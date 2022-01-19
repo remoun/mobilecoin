@@ -22,7 +22,7 @@ use mc_util_from_random::FromRandom;
 use mc_util_uri::{ConnectionUri, ConsensusPeerUri as PeerUri};
 use rand::SeedableRng;
 use rand_hc::Hc128Rng as FixedRng;
-use sha2::{digest::Digest, Sha512Trunc256};
+use sha2::{digest::Digest, Sha512};
 use std::{
     cmp::{min, Ordering},
     collections::{BTreeSet, VecDeque},
@@ -35,6 +35,7 @@ use std::{
     thread,
     time::Duration,
 };
+use mc_transaction_core::tx::TX_HASH_LEN;
 
 #[derive(Clone, Default)]
 pub struct MockPeerState {
@@ -228,7 +229,8 @@ pub fn create_consensus_msg(
     msg: &str,
     signer_key: &Ed25519Pair,
 ) -> ConsensusMsg {
-    let msg_hash = TxHash::try_from(Sha512Trunc256::digest(msg.as_bytes()).as_slice())
+    let bytes = &Sha512::digest(msg.as_bytes())[..TX_HASH_LEN];
+    let msg_hash = TxHash::try_from(bytes)
         .expect("Could not hash message into TxHash");
     let mut payload = NominatePayload {
         X: BTreeSet::default(),

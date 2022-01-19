@@ -185,7 +185,7 @@ dependencies = [
  "rand_core",
  "serde",
  "serde_derive",
- "sha3",
+ "sha3 0.9.1",
  "subtle",
 ]
 
@@ -403,7 +403,7 @@ dependencies = [
  "rand",
  "serde",
  "serde_bytes",
- "sha2",
+ "sha2 0.9.8",
  "zeroize",
 ]
 
@@ -732,7 +732,7 @@ dependencies = [
  "prost",
  "rjson",
  "serde",
- "sha2",
+ "sha2 0.10.1",
  "subtle",
 ]
 
@@ -781,7 +781,7 @@ dependencies = [
  "rand",
  "rand_hc",
  "serde",
- "sha2",
+ "sha2 0.10.1",
 ]
 
 [[package]]
@@ -799,7 +799,7 @@ dependencies = [
  "mc-util-serial",
  "rand_core",
  "serde",
- "sha3",
+ "sha3 0.10.0",
  "siphasher",
  "slog",
 ]
@@ -886,7 +886,7 @@ dependencies = [
  "mc-util-build-sgx",
  "mc-util-serial",
  "pkg-config",
- "sha2",
+ "sha2 0.10.1",
 ]
 
 [[package]]
@@ -906,7 +906,7 @@ dependencies = [
  "mc-sgx-build",
  "mc-sgx-compat",
  "mc-util-from-random",
- "sha2",
+ "sha2 0.10.1",
 ]
 
 [[package]]
@@ -982,7 +982,7 @@ dependencies = [
  "rand_hc",
  "schnorrkel-og",
  "serde",
- "sha2",
+ "sha2 0.10.1",
  "signature",
  "subtle",
  "x25519-dalek",
@@ -1017,7 +1017,7 @@ dependencies = [
  "rand_core",
  "secrecy",
  "serde",
- "sha2",
+ "sha2 0.10.1",
  "subtle",
  "zeroize",
 ]
@@ -1099,7 +1099,7 @@ name = "mc-sgx-css"
 version = "1.2.0-pre0"
 dependencies = [
  "displaydoc",
- "sha2",
+ "sha2 0.10.1",
 ]
 
 [[package]]
@@ -1198,7 +1198,7 @@ dependencies = [
  "prost",
  "rand_core",
  "serde",
- "sha2",
+ "sha2 0.10.1",
  "subtle",
  "zeroize",
 ]
@@ -1510,7 +1510,7 @@ dependencies = [
  "curve25519-dalek",
  "merlin",
  "rand_core",
- "sha2",
+ "sha2 0.9.8",
  "subtle",
  "zeroize",
 ]
@@ -1576,6 +1576,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "sha2"
+version = "0.10.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "99c3bd8169c58782adad9290a9af5939994036b76187f7b4f0e6de91dbbfc0ec"
+dependencies = [
+ "cfg-if 1.0.0",
+ "cpufeatures",
+ "digest 0.10.1",
+]
+
+[[package]]
 name = "sha3"
 version = "0.9.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1588,6 +1599,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "sha3"
+version = "0.10.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "31f935e31cf406e8c0e96c2815a5516181b7004ae8c5f296293221e9b1e356bd"
+dependencies = [
+ "digest 0.10.1",
+ "keccak",
+]
+
+[[package]]
 name = "shlex"
 version = "1.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1595,11 +1616,11 @@ checksum = "42a568c8f2cd051a4d283bd6eb0343ac214c1b0f1ac19f93e1175b2dee38c73d"
 
 [[package]]
 name = "signature"
-version = "1.4.0"
+version = "1.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "02658e48d89f2bec991f9a78e69cfa4c316f8d6a6c4ec12fae1aeb263d486788"
+checksum = "f054c6c1a6e95179d6f23ed974060dcefb2d9388bb7256900badad682c499de4"
 dependencies = [
- "digest 0.9.0",
+ "digest 0.10.1",
 ]
 
 [[package]]

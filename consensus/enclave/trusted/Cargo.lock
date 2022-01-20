@@ -70,9 +70,9 @@ checksum = "a4c527152e37cf757a3f78aae5a06fbeefdb07ccc535c980a3208ee3060dd544"
 
 [[package]]
 name = "arrayvec"
-version = "0.5.2"
+version = "0.7.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "23b62fc65de8e4e7f52534fb52b0f3ed04746ae267519eef2a83941e8085068b"
+checksum = "8da52d66c7071e2e3fa2a1e5c6d088fec47b593032b254f5e980de8ea54454d6"
 
 [[package]]
 name = "atty"
@@ -318,16 +318,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "crypto-mac"
-version = "0.8.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b584a330336237c1eecd3e94266efb216c56ed91225d634cb2991c5f3fd1aeab"
-dependencies = [
- "generic-array",
- "subtle",
-]
-
-[[package]]
 name = "ctr"
 version = "0.8.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -338,12 +328,11 @@ dependencies = [
 
 [[package]]
 name = "curve25519-dalek"
-version = "4.0.0-pre.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4033478fbf70d6acf2655ac70da91ee65852d69daf7a67bf7a2f518fb47aafcf"
+version = "4.0.0-pre.2"
+source = "git+https://github.com/remoun/curve25519-dalek.git?branch=mobilecoin#77391036a6e43f3c9a2d8b937e621dcfe9d95d8c"
 dependencies = [
  "byteorder",
- "digest 0.9.0",
+ "digest 0.10.1",
  "packed_simd_2",
  "rand_core",
  "serde",
@@ -395,15 +384,15 @@ dependencies = [
 
 [[package]]
 name = "ed25519-dalek"
-version = "2.0.0-pre.0"
-source = "git+https://github.com/mobilecoinfoundation/ed25519-dalek.git?rev=78bdc2a0b0af852cb4e47a0ca9be74bdf77c57b6#78bdc2a0b0af852cb4e47a0ca9be74bdf77c57b6"
+version = "2.0.0-pre.1"
+source = "git+https://github.com/remoun/ed25519-dalek.git?branch=mobilecoin#3ca587052cfd6af76f615b494f2e4755e01a58dd"
 dependencies = [
  "curve25519-dalek",
  "ed25519",
  "rand",
  "serde",
  "serde_bytes",
- "sha2 0.9.8",
+ "sha2",
  "zeroize",
 ]
 
@@ -521,22 +510,20 @@ checksum = "b07f60793ff0a4d9cef0f18e63b5357e06209987153a64648c972c1e5aff336f"
 
 [[package]]
 name = "hkdf"
-version = "0.9.0"
+version = "0.12.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "fe1149865383e4526a43aee8495f9a325f0b806c63ce6427d06336a590abbbc9"
+checksum = "94f41e9c77b6fc05b57497b960aad55942a9bbc5b20e1e623cf7fb1868f695d1"
 dependencies = [
- "digest 0.9.0",
  "hmac",
 ]
 
 [[package]]
 name = "hmac"
-version = "0.8.1"
+version = "0.12.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "126888268dcc288495a26bf004b38c5fdbb31682f992c84ceb046a1f0fe38840"
+checksum = "ddca131f3e7f2ce2df364b57949a9d47915cfbd35e46cfee355ccebbf794d6a2"
 dependencies = [
- "crypto-mac",
- "digest 0.9.0",
+ "digest 0.10.1",
 ]
 
 [[package]]
@@ -732,7 +719,7 @@ dependencies = [
  "prost",
  "rjson",
  "serde",
- "sha2 0.10.1",
+ "sha2",
  "subtle",
 ]
 
@@ -781,7 +768,7 @@ dependencies = [
  "rand",
  "rand_hc",
  "serde",
- "sha2 0.10.1",
+ "sha2",
 ]
 
 [[package]]
@@ -886,7 +873,7 @@ dependencies = [
  "mc-util-build-sgx",
  "mc-util-serial",
  "pkg-config",
- "sha2 0.10.1",
+ "sha2",
 ]
 
 [[package]]
@@ -906,7 +893,7 @@ dependencies = [
  "mc-sgx-build",
  "mc-sgx-compat",
  "mc-util-from-random",
- "sha2 0.10.1",
+ "sha2",
 ]
 
 [[package]]
@@ -982,7 +969,7 @@ dependencies = [
  "rand_hc",
  "schnorrkel-og",
  "serde",
- "sha2 0.10.1",
+ "sha2",
  "signature",
  "subtle",
  "x25519-dalek",
@@ -1017,7 +1004,7 @@ dependencies = [
  "rand_core",
  "secrecy",
  "serde",
- "sha2 0.10.1",
+ "sha2",
  "subtle",
  "zeroize",
 ]
@@ -1099,7 +1086,7 @@ name = "mc-sgx-css"
 version = "1.2.0-pre0"
 dependencies = [
  "displaydoc",
- "sha2 0.10.1",
+ "sha2",
 ]
 
 [[package]]
@@ -1198,7 +1185,7 @@ dependencies = [
  "prost",
  "rand_core",
  "serde",
- "sha2 0.10.1",
+ "sha2",
  "subtle",
  "zeroize",
 ]
@@ -1502,15 +1489,15 @@ dependencies = [
 
 [[package]]
 name = "schnorrkel-og"
-version = "0.10.2"
-source = "git+https://github.com/mobilecoinfoundation/schnorrkel.git?rev=9b48418556b0af476be2313309bc5a23fb8b351d#9b48418556b0af476be2313309bc5a23fb8b351d"
+version = "0.11.0-pre.0"
+source = "git+https://github.com/remoun/schnorrkel.git?branch=mobilecoin#b2f09a388b87f8aafba79c2af6af6e607e51d1ab"
 dependencies = [
  "arrayref",
  "arrayvec",
  "curve25519-dalek",
  "merlin",
  "rand_core",
- "sha2 0.9.8",
+ "sha2",
  "subtle",
  "zeroize",
 ]
@@ -1560,19 +1547,6 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn",
-]
-
-[[package]]
-name = "sha2"
-version = "0.9.8"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b69f9a4c9740d74c5baa3fd2e547f9525fa8088a8a958e0ca2409a514e33f5fa"
-dependencies = [
- "block-buffer 0.9.0",
- "cfg-if 1.0.0",
- "cpufeatures",
- "digest 0.9.0",
- "opaque-debug",
 ]
 
 [[package]]
@@ -1866,8 +1840,8 @@ checksum = "712e227841d057c1ee1cd2fb22fa7e5a5461ae8e48fa2ca79ec42cfc1931183f"
 
 [[package]]
 name = "x25519-dalek"
-version = "2.0.0-pre.0"
-source = "git+https://github.com/mobilecoinfoundation/x25519-dalek.git?rev=672f29ef4b3addd9a3c4888cf4b836b243bda595#672f29ef4b3addd9a3c4888cf4b836b243bda595"
+version = "2.0.0-pre.2"
+source = "git+https://github.com/remoun/x25519-dalek.git?branch=mobilecoin#5d7c3385a8b56d71a3be8d8e98a9d27d59c1d2fa"
 dependencies = [
  "curve25519-dalek",
  "rand_core",

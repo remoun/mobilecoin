@@ -189,7 +189,8 @@ cmake = { git = "https://github.com/alexcrichton/cmake-rs", rev = "5f89f90ee5d77
 datatest = { git = "https://github.com/mobilecoinfoundation/datatest.git", rev = "dc3521f692228b846a2312e7ceece50e7664be6e" }
 
 # Fix issues with recent nightlies, bump curve25519-dalek version
-ed25519-dalek = { git = "https://github.com/mobilecoinfoundation/ed25519-dalek.git", rev = "78bdc2a0b0af852cb4e47a0ca9be74bdf77c57b6" }
+curve25519-dalek = { git = "https://github.com/remoun/curve25519-dalek.git", branch = "mobilecoin" }
+ed25519-dalek = { git = "https://github.com/remoun/ed25519-dalek.git", branch = "mobilecoin" }
 
 # grpcio patched with metadata
 grpcio = { git = "https://github.com/mobilecoinofficial/grpc-rs", rev = "10ba9f8f4546916c7e7532c4d1c6cdcf5df62553" }
@@ -214,4 +215,4 @@ schnorrkel-og = { git = "https://github.com/mobilecoinfoundation/schnorrkel.git"
 serde_cbor = { git = "https://github.com/mobilecoinofficial/cbor", rev = "4c886a7c1d523aae1ec4aa7386f402cb2f4341b5" }
 
 # Fix issues with recent nightlies, bump curve25519-dalek version
-x25519-dalek = { git = "https://github.com/mobilecoinfoundation/x25519-dalek.git", rev = "672f29ef4b3addd9a3c4888cf4b836b243bda595" }
+x25519-dalek = { git = "https://github.com/remoun/x25519-dalek.git", branch = "mobilecoin" }

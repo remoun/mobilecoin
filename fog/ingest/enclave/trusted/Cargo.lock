@@ -372,12 +372,11 @@ dependencies = [
 
 [[package]]
 name = "curve25519-dalek"
-version = "4.0.0-pre.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4033478fbf70d6acf2655ac70da91ee65852d69daf7a67bf7a2f518fb47aafcf"
+version = "4.0.0-pre.2"
+source = "git+https://github.com/remoun/curve25519-dalek.git?branch=mobilecoin#77391036a6e43f3c9a2d8b937e621dcfe9d95d8c"
 dependencies = [
  "byteorder",
- "digest 0.9.0",
+ "digest 0.10.1",
  "packed_simd_2",
  "rand_core",
  "serde",
@@ -429,15 +428,15 @@ dependencies = [
 
 [[package]]
 name = "ed25519-dalek"
-version = "2.0.0-pre.0"
-source = "git+https://github.com/mobilecoinfoundation/ed25519-dalek.git?rev=78bdc2a0b0af852cb4e47a0ca9be74bdf77c57b6#78bdc2a0b0af852cb4e47a0ca9be74bdf77c57b6"
+version = "2.0.0-pre.1"
+source = "git+https://github.com/remoun/ed25519-dalek.git?branch=mobilecoin#3ca587052cfd6af76f615b494f2e4755e01a58dd"
 dependencies = [
  "curve25519-dalek",
  "ed25519",
  "rand",
  "serde",
  "serde_bytes",
- "sha2 0.9.8",
+ "sha2 0.10.1",
  "zeroize",
 ]
 
@@ -2004,8 +2003,8 @@ dependencies = [
 
 [[package]]
 name = "x25519-dalek"
-version = "2.0.0-pre.0"
-source = "git+https://github.com/mobilecoinfoundation/x25519-dalek.git?rev=672f29ef4b3addd9a3c4888cf4b836b243bda595#672f29ef4b3addd9a3c4888cf4b836b243bda595"
+version = "2.0.0-pre.2"
+source = "git+https://github.com/remoun/x25519-dalek.git?branch=mobilecoin#5d7c3385a8b56d71a3be8d8e98a9d27d59c1d2fa"
 dependencies = [
  "curve25519-dalek",
  "rand_core",

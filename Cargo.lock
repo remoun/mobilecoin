@@ -368,7 +368,7 @@ version = "0.7.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c0940dc441f31689269e10ac70eb1002a3a1d3ad1390e030043662eb7fe4688b"
 dependencies = [
- "block-padding 0.1.5",
+ "block-padding",
  "byte-tools",
  "byteorder",
  "generic-array 0.12.3",
@@ -380,7 +380,6 @@ version = "0.9.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "4152116fd6e9dadb291ae18fc1ec3575ed6d84c29642d97890f4b4a3417297e4"
 dependencies = [
- "block-padding 0.2.1",
  "generic-array 0.14.4",
 ]
 
@@ -401,12 +400,6 @@ checksum = "fa79dedbb091f449f1f39e53edf88d5dbe95f895dae6135a8d7b881fb5af73f5"
 dependencies = [
  "byte-tools",
 ]
-
-[[package]]
-name = "block-padding"
-version = "0.2.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8d696c370c750c948ada61c69a0ee2cbbb9c50b1019ddb86d9317157a99c2cae"
 
 [[package]]
 name = "boringssl-src"
@@ -436,19 +429,19 @@ dependencies = [
 ]
 
 [[package]]
-name = "bulletproofs-og"
-version = "3.0.0-pre.0"
-source = "git+https://github.com/mobilecoinfoundation/bulletproofs.git?rev=675330c754f28876dbf94fc303fe73666cf8f8f4#675330c754f28876dbf94fc303fe73666cf8f8f4"
+name = "bulletproofs"
+version = "3.0.0-pre.1"
+source = "git+https://github.com/remoun/bulletproofs.git?branch=mobilecoin#74e65633b4e253bdc0463e0561ad5e748e0cb08f"
 dependencies = [
  "byteorder",
  "clear_on_drop",
  "curve25519-dalek",
- "digest 0.9.0",
+ "digest 0.10.1",
  "merlin",
  "rand_core 0.6.3",
  "serde",
  "serde_derive",
- "sha3 0.9.1",
+ "sha3",
  "subtle 2.4.1",
 ]
 
@@ -2838,7 +2831,7 @@ dependencies = [
  "scoped_threadpool",
  "sentry",
  "serde",
- "sha3 0.10.0",
+ "sha3",
  "siphasher",
  "slog",
  "slog-async",
@@ -4952,7 +4945,7 @@ version = "1.2.0-pre0"
 dependencies = [
  "aes",
  "blake2",
- "bulletproofs-og",
+ "bulletproofs",
  "curve25519-dalek",
  "displaydoc",
  "generic-array 0.14.4",
@@ -7128,18 +7121,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "5c397a68de3079fa40e34eba871bea7f10de663f27f4c8b865c89ab47f103723"
 dependencies = [
  "cc",
-]
-
-[[package]]
-name = "sha3"
-version = "0.9.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f81199417d4e5de3f04b1e871023acea7389672c4135918f05aa9cbf2f2fa809"
-dependencies = [
- "block-buffer 0.9.0",
- "digest 0.9.0",
- "keccak",
- "opaque-debug 0.3.0",
 ]
 
 [[package]]

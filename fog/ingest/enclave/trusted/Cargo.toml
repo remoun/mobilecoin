@@ -66,8 +66,8 @@ debug-assertions = false
 overflow-checks = false
 
 [patch.crates-io]
-# Fork and rename to use "OG" dalek-cryptography.
-bulletproofs-og = { git = "https://github.com/mobilecoinfoundation/bulletproofs.git", rev = "675330c754f28876dbf94fc303fe73666cf8f8f4" }
+# Fork to use latest dependencies.
+bulletproofs = { git = "https://github.com/remoun/bulletproofs.git", branch = "mobilecoin" }
 
 # Patched to disable the cpuid instruction because that is incompatible with our sgx builds.
 cpufeatures = { git = "https://github.com/mobilecoinfoundation/RustCrypto-utils.git", rev = "9881a8f8aeb869ccdbefacfc19c7e5d2ef1ffb55" }

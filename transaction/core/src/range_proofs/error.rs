@@ -1,6 +1,6 @@
 // Copyright (c) 2018-2021 The MobileCoin Foundation
 
-use bulletproofs_og::ProofError;
+use bulletproofs::ProofError;
 use displaydoc::Display;
 
 #[derive(Debug, Display, PartialEq)]

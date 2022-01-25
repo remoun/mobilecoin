@@ -17,7 +17,7 @@ use alloc::{
     string::{String, ToString},
     vec::Vec,
 };
-use blake2::{Blake2b, Digest};
+use blake2::{Blake2b512, Digest};
 use core::{
     cmp::Ordering,
     fmt,
@@ -410,11 +410,11 @@ impl AccountKey {
         // `Hs(a || n)`
         let Hs: Scalar = {
             let n = Scalar::from(index);
-            let mut digest = Blake2b::new();
+            let mut digest = Blake2b512::new();
             digest.update(SUBADDRESS_DOMAIN_TAG);
             digest.update(a.as_bytes());
             digest.update(n.as_bytes());
-            Scalar::from_hash::<Blake2b>(digest)
+            Scalar::from_hash(digest)
         };
 
         let b: &Scalar = self.spend_private_key.as_ref();
@@ -433,11 +433,11 @@ impl AccountKey {
         // `Hs(a || n)`
         let Hs: Scalar = {
             let n = Scalar::from(index);
-            let mut digest = Blake2b::new();
+            let mut digest = Blake2b512::new();
             digest.update(SUBADDRESS_DOMAIN_TAG);
             digest.update(a.as_bytes());
             digest.update(n.as_bytes());
-            Scalar::from_hash::<Blake2b>(digest)
+            Scalar::from_hash(digest)
         };
 
         let b: &Scalar = self.spend_private_key.as_ref();

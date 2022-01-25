@@ -5,7 +5,7 @@ extern crate alloc;
 use alloc::{vec, vec::Vec};
 use core::convert::TryFrom;
 
-use blake2::{Blake2b, Digest};
+use blake2::{Blake2b512, Digest};
 use curve25519_dalek::ristretto::RistrettoPoint;
 use mc_crypto_digestible::Digestible;
 use mc_crypto_keys::{CompressedRistrettoPublic, RistrettoPrivate, RistrettoPublic};
@@ -308,14 +308,14 @@ fn challenge(
     R0: &RistrettoPoint,
     L1: &RistrettoPoint,
 ) -> Scalar {
-    let mut hasher = Blake2b::new();
+    let mut hasher = Blake2b512::new();
     hasher.update(&RING_MLSAG_CHALLENGE_DOMAIN_TAG);
     hasher.update(message);
     hasher.update(key_image);
     hasher.update(L0.compress().as_bytes());
     hasher.update(R0.compress().as_bytes());
     hasher.update(L1.compress().as_bytes());
-    Scalar::from_hash::<Blake2b>(hasher)
+    Scalar::from_hash(hasher)
 }
 
 fn decompress_ring(

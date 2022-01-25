@@ -72,7 +72,7 @@
 #![allow(non_snake_case)]
 
 use crate::domain_separators::HASH_TO_SCALAR_DOMAIN_TAG;
-use blake2::{Blake2b, Digest};
+use blake2::{Blake2b512, Digest};
 use curve25519_dalek::{
     constants::RISTRETTO_BASEPOINT_POINT, ristretto::RistrettoPoint, scalar::Scalar,
 };
@@ -83,10 +83,10 @@ const G: RistrettoPoint = RISTRETTO_BASEPOINT_POINT;
 
 /// Hashes a curve point to a Scalar.
 fn hash_to_scalar(point: RistrettoPoint) -> Scalar {
-    let mut hasher = Blake2b::new();
+    let mut hasher = Blake2b512::new();
     hasher.update(&HASH_TO_SCALAR_DOMAIN_TAG);
     hasher.update(point.compress().as_bytes());
-    Scalar::from_hash::<Blake2b>(hasher)
+    Scalar::from_hash(hasher)
 }
 
 /// Creates target_key `Hs( r * C ) * G + D` for an output sent to

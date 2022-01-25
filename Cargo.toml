@@ -189,15 +189,15 @@ cmake = { git = "https://github.com/alexcrichton/cmake-rs", rev = "5f89f90ee5d77
 datatest = { git = "https://github.com/mobilecoinfoundation/datatest.git", rev = "dc3521f692228b846a2312e7ceece50e7664be6e" }
 
 # Fix issues with recent nightlies, bump curve25519-dalek version
-curve25519-dalek = { git = "https://github.com/remoun/curve25519-dalek.git", branch = "mobilecoin" }
-ed25519-dalek = { git = "https://github.com/remoun/ed25519-dalek.git", branch = "mobilecoin" }
+curve25519-dalek = { git = "https://github.com/remoun/curve25519-dalek.git", rev = "77391036a6e43f3c9a2d8b937e621dcfe9d95d8c" }
+ed25519-dalek = { git = "https://github.com/remoun/ed25519-dalek.git", rev = "3ca587052cfd6af76f615b494f2e4755e01a58dd" }
 
 # grpcio patched with metadata
 grpcio = { git = "https://github.com/mobilecoinofficial/grpc-rs", rev = "10ba9f8f4546916c7e7532c4d1c6cdcf5df62553" }
 protoc-grpcio = { git = "https://github.com/mobilecoinofficial/protoc-grpcio", rev = "9e63f09ec408722f731c9cb60bf06c3d46bcabec" }
 
 # Use SimpleHkdf
-hkdf = { git = "https://github.com/remoun/KDFs.git", branch = "add-simple" }
+hkdf = { git = "https://github.com/remoun/KDFs.git", rev = "d7dbfe87a1e7046ebdc3ee056502b899dcb4ab66" }
 
 # mbedtls patched to allow certificate verification with a profile
 mbedtls = { git = "https://github.com/mobilecoinofficial/rust-mbedtls.git", rev = "49a293a5f4b1ef571c71174e3fa1f301925f3915" }
@@ -210,7 +210,7 @@ packed_simd_2 = { git = "https://github.com/rust-lang/packed_simd.git", rev = "f
 lmdb-rkv = { git = "https://github.com/mozilla/lmdb-rs", rev = "df1c2f5" }
 
 # Fork to use latest dependencies.
-schnorrkel-og = { git = "https://github.com/remoun/schnorrkel.git", branch = "mobilecoin" }
+schnorrkel-og = { git = "https://github.com/remoun/schnorrkel.git", rev = "b2f09a388b87f8aafba79c2af6af6e607e51d1ab" }
 
 # Fixes the following:
 # * Allow enabling `serde/std` without also requiring `serde_cbor/std` to be enabled.
@@ -218,4 +218,4 @@ schnorrkel-og = { git = "https://github.com/remoun/schnorrkel.git", branch = "mo
 serde_cbor = { git = "https://github.com/mobilecoinofficial/cbor", rev = "4c886a7c1d523aae1ec4aa7386f402cb2f4341b5" }
 
 # Fix issues with recent nightlies, bump curve25519-dalek version
-x25519-dalek = { git = "https://github.com/remoun/x25519-dalek.git", branch = "mobilecoin" }
+x25519-dalek = { git = "https://github.com/remoun/x25519-dalek.git", rev = "5d7c3385a8b56d71a3be8d8e98a9d27d59c1d2fa" }

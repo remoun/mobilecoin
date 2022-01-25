@@ -79,11 +79,11 @@ bulletproofs-og = { git = "https://github.com/remoun/bulletproofs.git", rev = "6
 cpufeatures = { git = "https://github.com/mobilecoinfoundation/RustCrypto-utils.git", rev = "9881a8f8aeb869ccdbefacfc19c7e5d2ef1ffb55" }
 
 # Fix issues with recent nightlies, bump curve25519-dalek version
-curve25519-dalek = { git = "https://github.com/remoun/curve25519-dalek.git", branch = "mobilecoin" }
-ed25519-dalek = { git = "https://github.com/remoun/ed25519-dalek.git", branch = "mobilecoin" }
+curve25519-dalek = { git = "https://github.com/remoun/curve25519-dalek.git", rev = "77391036a6e43f3c9a2d8b937e621dcfe9d95d8c" }
+ed25519-dalek = { git = "https://github.com/remoun/ed25519-dalek.git", rev = "3ca587052cfd6af76f615b494f2e4755e01a58dd" }
 
 # Use SimpleHkdf
-hkdf = { git = "https://github.com/remoun/KDFs.git", branch = "add-simple" }
+hkdf = { git = "https://github.com/remoun/KDFs.git", rev = "d7dbfe87a1e7046ebdc3ee056502b899dcb4ab66" }
 
 # Our patches for newer bindgen, no-std
 mbedtls = { git = "https://github.com/mobilecoinofficial/rust-mbedtls.git", rev = "49a293a5f4b1ef571c71174e3fa1f301925f3915" }
@@ -93,7 +93,7 @@ mbedtls-sys-auto = { git = "https://github.com/mobilecoinofficial/rust-mbedtls.g
 packed_simd_2 = { git = "https://github.com/rust-lang/packed_simd.git", rev = "f60e900f4ceb71303baa37ff8b41ee7d490c01bf" }
 
 # Fork to use latest dependencies.
-schnorrkel-og = { git = "https://github.com/remoun/schnorrkel.git", branch = "mobilecoin" }
+schnorrkel-og = { git = "https://github.com/remoun/schnorrkel.git", rev = "b2f09a388b87f8aafba79c2af6af6e607e51d1ab" }
 
 # Fixes the following:
 # * Allow enabling `serde/std` without also requiring `serde_cbor/std` to be enabled.
@@ -101,4 +101,4 @@ schnorrkel-og = { git = "https://github.com/remoun/schnorrkel.git", branch = "mo
 serde_cbor = { git = "https://github.com/mobilecoinofficial/cbor", rev = "4c886a7c1d523aae1ec4aa7386f402cb2f4341b5" }
 
 # Fix issues with recent nightlies, bump curve25519-dalek version
-x25519-dalek = { git = "https://github.com/remoun/x25519-dalek.git", branch = "mobilecoin" }
+x25519-dalek = { git = "https://github.com/remoun/x25519-dalek.git", rev = "5d7c3385a8b56d71a3be8d8e98a9d27d59c1d2fa" }

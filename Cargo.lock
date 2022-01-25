@@ -1032,7 +1032,7 @@ dependencies = [
 [[package]]
 name = "curve25519-dalek"
 version = "4.0.0-pre.2"
-source = "git+https://github.com/remoun/curve25519-dalek.git?branch=mobilecoin#77391036a6e43f3c9a2d8b937e621dcfe9d95d8c"
+source = "git+https://github.com/remoun/curve25519-dalek.git?rev=77391036a6e43f3c9a2d8b937e621dcfe9d95d8c#77391036a6e43f3c9a2d8b937e621dcfe9d95d8c"
 dependencies = [
  "byteorder",
  "digest 0.10.1",
@@ -1299,7 +1299,7 @@ dependencies = [
 [[package]]
 name = "ed25519-dalek"
 version = "2.0.0-pre.1"
-source = "git+https://github.com/remoun/ed25519-dalek.git?branch=mobilecoin#3ca587052cfd6af76f615b494f2e4755e01a58dd"
+source = "git+https://github.com/remoun/ed25519-dalek.git?rev=3ca587052cfd6af76f615b494f2e4755e01a58dd#3ca587052cfd6af76f615b494f2e4755e01a58dd"
 dependencies = [
  "curve25519-dalek",
  "ed25519",
@@ -1848,7 +1848,7 @@ checksum = "b07f60793ff0a4d9cef0f18e63b5357e06209987153a64648c972c1e5aff336f"
 [[package]]
 name = "hkdf"
 version = "0.12.1-pre.0"
-source = "git+https://github.com/remoun/KDFs.git?branch=add-simple#d7dbfe87a1e7046ebdc3ee056502b899dcb4ab66"
+source = "git+https://github.com/remoun/KDFs.git?rev=d7dbfe87a1e7046ebdc3ee056502b899dcb4ab66#d7dbfe87a1e7046ebdc3ee056502b899dcb4ab66"
 dependencies = [
  "hmac 0.12.0",
 ]
@@ -6836,7 +6836,7 @@ dependencies = [
 [[package]]
 name = "schnorrkel-og"
 version = "0.11.0-pre.0"
-source = "git+https://github.com/remoun/schnorrkel.git?branch=mobilecoin#b2f09a388b87f8aafba79c2af6af6e607e51d1ab"
+source = "git+https://github.com/remoun/schnorrkel.git?rev=b2f09a388b87f8aafba79c2af6af6e607e51d1ab#b2f09a388b87f8aafba79c2af6af6e607e51d1ab"
 dependencies = [
  "arrayref",
  "arrayvec 0.7.2",
@@ -8408,7 +8408,7 @@ dependencies = [
 [[package]]
 name = "x25519-dalek"
 version = "2.0.0-pre.2"
-source = "git+https://github.com/remoun/x25519-dalek.git?branch=mobilecoin#5d7c3385a8b56d71a3be8d8e98a9d27d59c1d2fa"
+source = "git+https://github.com/remoun/x25519-dalek.git?rev=5d7c3385a8b56d71a3be8d8e98a9d27d59c1d2fa#5d7c3385a8b56d71a3be8d8e98a9d27d59c1d2fa"
 dependencies = [
  "curve25519-dalek",
  "rand_core 0.6.3",

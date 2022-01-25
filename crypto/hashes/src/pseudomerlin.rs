@@ -45,9 +45,7 @@ where
 {
     #[inline]
     fn new() -> Self {
-        Self {
-            inner: D::new(),
-        }
+        Self { inner: D::new() }
     }
 
     #[inline]

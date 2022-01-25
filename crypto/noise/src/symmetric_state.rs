@@ -16,7 +16,7 @@ use core::{convert::TryInto, marker::PhantomData};
 use digest::{core_api::BlockSizeUser, Digest};
 use displaydoc::Display;
 use generic_array::typenum::Unsigned;
-use hkdf::{SimpleHkdf, InvalidLength};
+use hkdf::{InvalidLength, SimpleHkdf};
 use mc_crypto_keys::{Kex, KexPublic, ReprBytes};
 use secrecy::{ExposeSecret, SecretVec};
 use serde::{Deserialize, Serialize};
@@ -286,7 +286,8 @@ where
     type Error = SymmetricError;
 
     fn try_into(self) -> Result<SymmetricOutput<Cipher, KexAlgo::Public>, SymmetricError> {
-        let kdf = SimpleHkdf::<DigestAlgo>::new(Some(self.chaining_key.expose_secret().as_slice()), &[]);
+        let kdf =
+            SimpleHkdf::<DigestAlgo>::new(Some(self.chaining_key.expose_secret().as_slice()), &[]);
 
         let key_len = Cipher::KeySize::to_usize();
         let digest_len = DigestAlgo::OutputSize::to_usize();

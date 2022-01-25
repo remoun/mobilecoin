@@ -17,7 +17,10 @@ use mc_consensus_scp::{
 use mc_crypto_keys::Ed25519Pair;
 use mc_ledger_db::{test_utils::mock_ledger::MockLedger, Ledger};
 use mc_peers::{ConsensusConnection, ConsensusMsg, Error as PeerError, Result as PeerResult};
-use mc_transaction_core::{tx::TxHash, Block, BlockID, BlockIndex};
+use mc_transaction_core::{
+    tx::{TxHash, TX_HASH_LEN},
+    Block, BlockID, BlockIndex,
+};
 use mc_util_from_random::FromRandom;
 use mc_util_uri::{ConnectionUri, ConsensusPeerUri as PeerUri};
 use rand::SeedableRng;
@@ -35,7 +38,6 @@ use std::{
     thread,
     time::Duration,
 };
-use mc_transaction_core::tx::TX_HASH_LEN;
 
 #[derive(Clone, Default)]
 pub struct MockPeerState {
@@ -230,8 +232,7 @@ pub fn create_consensus_msg(
     signer_key: &Ed25519Pair,
 ) -> ConsensusMsg {
     let bytes = &Sha512::digest(msg.as_bytes())[..TX_HASH_LEN];
-    let msg_hash = TxHash::try_from(bytes)
-        .expect("Could not hash message into TxHash");
+    let msg_hash = TxHash::try_from(bytes).expect("Could not hash message into TxHash");
     let mut payload = NominatePayload {
         X: BTreeSet::default(),
         Y: BTreeSet::default(),

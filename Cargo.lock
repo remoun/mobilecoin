@@ -1046,7 +1046,7 @@ dependencies = [
 [[package]]
 name = "datatest"
 version = "0.6.4"
-source = "git+https://github.com/mobilecoinfoundation/datatest.git?branch=mobilecoin#dc3521f692228b846a2312e7ceece50e7664be6e"
+source = "git+https://github.com/mobilecoinfoundation/datatest.git?rev=dc3521f692228b846a2312e7ceece50e7664be6e#dc3521f692228b846a2312e7ceece50e7664be6e"
 dependencies = [
  "ctor",
  "datatest-derive",
@@ -1061,7 +1061,7 @@ dependencies = [
 [[package]]
 name = "datatest-derive"
 version = "0.6.4"
-source = "git+https://github.com/mobilecoinfoundation/datatest.git?branch=mobilecoin#dc3521f692228b846a2312e7ceece50e7664be6e"
+source = "git+https://github.com/mobilecoinfoundation/datatest.git?rev=dc3521f692228b846a2312e7ceece50e7664be6e#dc3521f692228b846a2312e7ceece50e7664be6e"
 dependencies = [
  "proc-macro2 1.0.32",
  "quote 1.0.10",
@@ -2450,7 +2450,7 @@ checksum = "60302e4db3a61da70c0cb7991976248362f30319e88850c487b9b95bbf059e00"
 [[package]]
 name = "mbedtls"
 version = "0.8.1"
-source = "git+https://github.com/mobilecoinofficial/rust-mbedtls.git?branch=mc-develop#49a293a5f4b1ef571c71174e3fa1f301925f3915"
+source = "git+https://github.com/mobilecoinofficial/rust-mbedtls.git?rev=49a293a5f4b1ef571c71174e3fa1f301925f3915#49a293a5f4b1ef571c71174e3fa1f301925f3915"
 dependencies = [
  "bitflags",
  "byteorder",
@@ -2469,7 +2469,7 @@ dependencies = [
 [[package]]
 name = "mbedtls-sys-auto"
 version = "2.26.1"
-source = "git+https://github.com/mobilecoinofficial/rust-mbedtls.git?branch=mc-develop#49a293a5f4b1ef571c71174e3fa1f301925f3915"
+source = "git+https://github.com/mobilecoinofficial/rust-mbedtls.git?rev=49a293a5f4b1ef571c71174e3fa1f301925f3915#49a293a5f4b1ef571c71174e3fa1f301925f3915"
 dependencies = [
  "bindgen",
  "cc",
@@ -6962,7 +6962,7 @@ dependencies = [
 [[package]]
 name = "serde_cbor"
 version = "0.11.1"
-source = "git+https://github.com/mobilecoinofficial/cbor?branch=master#4c886a7c1d523aae1ec4aa7386f402cb2f4341b5"
+source = "git+https://github.com/mobilecoinofficial/cbor?rev=4c886a7c1d523aae1ec4aa7386f402cb2f4341b5#4c886a7c1d523aae1ec4aa7386f402cb2f4341b5"
 dependencies = [
  "half",
  "serde",

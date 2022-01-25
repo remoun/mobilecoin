@@ -186,7 +186,7 @@ bulletproofs = { git = "https://github.com/remoun/bulletproofs.git", branch = "m
 cmake = { git = "https://github.com/alexcrichton/cmake-rs", rev = "5f89f90ee5d7789832963bffdb2dcb5939e6199c" }
 
 # Fix issues with recent nightlies
-datatest = { git = "https://github.com/mobilecoinfoundation/datatest.git", branch = "mobilecoin" }
+datatest = { git = "https://github.com/mobilecoinfoundation/datatest.git", rev = "dc3521f692228b846a2312e7ceece50e7664be6e" }
 
 # Fix issues with recent nightlies, bump curve25519-dalek version
 curve25519-dalek = { git = "https://github.com/remoun/curve25519-dalek.git", branch = "mobilecoin" }
@@ -200,8 +200,8 @@ protoc-grpcio = { git = "https://github.com/mobilecoinofficial/protoc-grpcio", r
 hkdf = { git = "https://github.com/remoun/KDFs.git", branch = "add-simple" }
 
 # mbedtls patched to allow certificate verification with a profile
-mbedtls = { git = "https://github.com/mobilecoinofficial/rust-mbedtls.git", branch = "mc-develop" }
-mbedtls-sys-auto = { git = "https://github.com/mobilecoinofficial/rust-mbedtls.git", branch = "mc-develop" }
+mbedtls = { git = "https://github.com/mobilecoinofficial/rust-mbedtls.git", rev = "49a293a5f4b1ef571c71174e3fa1f301925f3915" }
+mbedtls-sys-auto = { git = "https://github.com/mobilecoinofficial/rust-mbedtls.git", rev = "49a293a5f4b1ef571c71174e3fa1f301925f3915" }
 
 # packed_simd_2 has unreleased fixes for build issues we're experiencing
 packed_simd_2 = { git = "https://github.com/rust-lang/packed_simd.git", rev = "f60e900f4ceb71303baa37ff8b41ee7d490c01bf" }
@@ -215,7 +215,7 @@ schnorrkel-og = { git = "https://github.com/remoun/schnorrkel.git", branch = "mo
 # Fixes the following:
 # * Allow enabling `serde/std` without also requiring `serde_cbor/std` to be enabled.
 #   See: https://github.com/pyfisch/cbor/pull/198
-serde_cbor = { git = "https://github.com/mobilecoinofficial/cbor", branch = "master" }
+serde_cbor = { git = "https://github.com/mobilecoinofficial/cbor", rev = "4c886a7c1d523aae1ec4aa7386f402cb2f4341b5" }
 
 # Fix issues with recent nightlies, bump curve25519-dalek version
 x25519-dalek = { git = "https://github.com/remoun/x25519-dalek.git", branch = "mobilecoin" }

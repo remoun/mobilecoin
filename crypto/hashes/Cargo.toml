@@ -6,6 +6,6 @@ edition = "2018"
 
 [dependencies]
 blake2 = { version = "0.10.2", default-features = false, features = ["simd"] }
-digest = { version = "0.10.1", default-features = false }
+digest = "0.10.1"
 
 mc-crypto-digestible = { path = "../digestible" }

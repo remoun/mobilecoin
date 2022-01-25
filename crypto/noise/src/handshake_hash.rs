@@ -10,7 +10,7 @@ use core::{
     ops::{Add, AddAssign},
 };
 use digest::{core_api::BlockSizeUser, Digest};
-use generic_array::{typenum::Unsigned, GenericArray};
+use generic_array::GenericArray;
 use mc_crypto_keys::Kex;
 use secrecy::{ExposeSecret, SecretVec};
 use zeroize::Zeroize;
@@ -91,7 +91,7 @@ where
     ) -> HandshakeHash<DigestAlgo> {
         let proto = src.as_ref().as_bytes();
         let proto_len = proto.len();
-        let mut result = if proto_len <= DigestAlgo::OutputSize::to_usize() {
+        let mut result = if proto_len <= DigestAlgo::output_size() {
             let mut result = GenericArray::default();
             result[..proto_len].copy_from_slice(proto);
             result

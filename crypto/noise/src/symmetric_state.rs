@@ -117,7 +117,7 @@ where
         );
 
         // expand chaining_key_len + key_len bytes of secret material
-        let chaining_key_len = DigestAlgo::OutputSize::to_usize();
+        let chaining_key_len = DigestAlgo::output_size();
         let key_len = Cipher::KeySize::to_usize();
         let mut output = vec![0u8; chaining_key_len * 2];
         kdf.expand(&[], &mut output)?;
@@ -159,8 +159,8 @@ where
         &mut self,
         input_key_material: KexAlgo::Secret,
     ) -> Result<(), SymmetricError> {
-        let chaining_key_len = DigestAlgo::OutputSize::to_usize();
-        let hash_len = DigestAlgo::OutputSize::to_usize();
+        let chaining_key_len = DigestAlgo::output_size();
+        let hash_len = DigestAlgo::output_size();
         let key_len = Cipher::KeySize::to_usize();
         let mut output = vec![0u8; chaining_key_len + hash_len + key_len];
 
@@ -290,7 +290,7 @@ where
             SimpleHkdf::<DigestAlgo>::new(Some(self.chaining_key.expose_secret().as_slice()), &[]);
 
         let key_len = Cipher::KeySize::to_usize();
-        let digest_len = DigestAlgo::OutputSize::to_usize();
+        let digest_len = DigestAlgo::output_size();
         assert!(digest_len >= key_len);
 
         let mut output = vec![0u8; digest_len * 2];

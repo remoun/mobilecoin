@@ -76,6 +76,9 @@ cpufeatures = { git = "https://github.com/mobilecoinfoundation/RustCrypto-utils.
 curve25519-dalek = { git = "https://github.com/remoun/curve25519-dalek.git", branch = "mobilecoin" }
 ed25519-dalek = { git = "https://github.com/remoun/ed25519-dalek.git", branch = "mobilecoin" }
 
+# Use SimpleHkdf
+hkdf = { git = "https://github.com/remoun/KDFs.git", branch = "add-simple" }
+
 # Our patches for newer bindgen, no-std
 mbedtls = { git = "https://github.com/mobilecoinofficial/rust-mbedtls.git", rev = "49a293a5f4b1ef571c71174e3fa1f301925f3915" }
 mbedtls-sys-auto = { git = "https://github.com/mobilecoinofficial/rust-mbedtls.git", rev = "49a293a5f4b1ef571c71174e3fa1f301925f3915" }

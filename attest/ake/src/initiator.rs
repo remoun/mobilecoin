@@ -11,7 +11,7 @@ use crate::{
 use aead::{AeadMut, NewAead};
 use alloc::vec::Vec;
 use core::convert::TryFrom;
-use digest::{BlockInput, Digest, FixedOutput, Reset, Update};
+use digest::{core_api::BlockSizeUser, Digest};
 use mc_attest_core::{ReportDataMask, VerificationReport};
 use mc_crypto_keys::{Kex, ReprBytes};
 use mc_crypto_noise::{
@@ -22,12 +22,12 @@ use prost::Message;
 use rand_core::{CryptoRng, RngCore};
 
 /// Helper function to create the output for an initiate
-fn parse_handshake_output<Handshake, KexAlgo, Cipher, DigestType>(
-    output: HandshakeOutput<KexAlgo, Cipher, DigestType>,
+fn parse_handshake_output<Handshake, KexAlgo, Cipher, DigestAlgo>(
+    output: HandshakeOutput<KexAlgo, Cipher, DigestAlgo>,
 ) -> Result<
     (
-        AuthPending<KexAlgo, Cipher, DigestType>,
-        AuthRequestOutput<Handshake, KexAlgo, Cipher, DigestType>,
+        AuthPending<KexAlgo, Cipher, DigestAlgo>,
+        AuthRequestOutput<Handshake, KexAlgo, Cipher, DigestAlgo>,
     ),
     Error,
 >
@@ -35,46 +35,46 @@ where
     Handshake: HandshakePattern,
     KexAlgo: Kex,
     Cipher: AeadMut + NewAead + NoiseCipher + Sized,
-    DigestType: BlockInput + Clone + Default + Digest + FixedOutput + Update + Reset,
+    DigestAlgo: Digest + BlockSizeUser + Clone,
 {
     match output.status {
         HandshakeStatus::InProgress(state) => Ok((
             AuthPending::new(state),
-            AuthRequestOutput::<Handshake, KexAlgo, Cipher, DigestType>::from(output.payload),
+            AuthRequestOutput::<Handshake, KexAlgo, Cipher, DigestAlgo>::from(output.payload),
         )),
         HandshakeStatus::Complete(_output) => Err(Error::EarlyHandshakeComplete),
     }
 }
 
 /// Start + ClientInitiate => AuthPending + AuthRequestOutput
-impl<KexAlgo, Cipher, DigestType>
+impl<KexAlgo, Cipher, DigestAlgo>
     Transition<
-        AuthPending<KexAlgo, Cipher, DigestType>,
-        ClientInitiate<KexAlgo, Cipher, DigestType>,
-        AuthRequestOutput<HandshakeNX, KexAlgo, Cipher, DigestType>,
+        AuthPending<KexAlgo, Cipher, DigestAlgo>,
+        ClientInitiate<KexAlgo, Cipher, DigestAlgo>,
+        AuthRequestOutput<HandshakeNX, KexAlgo, Cipher, DigestAlgo>,
     > for Start
 where
     KexAlgo: Kex,
     Cipher: AeadMut + NewAead + NoiseCipher + Sized,
-    DigestType: BlockInput + Clone + Default + Digest + FixedOutput + Update + Reset,
-    ProtocolName<HandshakeNX, KexAlgo, Cipher, DigestType>: AsRef<str>,
+    DigestAlgo: Digest + BlockSizeUser + Clone,
+    ProtocolName<HandshakeNX, KexAlgo, Cipher, DigestAlgo>: AsRef<str>,
 {
     type Error = Error;
 
     fn try_next<R: CryptoRng + RngCore>(
         self,
         csprng: &mut R,
-        _input: ClientInitiate<KexAlgo, Cipher, DigestType>,
+        _input: ClientInitiate<KexAlgo, Cipher, DigestAlgo>,
     ) -> Result<
         (
-            AuthPending<KexAlgo, Cipher, DigestType>,
-            AuthRequestOutput<HandshakeNX, KexAlgo, Cipher, DigestType>,
+            AuthPending<KexAlgo, Cipher, DigestAlgo>,
+            AuthRequestOutput<HandshakeNX, KexAlgo, Cipher, DigestAlgo>,
         ),
         Self::Error,
     > {
         let handshake_state = HandshakeState::new(
             true,
-            ProtocolName::<HandshakeNX, KexAlgo, Cipher, DigestType>::default(),
+            ProtocolName::<HandshakeNX, KexAlgo, Cipher, DigestAlgo>::default(),
             self.responder_id.as_ref(),
             None,
             None,
@@ -92,34 +92,34 @@ where
 }
 
 /// Start + NodeInitiate => AuthPending + AuthRequestOutput
-impl<KexAlgo, Cipher, DigestType>
+impl<KexAlgo, Cipher, DigestAlgo>
     Transition<
-        AuthPending<KexAlgo, Cipher, DigestType>,
-        NodeInitiate<KexAlgo, Cipher, DigestType>,
-        AuthRequestOutput<HandshakeIX, KexAlgo, Cipher, DigestType>,
+        AuthPending<KexAlgo, Cipher, DigestAlgo>,
+        NodeInitiate<KexAlgo, Cipher, DigestAlgo>,
+        AuthRequestOutput<HandshakeIX, KexAlgo, Cipher, DigestAlgo>,
     > for Start
 where
     KexAlgo: Kex,
     Cipher: AeadMut + NewAead + NoiseCipher + Sized,
-    DigestType: BlockInput + Clone + Default + Digest + FixedOutput + Update + Reset,
-    ProtocolName<HandshakeIX, KexAlgo, Cipher, DigestType>: AsRef<str>,
+    DigestAlgo: Digest + BlockSizeUser + Clone,
+    ProtocolName<HandshakeIX, KexAlgo, Cipher, DigestAlgo>: AsRef<str>,
 {
     type Error = Error;
 
     fn try_next<R: CryptoRng + RngCore>(
         self,
         csprng: &mut R,
-        input: NodeInitiate<KexAlgo, Cipher, DigestType>,
+        input: NodeInitiate<KexAlgo, Cipher, DigestAlgo>,
     ) -> Result<
         (
-            AuthPending<KexAlgo, Cipher, DigestType>,
-            AuthRequestOutput<HandshakeIX, KexAlgo, Cipher, DigestType>,
+            AuthPending<KexAlgo, Cipher, DigestAlgo>,
+            AuthRequestOutput<HandshakeIX, KexAlgo, Cipher, DigestAlgo>,
         ),
         Self::Error,
     > {
         let handshake_state = HandshakeState::new(
             true,
-            ProtocolName::<HandshakeIX, KexAlgo, Cipher, DigestType>::default(),
+            ProtocolName::<HandshakeIX, KexAlgo, Cipher, DigestAlgo>::default(),
             self.responder_id.as_ref(),
             Some(input.local_identity),
             None,
@@ -143,12 +143,12 @@ where
 }
 
 /// AuthPending + AuthResponseInput => Ready + VerificationReport
-impl<KexAlgo, Cipher, DigestType> Transition<Ready<Cipher>, AuthResponseInput, VerificationReport>
-    for AuthPending<KexAlgo, Cipher, DigestType>
+impl<KexAlgo, Cipher, DigestAlgo> Transition<Ready<Cipher>, AuthResponseInput, VerificationReport>
+    for AuthPending<KexAlgo, Cipher, DigestAlgo>
 where
     KexAlgo: Kex,
     Cipher: AeadMut + NewAead + NoiseCipher + Sized,
-    DigestType: BlockInput + Clone + Default + Digest + FixedOutput + Update + Reset,
+    DigestAlgo: Digest + BlockSizeUser + Clone,
 {
     type Error = Error;
 

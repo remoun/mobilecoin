@@ -4,7 +4,7 @@
 
 use crate::attest::{AuthMessage, Message};
 use aead::{AeadMut, NewAead};
-use digest::{BlockInput, FixedOutput, Reset, Update};
+use digest::{core_api::BlockSizeUser, Digest};
 use mc_attest_ake::{AuthRequestOutput, AuthResponseOutput};
 use mc_attest_enclave_api::{
     ClientAuthRequest, ClientAuthResponse, EnclaveMessage, PeerAuthRequest, PeerAuthResponse,
@@ -13,15 +13,15 @@ use mc_attest_enclave_api::{
 use mc_crypto_keys::Kex;
 use mc_crypto_noise::{HandshakePattern, NoiseCipher};
 
-impl<Handshake, KexAlgo, Cipher, DigestType>
-    From<AuthRequestOutput<Handshake, KexAlgo, Cipher, DigestType>> for AuthMessage
+impl<Handshake, KexAlgo, Cipher, DigestAlgo>
+    From<AuthRequestOutput<Handshake, KexAlgo, Cipher, DigestAlgo>> for AuthMessage
 where
     Handshake: HandshakePattern,
     KexAlgo: Kex,
     Cipher: AeadMut + NewAead + NoiseCipher + Sized,
-    DigestType: BlockInput + Clone + Default + FixedOutput + Update + Reset,
+    DigestAlgo: Digest + BlockSizeUser + Clone,
 {
-    fn from(src: AuthRequestOutput<Handshake, KexAlgo, Cipher, DigestType>) -> Self {
+    fn from(src: AuthRequestOutput<Handshake, KexAlgo, Cipher, DigestAlgo>) -> Self {
         let mut retval = Self::default();
         retval.set_data(src.into());
         retval

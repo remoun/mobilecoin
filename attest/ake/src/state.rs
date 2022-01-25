@@ -5,7 +5,7 @@
 use crate::mealy::State;
 use aead::{AeadMut, NewAead};
 use alloc::{string::String, vec::Vec};
-use digest::{BlockInput, FixedOutput, Reset, Update};
+use digest::{core_api::BlockSizeUser, Digest};
 use mc_crypto_keys::Kex;
 use mc_crypto_noise::{CipherError, CipherState, HandshakeState, NoiseCipher};
 
@@ -28,31 +28,31 @@ impl State for Start {}
 
 /// The state after an NodeInit or ClientInit event has been added to
 /// the Start state.
-pub struct AuthPending<KexAlgo, Cipher, DigestType>
+pub struct AuthPending<KexAlgo, Cipher, DigestAlgo>
 where
     KexAlgo: Kex,
     Cipher: AeadMut + NewAead + NoiseCipher + Sized,
-    DigestType: BlockInput + Clone + Default + FixedOutput + Update + Reset,
+    DigestAlgo: Digest + BlockSizeUser + Clone,
 {
     /// The handshake state
-    pub(crate) state: HandshakeState<KexAlgo, Cipher, DigestType>,
+    pub(crate) state: HandshakeState<KexAlgo, Cipher, DigestAlgo>,
 }
 
-impl<KexAlgo, Cipher, DigestType> State for AuthPending<KexAlgo, Cipher, DigestType>
+impl<KexAlgo, Cipher, DigestAlgo> State for AuthPending<KexAlgo, Cipher, DigestAlgo>
 where
     KexAlgo: Kex,
     Cipher: AeadMut + NewAead + NoiseCipher + Sized,
-    DigestType: BlockInput + Clone + Default + FixedOutput + Update + Reset,
+    DigestAlgo: Digest + BlockSizeUser + Clone,
 {
 }
 
-impl<KexAlgo, Cipher, DigestType> AuthPending<KexAlgo, Cipher, DigestType>
+impl<KexAlgo, Cipher, DigestAlgo> AuthPending<KexAlgo, Cipher, DigestAlgo>
 where
     KexAlgo: Kex,
     Cipher: AeadMut + NewAead + NoiseCipher + Sized,
-    DigestType: BlockInput + Clone + Default + FixedOutput + Update + Reset,
+    DigestAlgo: Digest + BlockSizeUser + Clone,
 {
-    pub(crate) fn new(state: HandshakeState<KexAlgo, Cipher, DigestType>) -> Self {
+    pub(crate) fn new(state: HandshakeState<KexAlgo, Cipher, DigestAlgo>) -> Self {
         Self { state }
     }
 }

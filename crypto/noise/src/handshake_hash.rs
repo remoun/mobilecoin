@@ -9,7 +9,7 @@ use core::{
     marker::PhantomData,
     ops::{Add, AddAssign},
 };
-use digest::{FixedOutput, Update};
+use digest::{core_api::BlockSizeUser, Digest};
 use generic_array::{typenum::Unsigned, GenericArray};
 use mc_crypto_keys::Kex;
 use secrecy::{ExposeSecret, SecretVec};
@@ -21,9 +21,9 @@ use zeroize::Zeroize;
 /// This type is not specifically defined by the noise framework, but the
 /// `h = HASH(h || data)` construction happens in a lot of places. This type,
 /// therefore, is the `h`.
-pub struct HandshakeHash<DigestType: Default + FixedOutput + Update> {
+pub struct HandshakeHash<DigestAlgo: Digest + BlockSizeUser + Clone> {
     hash: SecretVec<u8>,
-    _digest: PhantomData<fn() -> DigestType>,
+    _digest: PhantomData<fn() -> DigestAlgo>,
 }
 
 /// Handshake hashes can be exposed as a byte slice to facilitate chaining
@@ -33,23 +33,23 @@ pub struct HandshakeHash<DigestType: Default + FixedOutput + Update> {
 /// `SymmetricState::InitializedSymmetric`, defined at
 /// [section 5.2](http://noiseprotocol.org/noise.html#the-symmetricstate-object)
 /// of the specification.
-impl<DigestType: Default + FixedOutput + Update> AsRef<[u8]> for HandshakeHash<DigestType> {
+impl<DigestAlgo: Digest + BlockSizeUser + Clone> AsRef<[u8]> for HandshakeHash<DigestAlgo> {
     fn as_ref(&self) -> &[u8] {
         self.hash.expose_secret().as_slice()
     }
 }
 
 /// New data can be mixed with the handshake hash via addition.
-impl<'data, DigestType: Default + FixedOutput + Update> Add<&'data [u8]>
-    for HandshakeHash<DigestType>
+impl<'data, DigestAlgo: Digest + BlockSizeUser + Clone> Add<&'data [u8]>
+    for HandshakeHash<DigestAlgo>
 {
     type Output = Self;
 
     fn add(self, data: &[u8]) -> Self {
-        let mut hasher = DigestType::default();
+        let mut hasher = DigestAlgo::new();
         hasher.update(self.hash.expose_secret().as_slice());
         hasher.update(data);
-        let mut result = hasher.finalize_fixed();
+        let mut result = hasher.finalize();
         let mut target = self;
         target.hash = SecretVec::new(result.to_vec());
         result.zeroize();
@@ -58,14 +58,14 @@ impl<'data, DigestType: Default + FixedOutput + Update> Add<&'data [u8]>
 }
 
 /// New data can be mixed with the handshake hash via add-assignment.
-impl<'data, DigestType: Default + FixedOutput + Update> AddAssign<&'data [u8]>
-    for HandshakeHash<DigestType>
+impl<'data, DigestAlgo: Digest + BlockSizeUser + Clone> AddAssign<&'data [u8]>
+    for HandshakeHash<DigestAlgo>
 {
     fn add_assign(&mut self, data: &[u8]) {
-        let mut hasher = DigestType::default();
+        let mut hasher = DigestAlgo::new();
         hasher.update(self.hash.expose_secret().as_slice());
         hasher.update(data);
-        let mut result = hasher.finalize_fixed();
+        let mut result = hasher.finalize();
         self.hash = SecretVec::new(result.to_vec());
         result.zeroize();
     }
@@ -77,28 +77,28 @@ impl<'data, DigestType: Default + FixedOutput + Update> AddAssign<&'data [u8]>
 /// `SymmetricState::InitializeSymmetric()` at
 /// [section 5.2](http://noiseprotocol.org/noise.html#the-symmetricstate-object),
 /// of the spec.
-impl<Handshake, KexAlgo, Cipher, DigestType>
-    From<ProtocolName<Handshake, KexAlgo, Cipher, DigestType>> for HandshakeHash<DigestType>
+impl<Handshake, KexAlgo, Cipher, DigestAlgo>
+    From<ProtocolName<Handshake, KexAlgo, Cipher, DigestAlgo>> for HandshakeHash<DigestAlgo>
 where
     Handshake: HandshakePattern,
     KexAlgo: Kex,
     Cipher: AeadMut,
-    DigestType: Default + FixedOutput + Update,
-    ProtocolName<Handshake, KexAlgo, Cipher, DigestType>: AsRef<str>,
+    DigestAlgo: Digest + BlockSizeUser + Clone,
+    ProtocolName<Handshake, KexAlgo, Cipher, DigestAlgo>: AsRef<str>,
 {
     fn from(
-        src: ProtocolName<Handshake, KexAlgo, Cipher, DigestType>,
-    ) -> HandshakeHash<DigestType> {
+        src: ProtocolName<Handshake, KexAlgo, Cipher, DigestAlgo>,
+    ) -> HandshakeHash<DigestAlgo> {
         let proto = src.as_ref().as_bytes();
         let proto_len = proto.len();
-        let mut result = if proto_len <= DigestType::OutputSize::to_usize() {
+        let mut result = if proto_len <= DigestAlgo::OutputSize::to_usize() {
             let mut result = GenericArray::default();
             result[..proto_len].copy_from_slice(proto);
             result
         } else {
-            let mut hasher = DigestType::default();
+            let mut hasher = DigestAlgo::new();
             hasher.update(proto);
-            hasher.finalize_fixed()
+            hasher.finalize()
         };
         let hash = SecretVec::new(result.to_vec());
         result.zeroize();
@@ -111,8 +111,8 @@ where
 }
 
 /// A HandshakeHash may be consumed to reveal the result.
-impl<DigestType: Default + FixedOutput + Update> From<HandshakeHash<DigestType>> for Vec<u8> {
-    fn from(src: HandshakeHash<DigestType>) -> Vec<u8> {
+impl<DigestAlgo: Digest + BlockSizeUser + Clone> From<HandshakeHash<DigestAlgo>> for Vec<u8> {
+    fn from(src: HandshakeHash<DigestAlgo>) -> Vec<u8> {
         src.hash.expose_secret().clone()
     }
 }

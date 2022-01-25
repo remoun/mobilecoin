@@ -13,10 +13,10 @@ use crate::{
 use aead::{AeadMut, NewAead};
 use alloc::vec::Vec;
 use core::{convert::TryInto, marker::PhantomData};
-use digest::{BlockInput, FixedOutput, Reset, Update};
+use digest::{core_api::BlockSizeUser, Digest};
 use displaydoc::Display;
 use generic_array::typenum::Unsigned;
-use hkdf::{Hkdf, InvalidLength};
+use hkdf::{SimpleHkdf, InvalidLength};
 use mc_crypto_keys::{Kex, KexPublic, ReprBytes};
 use secrecy::{ExposeSecret, SecretVec};
 use serde::{Deserialize, Serialize};
@@ -46,33 +46,33 @@ impl From<InvalidLength> for SymmetricError {
 /// The SymmetricState object, defined in
 /// [section 5.2](http://noiseprotocol.org/noise.html#the-symmetricstate-object)
 /// of the specification.
-pub struct SymmetricState<KexAlgo, Cipher, DigestType>
+pub struct SymmetricState<KexAlgo, Cipher, DigestAlgo>
 where
     KexAlgo: Kex,
     Cipher: AeadMut + NewAead + NoiseCipher + Sized,
-    DigestType: BlockInput + Clone + Default + FixedOutput + Update + Reset,
+    DigestAlgo: Digest + BlockSizeUser + Clone,
 {
-    hash: HandshakeHash<DigestType>,
+    hash: HandshakeHash<DigestAlgo>,
     chaining_key: SecretVec<u8>,
     cipher_state: CipherState<Cipher>,
     _kex: PhantomData<fn() -> KexAlgo>,
 }
 
-impl<Handshake, KexAlgo, Cipher, DigestType>
-    From<ProtocolName<Handshake, KexAlgo, Cipher, DigestType>>
-    for SymmetricState<KexAlgo, Cipher, DigestType>
+impl<Handshake, KexAlgo, Cipher, DigestAlgo>
+    From<ProtocolName<Handshake, KexAlgo, Cipher, DigestAlgo>>
+    for SymmetricState<KexAlgo, Cipher, DigestAlgo>
 where
     Handshake: HandshakePattern,
     KexAlgo: Kex,
     Cipher: AeadMut + NewAead + NoiseCipher + Sized,
-    DigestType: BlockInput + Clone + Default + FixedOutput + Update + Reset,
-    ProtocolName<Handshake, KexAlgo, Cipher, DigestType>: AsRef<str>,
+    DigestAlgo: Digest + BlockSizeUser + Clone,
+    ProtocolName<Handshake, KexAlgo, Cipher, DigestAlgo>: AsRef<str>,
 {
     /// The noise protocol `InitializeSymmetric()` operation.
     ///
     /// Using the ProtocolName ZWT, construct a handshake hash, chaining key,
     /// and "unkeyed" cipher state.
-    fn from(protocol_name: ProtocolName<Handshake, KexAlgo, Cipher, DigestType>) -> Self {
+    fn from(protocol_name: ProtocolName<Handshake, KexAlgo, Cipher, DigestAlgo>) -> Self {
         let hash = HandshakeHash::from(protocol_name);
         let chaining_key = SecretVec::new(Vec::from(hash.as_ref()));
         let cipher_state = CipherState::default();
@@ -86,11 +86,11 @@ where
     }
 }
 
-impl<KexAlgo, Cipher, DigestType> SymmetricState<KexAlgo, Cipher, DigestType>
+impl<KexAlgo, Cipher, DigestAlgo> SymmetricState<KexAlgo, Cipher, DigestAlgo>
 where
     KexAlgo: Kex,
     Cipher: AeadMut + NewAead + NoiseCipher + Sized,
-    DigestType: BlockInput + Clone + Default + FixedOutput + Update + Reset,
+    DigestAlgo: Digest + BlockSizeUser + Clone,
 {
     /// Retrieve the expected size (in bytes) of a public key to read.
     ///
@@ -111,13 +111,13 @@ where
     /// chaining key, for future invocations, and a new cipher key, which is
     /// applied to our internal cipher state.
     pub fn mix_key(&mut self, input_key_material: KexAlgo::Secret) -> Result<(), SymmetricError> {
-        let kdf = Hkdf::<DigestType>::new(
+        let kdf = SimpleHkdf::<DigestAlgo>::new(
             Some(self.chaining_key.expose_secret().as_slice()),
             input_key_material.as_ref(),
         );
 
         // expand chaining_key_len + key_len bytes of secret material
-        let chaining_key_len = DigestType::OutputSize::to_usize();
+        let chaining_key_len = DigestAlgo::OutputSize::to_usize();
         let key_len = Cipher::KeySize::to_usize();
         let mut output = vec![0u8; chaining_key_len * 2];
         kdf.expand(&[], &mut output)?;
@@ -159,12 +159,12 @@ where
         &mut self,
         input_key_material: KexAlgo::Secret,
     ) -> Result<(), SymmetricError> {
-        let chaining_key_len = DigestType::OutputSize::to_usize();
-        let hash_len = DigestType::OutputSize::to_usize();
+        let chaining_key_len = DigestAlgo::OutputSize::to_usize();
+        let hash_len = DigestAlgo::OutputSize::to_usize();
         let key_len = Cipher::KeySize::to_usize();
         let mut output = vec![0u8; chaining_key_len + hash_len + key_len];
 
-        let kdf = Hkdf::<DigestType>::new(
+        let kdf = SimpleHkdf::<DigestAlgo>::new(
             Some(self.chaining_key.expose_secret().as_slice()),
             input_key_material.as_ref(),
         );
@@ -276,20 +276,20 @@ where
 /// in new cipherstate objects, one used to handle messages from the initiator,
 /// the other to handle messages from the responder, and the final handshake
 /// hash, used by application-layer channel binding (i.e. as a "session ID").
-impl<KexAlgo, Cipher, DigestType> TryInto<SymmetricOutput<Cipher, KexAlgo::Public>>
-    for SymmetricState<KexAlgo, Cipher, DigestType>
+impl<KexAlgo, Cipher, DigestAlgo> TryInto<SymmetricOutput<Cipher, KexAlgo::Public>>
+    for SymmetricState<KexAlgo, Cipher, DigestAlgo>
 where
     KexAlgo: Kex,
     Cipher: AeadMut + NewAead + NoiseCipher + Sized,
-    DigestType: BlockInput + Clone + Default + FixedOutput + Update + Reset,
+    DigestAlgo: Digest + BlockSizeUser + Clone,
 {
     type Error = SymmetricError;
 
     fn try_into(self) -> Result<SymmetricOutput<Cipher, KexAlgo::Public>, SymmetricError> {
-        let kdf = Hkdf::<DigestType>::new(Some(self.chaining_key.expose_secret().as_slice()), &[]);
+        let kdf = SimpleHkdf::<DigestAlgo>::new(Some(self.chaining_key.expose_secret().as_slice()), &[]);
 
         let key_len = Cipher::KeySize::to_usize();
-        let digest_len = DigestType::OutputSize::to_usize();
+        let digest_len = DigestAlgo::OutputSize::to_usize();
         assert!(digest_len >= key_len);
 
         let mut output = vec![0u8; digest_len * 2];

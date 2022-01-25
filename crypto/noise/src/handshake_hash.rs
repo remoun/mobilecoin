@@ -23,7 +23,7 @@ use zeroize::Zeroize;
 /// therefore, is the `h`.
 pub struct HandshakeHash<DigestAlgo: Digest + BlockSizeUser + Clone> {
     hash: SecretVec<u8>,
-    _digest: PhantomData<fn() -> DigestAlgo>,
+    _digest: PhantomData<DigestAlgo>,
 }
 
 /// Handshake hashes can be exposed as a byte slice to facilitate chaining
@@ -105,7 +105,7 @@ where
 
         Self {
             hash,
-            _digest: PhantomData::default(),
+            _digest: PhantomData,
         }
     }
 }

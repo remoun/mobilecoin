@@ -38,9 +38,9 @@ where
     DigestAlgo: Digest + BlockSizeUser + Clone,
     AeadAlgo: AeadInPlace + NewAead + CtAeadDecrypt,
 {
-    _kex: PhantomData<fn() -> KexAlgo>,
-    _digest: PhantomData<fn() -> DigestAlgo>,
-    _aead: PhantomData<fn() -> AeadAlgo>,
+    _kex: PhantomData<KexAlgo>,
+    _digest: PhantomData<DigestAlgo>,
+    _aead: PhantomData<AeadAlgo>,
 }
 
 impl<KexAlgo, DigestAlgo, AeadAlgo> CryptoBox<KexAlgo> for HkdfBox<KexAlgo, DigestAlgo, AeadAlgo>

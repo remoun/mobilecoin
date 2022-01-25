@@ -187,9 +187,9 @@ dependencies = [
 ]
 
 [[package]]
-name = "bulletproofs"
+name = "bulletproofs-og"
 version = "3.0.0-pre.1"
-source = "git+https://github.com/remoun/bulletproofs.git?branch=mobilecoin#74e65633b4e253bdc0463e0561ad5e748e0cb08f"
+source = "git+https://github.com/remoun/bulletproofs.git?rev=6a1f2f47774fbbb145ea8f3c7f7520bd57478e91#6a1f2f47774fbbb145ea8f3c7f7520bd57478e91"
 dependencies = [
  "byteorder",
  "clear_on_drop",
@@ -1290,7 +1290,7 @@ version = "1.2.0-pre0"
 dependencies = [
  "aes",
  "blake2",
- "bulletproofs",
+ "bulletproofs-og",
  "curve25519-dalek",
  "displaydoc",
  "generic-array",

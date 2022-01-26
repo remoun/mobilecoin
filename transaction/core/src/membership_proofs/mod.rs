@@ -17,10 +17,8 @@ use subtle::{Choice, ConditionallySelectable, ConstantTimeEq};
 mod errors;
 mod range;
 
-pub use {
-    errors::Error as MembershipProofError,
-    range::{Range, RangeError},
-};
+pub use errors::Error as MembershipProofError;
+pub use range::{Range, RangeError};
 
 lazy_static! {
     pub static ref NIL_HASH: [u8; 32] = hash_nil();

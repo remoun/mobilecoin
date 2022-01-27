@@ -208,13 +208,13 @@ pub struct Environment {
 }
 
 impl Default for Environment {
+    /// Construct a new build configuration structure, or die trying.
     fn default() -> Environment {
         Environment::new().expect("Could not read environment")
     }
 }
 
 impl Environment {
-    /// Construct a new build configuration structure, or die trying.
     pub fn new() -> Result<Environment, EnvironmentError> {
         let out_dir = PathBuf::from(
             var(ENV_OUT_DIR).map_err(|e| EnvironmentError::Var(ENV_OUT_DIR.to_owned(), e))?,

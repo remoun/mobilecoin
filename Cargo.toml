@@ -189,7 +189,7 @@ cmake = { git = "https://github.com/alexcrichton/cmake-rs", rev = "5f89f90ee5d77
 datatest = { git = "https://github.com/mobilecoinfoundation/datatest.git", rev = "dc3521f692228b846a2312e7ceece50e7664be6e" }
 
 # Fix issues with recent nightlies, bump curve25519-dalek version
-curve25519-dalek = { git = "https://github.com/remoun/curve25519-dalek.git", rev = "77391036a6e43f3c9a2d8b937e621dcfe9d95d8c" }
+curve25519-dalek = { git = "https://github.com/remoun/curve25519-dalek.git", rev = "03758be20c372ae77a6c6a94c7fb7ab94ca6b342" }
 ed25519-dalek = { git = "https://github.com/remoun/ed25519-dalek.git", rev = "3ca587052cfd6af76f615b494f2e4755e01a58dd" }
 
 # grpcio patched with metadata

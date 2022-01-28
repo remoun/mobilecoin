@@ -357,7 +357,7 @@ dependencies = [
 [[package]]
 name = "curve25519-dalek"
 version = "4.0.0-pre.2"
-source = "git+https://github.com/remoun/curve25519-dalek.git?rev=77391036a6e43f3c9a2d8b937e621dcfe9d95d8c#77391036a6e43f3c9a2d8b937e621dcfe9d95d8c"
+source = "git+https://github.com/remoun/curve25519-dalek.git?rev=03758be20c372ae77a6c6a94c7fb7ab94ca6b342#03758be20c372ae77a6c6a94c7fb7ab94ca6b342"
 dependencies = [
  "byteorder",
  "digest",

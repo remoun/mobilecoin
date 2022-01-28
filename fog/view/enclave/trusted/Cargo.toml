@@ -79,7 +79,7 @@ bulletproofs-og = { git = "https://github.com/remoun/bulletproofs.git", rev = "6
 cpufeatures = { git = "https://github.com/mobilecoinfoundation/RustCrypto-utils.git", rev = "9881a8f8aeb869ccdbefacfc19c7e5d2ef1ffb55" }
 
 # Fix issues with recent nightlies, bump curve25519-dalek version
-curve25519-dalek = { git = "https://github.com/remoun/curve25519-dalek.git", rev = "77391036a6e43f3c9a2d8b937e621dcfe9d95d8c" }
+curve25519-dalek = { git = "https://github.com/remoun/curve25519-dalek.git", rev = "03758be20c372ae77a6c6a94c7fb7ab94ca6b342" }
 ed25519-dalek = { git = "https://github.com/remoun/ed25519-dalek.git", rev = "3ca587052cfd6af76f615b494f2e4755e01a58dd" }
 
 # Our patches for newer bindgen, no-std

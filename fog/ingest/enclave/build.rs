@@ -42,12 +42,10 @@ fn main() {
         "SGX_PANIC_EDL_SEARCH_PATH",
         "SGX_SLOG_EDL_SEARCH_PATH",
         "FOG_OCALL_ORAM_STORAGE_EDL_SEARCH_PATH",
-    ]
-    .iter()
-    {
+    ] {
         for path_str in env
             .depvar(edl_data)
-            .expect("Could not read EDL dep var")
+            .expect(concat!("Could not read EDL dep var ", edl_data))
             .split(':')
         {
             edger8r.search_path(path_str.as_ref());

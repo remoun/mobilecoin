@@ -13,17 +13,9 @@ use std::{str::FromStr, sync::Arc, vec};
 
 fn make_enclave(desired_tx_out_capacity: u64) -> SgxViewEnclave {
     let logger = mc_common::logger::create_test_logger("add e_txout bench".into());
-
-    let temp_dir = tempdir::TempDir::new("test_view_enclave").unwrap();
-    let db_full_path = temp_dir.path();
-    clear_recovery_db(&db_full_path);
-    init_recovery_db(&db_full_path, &logger);
-    let handle = open_recovery_db(&db_full_path, &logger);
-
     SgxViewEnclave::new(
         get_enclave_path(ENCLAVE_FILE),
         ResponderId::from_str("127.0.0.1:3050").unwrap(),
-        Arc::new(handle),
         desired_tx_out_capacity,
         logger,
     )

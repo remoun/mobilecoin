@@ -66,7 +66,7 @@ impl BlockTracker {
             .insert(ingress_key, block_index)
         {
             // Sanity check that we are only moving forward and not skipping any blocks.
-            assert!(block_index == previous_block_index + 1);
+            assert_eq!(block_index, previous_block_index + 1);
         }
     }
 

@@ -213,7 +213,7 @@ impl Client {
     ///
     /// Note: If the call returns Appeared(block_count), then the transaction
     /// appeared in block_count.
-    pub fn is_transaction_present(&mut self, transaction: &Tx) -> Result<TransactionStatus> {
+    pub fn is_transaction_present(&self, transaction: &Tx) -> Result<TransactionStatus> {
         assert!(
             !transaction.prefix.outputs.is_empty(),
             "Transaction must have at least one output"
@@ -236,11 +236,11 @@ impl Client {
                                     TxOutResultCode::MalformedRequest as u32;
                                 const DATABASE_ERROR: u32 = TxOutResultCode::DatabaseError as u32;
 
-                                match tx_out_result.result_code as u32 {
+                                return match tx_out_result.result_code as u32 {
                                     FOUND => {
-                                        return Ok(TransactionStatus::Appeared(
+                                        Ok(TransactionStatus::Appeared(
                                             tx_out_result.block_index,
-                                        ));
+                                        ))
                                     }
                                     MALFORMED_REQUEST => {
                                         panic!(
@@ -249,16 +249,16 @@ impl Client {
                                         );
                                     }
                                     DATABASE_ERROR => {
-                                        return Ok(TransactionStatus::Unknown);
+                                        Ok(TransactionStatus::Unknown)
                                     }
                                     NOT_FOUND => {
                                         // Note: A transaction must appear BEFORE the
                                         // tombstone_block,
                                         // it cannot appear in the tombstone block.
                                         if result.num_blocks >= transaction.prefix.tombstone_block {
-                                            return Ok(TransactionStatus::Expired);
+                                            Ok(TransactionStatus::Expired)
                                         } else {
-                                            return Ok(TransactionStatus::Unknown);
+                                            Ok(TransactionStatus::Unknown)
                                         }
                                     }
                                     other => {
@@ -814,7 +814,7 @@ mod test_build_transaction_helper {
             amount_to_send,
             &sender_account_key,
             &recipient_account_key.default_subaddress(),
-            super::BlockIndex::max_value(),
+            super::BlockIndex::MAX,
             fake_acct_resolver,
             true,
             &mut rng,

@@ -1,7 +1,7 @@
 // Copyright (c) 2018-2021 The MobileCoin Foundation
 
-/// mock_service is a series of stub implementations for functions from sgx_tservice,
-/// used in unit tests that are not sgx enabled
+/// mock_service is a series of stub implementations for functions from
+/// sgx_tservice, used in unit tests that are not sgx enabled
 use mc_sgx_types::{
     sgx_report_data_t, sgx_report_t, sgx_sealed_data_t, sgx_status_t, sgx_target_info_t,
 };
@@ -22,14 +22,13 @@ pub fn verify_report(_report: &sgx_report_t) -> Result<(), sgx_status_t> {
 const PREFIX_LEN: u32 = core::mem::size_of::<sgx_sealed_data_t>() as u32;
 
 /// Calculate sealed data size
-/// We are still using sgx_sealed_data_t layout, for compat with mc_attest_core::IntelSealed
+/// We are still using sgx_sealed_data_t layout, for compat with
+/// mc_attest_core::IntelSealed
 pub fn calc_sealed_data_size(
     plaintext_len: usize,
     additional_mac_txt_len: usize,
 ) -> Result<u32, sgx_status_t> {
-    if plaintext_len >= u32::max_value() as usize
-        || additional_mac_txt_len >= u32::max_value() as usize
-    {
+    if plaintext_len >= u32::MAX as usize || additional_mac_txt_len >= u32::MAX as usize {
         return Err(sgx_status_t::SGX_ERROR_INVALID_PARAMETER);
     }
     Ok(PREFIX_LEN + plaintext_len as u32 + additional_mac_txt_len as u32)
@@ -41,7 +40,7 @@ pub fn seal_data(
     additional_mac_txt: &[u8],
     out_buffer: &mut [u8],
 ) -> Result<(), sgx_status_t> {
-    if out_buffer.len() >= u32::max_value() as usize
+    if out_buffer.len() >= u32::MAX as usize
         || out_buffer.len() as u32
             != calc_sealed_data_size(plaintext.len(), additional_mac_txt.len())?
     {

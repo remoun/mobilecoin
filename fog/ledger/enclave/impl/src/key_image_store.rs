@@ -110,7 +110,7 @@ impl<OSC: ORAMStorageCreator<StorageDataSize, StorageMetaSize>> KeyImageStore<OS
             return Err(AddRecordsError::KeyRejected);
         } else if omap_result_code == OMAP_OVERFLOW {
             return Err(AddRecordsError::MapOverflow(
-                self.omap.len(),
+                self.omap.len() as u64,
                 self.omap.capacity(),
             ));
         } else if omap_result_code == OMAP_FOUND {

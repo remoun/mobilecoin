@@ -103,13 +103,13 @@ impl From<CurveScalar> for Scalar {
 }
 
 impl ReprBytes for CurveScalar {
-    type Error = Error;
     type Size = U32;
-    fn to_bytes(&self) -> GenericArray<u8, U32> {
-        self.scalar.to_bytes().into()
-    }
+    type Error = Error;
     fn from_bytes(src: &GenericArray<u8, U32>) -> Result<Self, Error> {
         Ok(Self::from(&(*src).into()))
+    }
+    fn to_bytes(&self) -> GenericArray<u8, U32> {
+        self.scalar.to_bytes().into()
     }
 }
 

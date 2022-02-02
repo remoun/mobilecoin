@@ -109,11 +109,19 @@ impl Ledger for MockLedger {
         unimplemented!()
     }
 
+    fn get_block_contents(&self, _block_number: u64) -> Result<BlockContents, Error> {
+        unimplemented!()
+    }
+
     fn get_block_signature(&self, _block_number: u64) -> Result<BlockSignature, Error> {
         unimplemented!()
     }
 
     fn get_block_data(&self, _block_number: u64) -> Result<BlockData, Error> {
+        unimplemented!()
+    }
+
+    fn get_block_index_by_tx_out_index(&self, _tx_out_index: u64) -> Result<u64, Error> {
         unimplemented!()
     }
 
@@ -126,6 +134,13 @@ impl Ledger for MockLedger {
             Some(index) => Ok(*index),
             None => Err(Error::NotFound),
         }
+    }
+
+    fn get_tx_out_index_by_public_key(
+        &self,
+        _tx_out_public_key: &CompressedRistrettoPublic,
+    ) -> Result<u64, Error> {
+        unimplemented!();
     }
 
     fn get_tx_out_by_index(&self, index: u64) -> Result<TxOut, Error> {
@@ -150,18 +165,6 @@ impl Ledger for MockLedger {
             .collect()
     }
 
-    fn check_key_image(&self, _key_image: &KeyImage) -> Result<Option<u64>, Error> {
-        unimplemented!()
-    }
-
-    fn get_key_images_by_block(&self, _block_number: u64) -> Result<Vec<KeyImage>, Error> {
-        unimplemented!()
-    }
-
-    fn get_block_contents(&self, _block_number: u64) -> Result<BlockContents, Error> {
-        unimplemented!()
-    }
-
     fn contains_tx_out_public_key(
         &self,
         _public_key: &CompressedRistrettoPublic,
@@ -169,14 +172,11 @@ impl Ledger for MockLedger {
         unimplemented!();
     }
 
-    fn get_tx_out_index_by_public_key(
-        &self,
-        _tx_out_public_key: &CompressedRistrettoPublic,
-    ) -> Result<u64, Error> {
-        unimplemented!();
+    fn check_key_image(&self, _key_image: &KeyImage) -> Result<Option<u64>, Error> {
+        unimplemented!()
     }
 
-    fn get_block_index_by_tx_out_index(&self, _tx_out_index: u64) -> Result<u64, Error> {
+    fn get_key_images_by_block(&self, _block_number: u64) -> Result<Vec<KeyImage>, Error> {
         unimplemented!()
     }
 }

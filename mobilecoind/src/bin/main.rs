@@ -221,7 +221,7 @@ fn create_or_open_ledger_db(
                 block_data.contents(),
                 block_data.signature().clone(),
             )
-            .expect("Failed to appened initial transactions");
+            .expect("Failed to append initial transactions");
             log::info!(logger, "Bootstrapping completed!");
         }
     }

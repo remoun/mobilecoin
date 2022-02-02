@@ -90,13 +90,15 @@ impl UntrustedAllocation {
         let mem_kb = compute_mem_kb(count, data_item_size, meta_item_size);
         let total_mem_kb = mem_kb + TOTAL_MEM_FOOTPRINT_KB.fetch_add(mem_kb, Ordering::SeqCst);
         global_log::info!("Untrusted is allocating oram storage: count = {}, data_size = {}, meta_size = {}, mem = {} KB. Total mem allocated this way = {} KB", count, data_item_size, meta_item_size, mem_kb, total_mem_kb);
-        assert!(
-            data_item_size % 8 == 0,
+        assert_eq!(
+            data_item_size % 8,
+            0,
             "data item size is not good: {}",
             data_item_size
         );
-        assert!(
-            meta_item_size % 8 == 0,
+        assert_eq!(
+            meta_item_size % 8,
+            0,
             "meta item size is not good: {}",
             meta_item_size
         );
@@ -234,8 +236,8 @@ pub unsafe extern "C" fn checkout_oram_storage(
     // The size of a meta_item, measured in u64's
     let meta_copy_size = (*ptr).meta_item_size / core::mem::size_of::<u64>();
 
-    assert!(idx_len * data_copy_size == databuf_len);
-    assert!(idx_len * meta_copy_size == metabuf_len);
+    assert_eq!(idx_len * data_copy_size, databuf_len);
+    assert_eq!(idx_len * meta_copy_size, metabuf_len);
 
     let indices = core::slice::from_raw_parts(idx, idx_len);
 
@@ -306,8 +308,8 @@ pub unsafe extern "C" fn checkin_oram_storage(
     // The size of a meta_item, measured in u64's
     let meta_copy_size = (*ptr).meta_item_size / core::mem::size_of::<u64>();
 
-    assert!(idx_len * data_copy_size == databuf_len);
-    assert!(idx_len * meta_copy_size == metabuf_len);
+    assert_eq!(idx_len * data_copy_size, databuf_len);
+    assert_eq!(idx_len * meta_copy_size, metabuf_len);
 
     let indices = core::slice::from_raw_parts(idx, idx_len);
 

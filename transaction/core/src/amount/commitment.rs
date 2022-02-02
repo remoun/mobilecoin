@@ -46,16 +46,16 @@ impl fmt::Debug for Commitment {
 }
 
 impl ReprBytes for Commitment {
-    type Error = Error;
     type Size = U32;
-    fn to_bytes(&self) -> GenericArray<u8, U32> {
-        self.point.compress().to_bytes().into()
-    }
+    type Error = Error;
     fn from_bytes(src: &GenericArray<u8, U32>) -> Result<Self, Error> {
         let point = CompressedRistretto::from_slice(src.as_slice())
             .decompress()
             .ok_or(Error::InvalidCurvePoint)?;
         Ok(Self { point })
+    }
+    fn to_bytes(&self) -> GenericArray<u8, U32> {
+        self.point.compress().to_bytes().into()
     }
 }
 

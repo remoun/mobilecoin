@@ -68,15 +68,15 @@ impl From<&[u8; 32]> for CompressedCommitment {
 derive_core_cmp_from_as_ref!(CompressedCommitment, [u8; 32]);
 
 impl ReprBytes for CompressedCommitment {
-    type Error = Error;
     type Size = U32;
-    fn to_bytes(&self) -> GenericArray<u8, U32> {
-        self.point.to_bytes().into()
-    }
+    type Error = Error;
     fn from_bytes(src: &GenericArray<u8, U32>) -> Result<Self, Error> {
         Ok(Self {
             point: CompressedRistretto::from_slice(src.as_slice()),
         })
+    }
+    fn to_bytes(&self) -> GenericArray<u8, U32> {
+        self.point.to_bytes().into()
     }
 }
 

@@ -219,6 +219,28 @@ impl<OSC: ORAMStorageCreator<StorageDataSize, StorageMetaSize>> IngestEnclave
         Ok(())
     }
 
+    fn new_keys(&self) -> Result<()> {
+        let mut ingress_key = self.ake.get_identity().private_key.lock()?;
+        let mut egress_key = self.egress_key.lock()?;
+        let mut rng_store_lk = self.rng_store.lock()?;
+        let rng_store = rng_store_lk.as_mut().expect("enclave was not initialized");
+
+        *ingress_key = RistrettoPrivate::from_random(&mut McRng::default());
+        *egress_key = RistrettoPrivate::from_random(&mut McRng::default());
+        rng_store.clear();
+        Ok(())
+    }
+
+    fn new_egress_key(&self) -> Result<()> {
+        let mut egress_key = self.egress_key.lock()?;
+        let mut rng_store_lk = self.rng_store.lock()?;
+        let rng_store = rng_store_lk.as_mut().expect("enclave was not initialized");
+
+        *egress_key = RistrettoPrivate::from_random(&mut McRng::default());
+        rng_store.clear();
+        Ok(())
+    }
+
     fn get_ingress_pubkey(&self) -> Result<RistrettoPublic> {
         Ok(self.ake.get_identity().get_public_key())
     }
@@ -331,28 +353,6 @@ impl<OSC: ORAMStorageCreator<StorageDataSize, StorageMetaSize>> IngestEnclave
                 rng_store.clear();
             }
         }
-    }
-
-    fn new_keys(&self) -> Result<()> {
-        let mut ingress_key = self.ake.get_identity().private_key.lock()?;
-        let mut egress_key = self.egress_key.lock()?;
-        let mut rng_store_lk = self.rng_store.lock()?;
-        let rng_store = rng_store_lk.as_mut().expect("enclave was not initialized");
-
-        *ingress_key = RistrettoPrivate::from_random(&mut McRng::default());
-        *egress_key = RistrettoPrivate::from_random(&mut McRng::default());
-        rng_store.clear();
-        Ok(())
-    }
-
-    fn new_egress_key(&self) -> Result<()> {
-        let mut egress_key = self.egress_key.lock()?;
-        let mut rng_store_lk = self.rng_store.lock()?;
-        let rng_store = rng_store_lk.as_mut().expect("enclave was not initialized");
-
-        *egress_key = RistrettoPrivate::from_random(&mut McRng::default());
-        rng_store.clear();
-        Ok(())
     }
 
     fn get_identity(&self) -> Result<X25519Public> {

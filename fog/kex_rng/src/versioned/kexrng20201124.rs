@@ -12,7 +12,7 @@ use mc_crypto_keys::Ristretto;
 type Output = GenericArray<u8, U16>;
 
 /// An implementation of KexRngCore based on Blake2b hash function.
-/// See README for discusison.
+/// See README for discussion.
 #[derive(Clone)]
 pub struct KexRng20201124;
 

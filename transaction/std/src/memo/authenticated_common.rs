@@ -33,7 +33,7 @@ pub fn compute_category1_hmac(
         .expect("hmac can take a key of any size");
     // First add domain separation
     mac.update(b"mc-memo-mac");
-    // Next add tx_out_public_key, binding this mac to a paritcular TxOut
+    // Next add tx_out_public_key, binding this mac to a particular TxOut
     mac.update(tx_out_public_key.as_ref());
     // Next add memo type bytes (2)
     mac.update(&memo_type_bytes);

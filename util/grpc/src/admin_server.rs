@@ -15,7 +15,7 @@ pub struct AdminServer {
 }
 
 impl AdminServer {
-    /// Initilaizes and starts the admin server
+    /// Initializes and starts the admin server
     pub fn start(
         env: Option<Arc<Environment>>,
         admin_listen_uri: &AdminUri,

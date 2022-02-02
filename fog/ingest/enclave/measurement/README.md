@@ -13,16 +13,16 @@ This crate's ostensible purpose is to provide programmatic access to the MobileC
 
 It's practical purpose is to "bake in" those values for a release, and if no metadata is provided, compile and sign the enclave binary, then extract that metadata to be "baked in". In order to facilitate this purpose, the build script will use the following environment variables to determine what artifacts will be generated:
 
-|Variable|Type|Actions|
----------|----|-------|
-|`INGEST_ENCLAVE_CSS`|`css`|If present, the build will read the file at the given path, and inject it into the crate for runtime evaluation of it's contents.|
-|`INGEST_ENCLAVE_SIGNED`|`.signed.so`|The signed enclave binary used to extract `INGEST_ENCLAVE_CSS`.|
-|`INGEST_ENCLAVE_UNSIGNED`|`.so`|The pre-compiled enclave binary which will be used to create `INGEST_ENCLAVE_SIGNED`.|
-|`INGEST_ENCLAVE_PRIVKEY`|`.pem`|The private key used to create a `INGEST_ENCLAVE_SIGNED` using `INGEST_ENCLAVE_UNSIGNED`.|
-|`INGEST_ENCLAVE_GENDATA`|`.dat`|Data previously extracted from `INGEST_ENCLAVE_UNSIGNED` which has been signed offline.|
-|`INGEST_ENCLAVE_SIGNATURE`|`.sig`|The signature over `INGEST_ENCLAVE_GENDATA` produced by the owner of `INGEST_ENCLAVE_PUBKEY`.|
-|`INGEST_ENCLAVE_PUBKEY`|`.pem`|The public key of the signing key which generated `INGEST_ENCLAVE_SIGNATURE`.|
-|`INGEST_ENCLAVE_LDS`|`.lds`|An optional linker script to provide when building `INGEST_ENCLAVE_UNSIGNED` from scratch.|
+| Variable                   | Type         | Actions                                                                                                                           |
+|----------------------------|--------------|-----------------------------------------------------------------------------------------------------------------------------------|
+| `INGEST_ENCLAVE_CSS`       | `css`        | If present, the build will read the file at the given path, and inject it into the crate for runtime evaluation of it's contents. |
+| `INGEST_ENCLAVE_SIGNED`    | `.signed.so` | The signed enclave binary used to extract `INGEST_ENCLAVE_CSS`.                                                                   |
+| `INGEST_ENCLAVE_UNSIGNED`  | `.so`        | The pre-compiled enclave binary which will be used to create `INGEST_ENCLAVE_SIGNED`.                                             |
+| `INGEST_ENCLAVE_PRIVKEY`   | `.pem`       | The private key used to create a `INGEST_ENCLAVE_SIGNED` using `INGEST_ENCLAVE_UNSIGNED`.                                         |
+| `INGEST_ENCLAVE_GENDATA`   | `.dat`       | Data previously extracted from `INGEST_ENCLAVE_UNSIGNED` which has been signed offline.                                           |
+| `INGEST_ENCLAVE_SIGNATURE` | `.sig`       | The signature over `INGEST_ENCLAVE_GENDATA` produced by the owner of `INGEST_ENCLAVE_PUBKEY`.                                     |
+| `INGEST_ENCLAVE_PUBKEY`    | `.pem`       | The public key of the signing key which generated `INGEST_ENCLAVE_SIGNATURE`.                                                     |
+| `INGEST_ENCLAVE_LDS`       | `.lds`       | An optional linker script to provide when building `INGEST_ENCLAVE_UNSIGNED` from scratch.                                        |
 
  The basic procedure here is:
 

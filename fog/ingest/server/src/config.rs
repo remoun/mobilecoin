@@ -53,7 +53,7 @@ pub struct IngestConfig {
     #[structopt(long, default_value = "")]
     pub fog_report_id: String,
 
-    /// Capacity of table for user rng's.
+    /// Capacity of table for user RNG's.
     /// Must be a power of two at time of writing.
     ///
     /// One entry is added to this table with every transaction.

@@ -96,10 +96,6 @@ impl Ledger for MockLedger {
         Ok(self.lock().blocks_by_block_number.len() as u64)
     }
 
-    fn num_txos(&self) -> Result<u64, Error> {
-        Ok(self.lock().tx_outs.len() as u64)
-    }
-
     fn get_block(&self, block_number: u64) -> Result<Block, Error> {
         self.lock()
             .blocks_by_block_number
@@ -136,12 +132,11 @@ impl Ledger for MockLedger {
             .ok_or(Error::NotFound)
     }
 
-    fn get_tx_out_index_by_hash(&self, _tx_out_hash: &[u8; 32]) -> Result<u64, Error> {
-        // Unused for these tests.
-        unimplemented!()
+    fn num_txos(&self) -> Result<u64, Error> {
+        Ok(self.lock().tx_outs.len() as u64)
     }
 
-    fn get_tx_out_by_index(&self, _: u64) -> Result<TxOut, Error> {
+    fn get_tx_out_index_by_hash(&self, _tx_out_hash: &[u8; 32]) -> Result<u64, Error> {
         // Unused for these tests.
         unimplemented!()
     }
@@ -153,19 +148,7 @@ impl Ledger for MockLedger {
         unimplemented!();
     }
 
-    fn contains_tx_out_public_key(
-        &self,
-        _public_key: &CompressedRistrettoPublic,
-    ) -> Result<bool, Error> {
-        unimplemented!();
-    }
-
-    fn check_key_image(&self, key_image: &KeyImage) -> Result<Option<u64>, Error> {
-        // Unused for these tests.
-        Ok(self.lock().key_images.get(key_image).cloned())
-    }
-
-    fn get_key_images_by_block(&self, _block_number: u64) -> Result<Vec<KeyImage>, Error> {
+    fn get_tx_out_by_index(&self, _: u64) -> Result<TxOut, Error> {
         // Unused for these tests.
         unimplemented!()
     }
@@ -185,6 +168,23 @@ impl Ledger for MockLedger {
                     .ok_or(Error::NotFound)
             })
             .collect()
+    }
+
+    fn contains_tx_out_public_key(
+        &self,
+        _public_key: &CompressedRistrettoPublic,
+    ) -> Result<bool, Error> {
+        unimplemented!();
+    }
+
+    fn check_key_image(&self, key_image: &KeyImage) -> Result<Option<u64>, Error> {
+        // Unused for these tests.
+        Ok(self.lock().key_images.get(key_image).cloned())
+    }
+
+    fn get_key_images_by_block(&self, _block_number: u64) -> Result<Vec<KeyImage>, Error> {
+        // Unused for these tests.
+        unimplemented!()
     }
 }
 

@@ -348,7 +348,7 @@ mod tests {
         );
 
         // Returns meaningless public key.
-        assert!(D_prime != *recipient.spend_public_key());
+        assert_ne!(D_prime, *recipient.spend_public_key());
 
         // view_key_matches_output should return false.
         let view_key = ViewKey::new(
@@ -381,7 +381,7 @@ mod tests {
         );
 
         // Returns meaningless public key.
-        assert!(D_prime != *recipient.spend_public_key());
+        assert_ne!(D_prime, *recipient.spend_public_key());
 
         // view_key_matches_output should return false.
         let view_key = ViewKey::new(
@@ -425,7 +425,10 @@ mod tests {
         let onetime_private_key =
             recover_onetime_private_key(&tx_public_key, account.view_private_key(), &d);
 
-        assert!(wrong_tx_target_key != RistrettoPublic::from(&onetime_private_key));
+        assert_ne!(
+            wrong_tx_target_key,
+            RistrettoPublic::from(&onetime_private_key)
+        );
     }
 
     #[test]
@@ -443,7 +446,7 @@ mod tests {
         let onetime_private_key =
             recover_onetime_private_key(&wrong_tx_public_key, account.view_private_key(), &d);
 
-        assert!(tx_target_key != RistrettoPublic::from(&onetime_private_key));
+        assert_ne!(tx_target_key, RistrettoPublic::from(&onetime_private_key));
     }
 
     #[test]

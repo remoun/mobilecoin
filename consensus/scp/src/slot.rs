@@ -494,7 +494,7 @@ impl<V: Value, ValidationError: Display> Slot<V, ValidationError> {
             // weight256 is the node's weight, scaled to 0..<max uint256>
             // (weight256 = <max uint256> * <num> / <denom>)
             let (num, denom) = self.weight(node_id);
-            let mut tmp = bigint::U512::from(bigint::U256::max_value());
+            let mut tmp = bigint::U512::from(bigint::U256::MAX);
             tmp = tmp.saturating_mul(bigint::U512::from(num));
             tmp = tmp.overflowing_div(bigint::U512::from(denom)).0;
             let weight256 = bigint::U256::from(tmp);

@@ -102,8 +102,9 @@ fn test_ingest_enclave(logger: Logger) {
             .unwrap();
             let mut search_keys: HashSet<_> =
                 tx_rows.iter().map(|row| row.search_key.clone()).collect();
-            assert!(
-                search_keys.len() == tx_rows.len(),
+            assert_eq!(
+                search_keys.len()
+                tx_rows.len(),
                 "Fog search key collisions, that is bad: {}/{} unique search keys",
                 search_keys.len(),
                 tx_rows.len()

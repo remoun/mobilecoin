@@ -6,16 +6,16 @@ This crate's ostensible purpose is to provide programmatic access to the Fog Vie
 
 It's practical purpose is to "bake in" those values for a release, and if no metadata is provided, compile and sign the enclave binary, then extract that metadata to be "baked in". In order to facilitate this purpose, the build script will use the following environment variables to determine what artifacts will be generated:
 
-|Variable|Type|Actions|
----------|----|-------|
-|`VIEW_ENCLAVE_CSS`|`css`|If present, the build will read the file at the given path, and inject it into the crate for runtime evaluation of it's contents.|
-|`VIEW_ENCLAVE_SIGNED`|`.signed.so`|The signed enclave binary used to extract `VIEW_ENCLAVE_CSS`.|
-|`VIEW_ENCLAVE_UNSIGNED`|`.so`|The pre-compiled enclave binary which will be used to create `VIEW_ENCLAVE_SIGNED`.|
-|`VIEW_ENCLAVE_PRIVKEY`|`.pem`|The private key used to create a `VIEW_ENCLAVE_SIGNED` using `VIEW_ENCLAVE_UNSIGNED`.|
-|`VIEW_ENCLAVE_GENDATA`|`.dat`|Data previously extracted from `VIEW_ENCLAVE_UNSIGNED` which has been signed offline.|
-|`VIEW_ENCLAVE_SIGNATURE`|`.sig`|The signature over `VIEW_ENCLAVE_GENDATA` produced by the owner of `VIEW_ENCLAVE_PUBKEY`.|
-|`VIEW_ENCLAVE_PUBKEY`|`.pem`|The public key of the signing key which generated `VIEW_ENCLAVE_SIGNATURE`.|
-|`VIEW_ENCLAVE_LDS`|`.lds`|An optional linker script to provide when building `VIEW_ENCLAVE_UNSIGNED` from scratch.|
+| Variable                 | Type         | Actions                                                                                                                           |
+|--------------------------|--------------|-----------------------------------------------------------------------------------------------------------------------------------|
+| `VIEW_ENCLAVE_CSS`       | `css`        | If present, the build will read the file at the given path, and inject it into the crate for runtime evaluation of it's contents. |
+| `VIEW_ENCLAVE_SIGNED`    | `.signed.so` | The signed enclave binary used to extract `VIEW_ENCLAVE_CSS`.                                                                     |
+| `VIEW_ENCLAVE_UNSIGNED`  | `.so`        | The pre-compiled enclave binary which will be used to create `VIEW_ENCLAVE_SIGNED`.                                               |
+| `VIEW_ENCLAVE_PRIVKEY`   | `.pem`       | The private key used to create a `VIEW_ENCLAVE_SIGNED` using `VIEW_ENCLAVE_UNSIGNED`.                                             |
+| `VIEW_ENCLAVE_GENDATA`   | `.dat`       | Data previously extracted from `VIEW_ENCLAVE_UNSIGNED` which has been signed offline.                                             |
+| `VIEW_ENCLAVE_SIGNATURE` | `.sig`       | The signature over `VIEW_ENCLAVE_GENDATA` produced by the owner of `VIEW_ENCLAVE_PUBKEY`.                                         |
+| `VIEW_ENCLAVE_PUBKEY`    | `.pem`       | The public key of the signing key which generated `VIEW_ENCLAVE_SIGNATURE`.                                                       |
+| `VIEW_ENCLAVE_LDS`       | `.lds`       | An optional linker script to provide when building `VIEW_ENCLAVE_UNSIGNED` from scratch.                                          |
 
  The basic procedure here is:
 

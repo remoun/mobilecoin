@@ -4,15 +4,14 @@
 // modification, are permitted provided that the following conditions
 // are met:
 //
-//  * Redistributions of source code must retain the above copyright
-//    notice, this list of conditions and the following disclaimer.
-//  * Redistributions in binary form must reproduce the above copyright
-//    notice, this list of conditions and the following disclaimer in
-//    the documentation and/or other materials provided with the
-//    distribution.
-//  * Neither the name of Baidu, Inc., nor the names of its
-//    contributors may be used to endorse or promote products derived
-//    from this software without specific prior written permission.
+//  * Redistributions of source code must retain the above copyright notice,
+//    this list of conditions and the following disclaimer.
+//  * Redistributions in binary form must reproduce the above copyright notice,
+//    this list of conditions and the following disclaimer in the documentation
+//    and/or other materials provided with the distribution.
+//  * Neither the name of Baidu, Inc., nor the names of its contributors may be
+//    used to endorse or promote products derived from this software without
+//    specific prior written permission.
 //
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 // "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
@@ -71,7 +70,7 @@ impl RwLockInfo {
         let ret: SysError;
         self.spinlock.lock();
         {
-            if self.busy == u32::max_value() {
+            if self.busy == u32::MAX {
                 ret = Err(libc::EAGAIN);
             } else {
                 self.busy += 1;
@@ -132,7 +131,7 @@ impl SgxThreadRwLock {
                 return Err(libc::EDEADLK);
             }
 
-            if rwlockinfo.readers_num == u32::max_value() {
+            if rwlockinfo.readers_num == u32::MAX {
                 rwlockinfo.mutex.unlock();
                 rwlockinfo.deref_busy();
                 return Err(libc::EAGAIN);
@@ -165,7 +164,7 @@ impl SgxThreadRwLock {
             let mut ret = Ok(());
             if rwlockinfo.writer_thread == thread::thread_self() {
                 ret = Err(libc::EDEADLK);
-            } else if rwlockinfo.readers_num == u32::max_value() {
+            } else if rwlockinfo.readers_num == u32::MAX {
                 ret = Err(libc::EAGAIN);
             } else if rwlockinfo.writers_num > 0 {
                 ret = Err(libc::EBUSY);
@@ -189,8 +188,8 @@ impl SgxThreadRwLock {
         Ok(())
     }
 
-    /// Acquires write access to the underlying lock, blocking the current thread
-    /// to do so.
+    /// Acquires write access to the underlying lock, blocking the current
+    /// thread to do so.
     pub unsafe fn write(&self) -> SysError {
         let rwlockinfo: &mut RwLockInfo = &mut *self.lock.get();
 
@@ -204,7 +203,7 @@ impl SgxThreadRwLock {
                 return Err(libc::EDEADLK);
             }
 
-            if rwlockinfo.writers_num == u32::max_value() {
+            if rwlockinfo.writers_num == u32::MAX {
                 rwlockinfo.mutex.unlock();
                 rwlockinfo.deref_busy();
                 return Err(libc::EAGAIN);
@@ -243,7 +242,7 @@ impl SgxThreadRwLock {
             let mut ret = Ok(());
             if rwlockinfo.writer_thread == thread::thread_self() {
                 ret = Err(libc::EDEADLK);
-            } else if rwlockinfo.writers_num == u32::max_value() {
+            } else if rwlockinfo.writers_num == u32::MAX {
                 ret = Err(libc::EAGAIN);
             } else if rwlockinfo.readers_num > 0 || rwlockinfo.writer_thread != SGX_THREAD_T_NULL {
                 ret = Err(libc::EBUSY);
@@ -351,7 +350,6 @@ impl SgxThreadRwLock {
 /// that an `RwLock` may only be poisoned if a panic occurs while it is locked
 /// exclusively (write mode). If a panic occurs in any reader, then the lock
 /// will not be poisoned.
-///
 pub struct SgxRwLock<T: ?Sized> {
     inner: Box<SgxThreadRwLock>,
     poison: poison::Flag,
@@ -396,7 +394,8 @@ impl<T: ?Sized> SgxRwLock<T> {
     ///
     /// # Panics
     ///
-    /// This function might panic when called if the lock is already held by the current thread.
+    /// This function might panic when called if the lock is already held by the
+    /// current thread.
     pub fn read(&self) -> LockResult<SgxRwLockReadGuard<T>> {
         unsafe {
             let ret = self.inner.read();
@@ -411,13 +410,14 @@ impl<T: ?Sized> SgxRwLock<T> {
     /// Attempts to acquire this rwlock with shared read access.
     ///
     /// If the access could not be granted at this time, then `Err` is returned.
-    /// Otherwise, an RAII guard is returned which will release the shared access
-    /// when it is dropped.
+    /// Otherwise, an RAII guard is returned which will release the shared
+    /// access when it is dropped.
     ///
     /// This function does not block.
     ///
-    /// This function does not provide any guarantees with respect to the ordering
-    /// of whether contentious readers or writers will acquire the lock first.
+    /// This function does not provide any guarantees with respect to the
+    /// ordering of whether contentious readers or writers will acquire the
+    /// lock first.
     ///
     /// # Errors
     ///
@@ -452,7 +452,8 @@ impl<T: ?Sized> SgxRwLock<T> {
     ///
     /// # Panics
     ///
-    /// This function might panic when called if the lock is already held by the current thread.
+    /// This function might panic when called if the lock is already held by the
+    /// current thread.
     pub fn write(&self) -> LockResult<SgxRwLockWriteGuard<T>> {
         unsafe {
             let ret = self.inner.write();
@@ -472,8 +473,9 @@ impl<T: ?Sized> SgxRwLock<T> {
     ///
     /// This function does not block.
     ///
-    /// This function does not provide any guarantees with respect to the ordering
-    /// of whether contentious readers or writers will acquire the lock first.
+    /// This function does not provide any guarantees with respect to the
+    /// ordering of whether contentious readers or writers will acquire the
+    /// lock first.
     ///
     /// # Errors
     ///

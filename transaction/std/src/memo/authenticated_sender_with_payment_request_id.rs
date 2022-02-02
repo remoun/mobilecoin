@@ -110,7 +110,7 @@ impl AuthenticatedSenderWithPaymentRequestIdMemo {
     ///   up by the ShortAddressHash provided.
     /// * receiving_subaddress_view_private_key: This is usually our
     ///   default_subaddress_view_private_key, but should correspond to whatever
-    ///   subaddress recieved this TxOut.
+    ///   subaddress received this TxOut.
     /// * tx_out_public_key: The public key of the TxOut to which this memo is
     ///   attached.
     ///

@@ -34,15 +34,15 @@ where
     Core: KexRngCore<KexAlgo>,
     KexAlgo: Kex,
 {
+    fn index(&self) -> u64 {
+        self.counter
+    }
     fn peek(&self) -> &[u8] {
         self.buffer.as_slice()
     }
     fn advance(&mut self) {
         self.counter += 1;
         self.buffer = Core::prf(&self.secret, &self.counter);
-    }
-    fn index(&self) -> u64 {
-        self.counter
     }
     fn version_id(&self) -> u32 {
         Core::VERSION_ID

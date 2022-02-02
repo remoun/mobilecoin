@@ -24,7 +24,6 @@ use alloc::{
 use binascii::{b64decode, b64encode, hex2bin};
 use core::{
     convert::{TryFrom, TryInto},
-    f64::EPSILON,
     fmt::Debug,
     intrinsics::fabsf64,
     result::Result,
@@ -162,7 +161,7 @@ impl VerificationReportData {
         expected_pse_manifest_hash: Option<&[u8]>,
     ) -> Result<(), VerifyError> {
         // Dumbest. Possible. Timeline.
-        if unsafe { fabsf64(expected_version - self.version) } > EPSILON {
+        if unsafe { fabsf64(expected_version - self.version) } > f64::EPSILON {
             return Err(VerifyError::VersionMismatch(expected_version, self.version));
         }
 

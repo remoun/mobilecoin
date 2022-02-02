@@ -199,7 +199,7 @@ mod testing {
             let choice = FogHint::ct_decrypt(&not_z, &ciphertext, &mut output_fog_hint);
 
             assert!(!bool::from(choice));
-            assert!(fog_hint != output_fog_hint);
+            assert_ne!(fog_hint, output_fog_hint);
         });
     }
 }

@@ -86,10 +86,10 @@ impl<FPR: FogPubkeyResolver> TransactionBuilder<FPR> {
         TransactionBuilder {
             input_credentials: Vec::new(),
             outputs_and_shared_secrets: Vec::new(),
-            tombstone_block: u64::max_value(),
+            tombstone_block: u64::MAX,
             fee: Mob::MINIMUM_FEE,
             fog_resolver,
-            fog_tombstone_block_limit: u64::max_value(),
+            fog_tombstone_block_limit: u64::MAX,
             memo_builder: Some(memo_builder),
         }
     }
@@ -397,15 +397,15 @@ fn create_output_with_fog_hint<RNG: CryptoRng + RngCore>(
 ///
 /// # Returns
 /// * `encrypted_fog_hint` - The fog hint to use for a TxOut.
-/// * `pubkey_expiry` - The block at which this fog pubkey expires, or
-///   u64::max_value() Imposes a limit on tombstone block for the transaction
+/// * `pubkey_expiry` - The block at which this fog pubkey expires, or u64::MAX
+///   Imposes a limit on tombstone block for the transaction
 fn create_fog_hint<RNG: RngCore + CryptoRng, FPR: FogPubkeyResolver>(
     recipient: &PublicAddress,
     fog_resolver: &FPR,
     rng: &mut RNG,
 ) -> Result<(EncryptedFogHint, u64), TxBuilderError> {
     if recipient.fog_report_url().is_none() {
-        return Ok((EncryptedFogHint::fake_onetime_hint(rng), u64::max_value()));
+        return Ok((EncryptedFogHint::fake_onetime_hint(rng), u64::MAX));
     }
 
     // Find fog pubkey from set of pre-fetched fog pubkeys

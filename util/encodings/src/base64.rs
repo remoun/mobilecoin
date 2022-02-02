@@ -25,7 +25,7 @@ pub trait ToBase64 {
 
     /// Serialize the contents of this object into a newly allocated string.
     ///
-    /// Most implementers of this trate will not need to provide a custom
+    /// Most implementers of this trait will not need to provide a custom
     /// implementation for this method.
     fn to_base64_owned(&self) -> String {
         let mut v = Vec::new();
@@ -42,7 +42,7 @@ pub trait ToBase64 {
 
 /// Calculate the size of the buffer which [binascii::b64encode] must be given.
 ///
-/// This will ensure at least one extra byte beyond the unpadded data length is
+/// This will ensure at least one extra byte beyond the un-padded data length is
 /// available for that function to write a (potentially) spurious padding
 /// character into.
 #[inline(always)]

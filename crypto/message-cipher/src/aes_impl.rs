@@ -1,6 +1,6 @@
 // Copyright (c) 2018-2021 The MobileCoin Foundation
 
-/// Implement LocalCipher trait around an AesGcm object that does rekeying
+/// Implement LocalCipher trait around an AesGcm object that does re-keying.
 use alloc::vec;
 use alloc::vec::Vec;
 use core::convert::TryInto;
@@ -133,7 +133,7 @@ impl<L: ArrayLength<u8>> Nonce<L> {
 
     pub fn is_max(&self) -> bool {
         for byte in self.bytes.iter() {
-            if *byte != u8::max_value() {
+            if *byte != u8::MAX {
                 return false;
             }
         }

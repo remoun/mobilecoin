@@ -503,7 +503,7 @@ mod account_key_tests {
 
     #[test]
     // Subaddress private keys should agree with subaddress public keys.
-    fn test_subadress_private_keys_agree_with_subaddress_public_keys() {
+    fn test_subaddress_private_keys_agree_with_subaddress_public_keys() {
         let mut rng: StdRng = SeedableRng::from_seed([91u8; 32]);
         let view_private = RistrettoPrivate::from_random(&mut rng);
         let spend_private = RistrettoPrivate::from_random(&mut rng);

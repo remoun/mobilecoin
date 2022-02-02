@@ -1,4 +1,4 @@
-//! A newtype representing a standard hash of a MobileCoin public address.
+//! A new type representing a standard hash of a MobileCoin public address.
 //! This is used in certain memos, as a compact representation of the address.
 
 use crate::account_keys::PublicAddress;

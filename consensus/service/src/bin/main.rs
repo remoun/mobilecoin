@@ -43,7 +43,7 @@ fn main() -> Result<(), ConsensusServiceError> {
     )
     .expect("Failed setting telemetry tracer");
 
-    // load the sealed block signing key fron storage
+    // load the sealed block signing key from storage
     let cached_key = match File::open(&config.sealed_block_signing_key) {
         Ok(mut file) => {
             let mut contents = String::new();

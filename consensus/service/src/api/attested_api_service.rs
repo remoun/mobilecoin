@@ -94,7 +94,7 @@ impl AttestedApi for AttestedApiService<ClientSession> {
                     {
                         self.sessions
                             .lock()
-                            .expect("Thread crashed while inserting client sesssion ID")
+                            .expect("Thread crashed while inserting client session ID")
                             .insert(session_id);
                     }
                     send_result(ctx, sink, Ok(response.into()), logger);

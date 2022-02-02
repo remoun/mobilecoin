@@ -321,9 +321,6 @@ impl DigestTranscript for InspectAST {
             data: data.as_ref().to_vec(),
         }));
     }
-    fn append_none(&mut self, context: &'static [u8]) {
-        self.push_ast_node(ASTNode::None(ASTNone { context }));
-    }
     fn append_seq_header(&mut self, context: &'static [u8], len: usize) {
         self.push_ast_node(ASTNode::Sequence(ASTSequence {
             context,
@@ -352,12 +349,13 @@ impl DigestTranscript for InspectAST {
                     !agg.is_completed,
                     "This aggregate was already marked completed"
                 );
-                assert!(
-                    agg.context == context,
+                assert_eq!(
+                    agg.context, context,
                     "Tried to close aggregate but wrong context was found"
                 );
-                assert!(
-                    &agg.name[..] == name,
+                assert_eq!(
+                    &agg.name[..],
+                    name,
                     "Tried to close aggregate but wrong name was found"
                 );
                 agg.is_completed = true;
@@ -372,6 +370,9 @@ impl DigestTranscript for InspectAST {
             which,
             value: None,
         }));
+    }
+    fn append_none(&mut self, context: &'static [u8]) {
+        self.push_ast_node(ASTNode::None(ASTNone { context }));
     }
 }
 
@@ -390,7 +391,7 @@ impl ASTNode {
             }
             ASTNode::None(none) => transcript.append_none(none.context.as_ref()),
             ASTNode::Sequence(seq) => {
-                assert!(seq.elems.len() as u64 == seq.len, "incomplete seq node");
+                assert_eq!(seq.elems.len() as u64, seq.len, "incomplete seq node");
                 transcript.append_seq_header(seq.context, seq.len as usize);
                 for elem in seq.elems.iter() {
                     elem.append_to_transcript(transcript);
@@ -446,8 +447,8 @@ pub fn calculate_digest_ast<O: Digestible>(context: &'static [u8], obj: &O) -> A
         result
     };
 
-    assert!(
-        merlin_digest == ast_merlin_digest,
+    assert_eq!(
+        merlin_digest, ast_merlin_digest,
         "AST merlin digest did not match merlin digest, the AST does not explain the hash"
     );
 

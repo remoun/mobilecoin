@@ -8,7 +8,6 @@ use crate::{
     mealy::Transition,
     state::{AuthPending, Ready, Start},
 };
-use aead::{AeadMut, NewAead};
 use alloc::vec::Vec;
 use core::convert::TryFrom;
 use digest::{core_api::BlockSizeUser, Digest};
@@ -34,7 +33,7 @@ fn parse_handshake_output<Handshake, KexAlgo, Cipher, DigestAlgo>(
 where
     Handshake: HandshakePattern,
     KexAlgo: Kex,
-    Cipher: AeadMut + NewAead + NoiseCipher + Sized,
+    Cipher: NoiseCipher,
     DigestAlgo: Digest + BlockSizeUser + Clone,
 {
     match output.status {
@@ -55,7 +54,7 @@ impl<KexAlgo, Cipher, DigestAlgo>
     > for Start
 where
     KexAlgo: Kex,
-    Cipher: AeadMut + NewAead + NoiseCipher + Sized,
+    Cipher: NoiseCipher,
     DigestAlgo: Digest + BlockSizeUser + Clone,
     ProtocolName<HandshakeNX, KexAlgo, Cipher, DigestAlgo>: AsRef<str>,
 {
@@ -100,7 +99,7 @@ impl<KexAlgo, Cipher, DigestAlgo>
     > for Start
 where
     KexAlgo: Kex,
-    Cipher: AeadMut + NewAead + NoiseCipher + Sized,
+    Cipher: NoiseCipher,
     DigestAlgo: Digest + BlockSizeUser + Clone,
     ProtocolName<HandshakeIX, KexAlgo, Cipher, DigestAlgo>: AsRef<str>,
 {
@@ -147,7 +146,7 @@ impl<KexAlgo, Cipher, DigestAlgo> Transition<Ready<Cipher>, AuthResponseInput, V
     for AuthPending<KexAlgo, Cipher, DigestAlgo>
 where
     KexAlgo: Kex,
-    Cipher: AeadMut + NewAead + NoiseCipher + Sized,
+    Cipher: NoiseCipher,
     DigestAlgo: Digest + BlockSizeUser + Clone,
 {
     type Error = Error;

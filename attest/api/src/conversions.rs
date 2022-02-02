@@ -3,7 +3,6 @@
 //! Conversions from gRPC message types into consensus_enclave_api types.
 
 use crate::attest::{AuthMessage, Message};
-use aead::{AeadMut, NewAead};
 use digest::{core_api::BlockSizeUser, Digest};
 use mc_attest_ake::{AuthRequestOutput, AuthResponseOutput};
 use mc_attest_enclave_api::{
@@ -18,7 +17,7 @@ impl<Handshake, KexAlgo, Cipher, DigestAlgo>
 where
     Handshake: HandshakePattern,
     KexAlgo: Kex,
-    Cipher: AeadMut + NewAead + NoiseCipher + Sized,
+    Cipher: NoiseCipher,
     DigestAlgo: Digest + BlockSizeUser + Clone,
 {
     fn from(src: AuthRequestOutput<Handshake, KexAlgo, Cipher, DigestAlgo>) -> Self {

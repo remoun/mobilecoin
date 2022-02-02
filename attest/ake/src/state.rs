@@ -3,7 +3,6 @@
 //! Transducer states used by initiators and/or responders.
 
 use crate::mealy::State;
-use aead::{AeadMut, NewAead};
 use alloc::{string::String, vec::Vec};
 use digest::{core_api::BlockSizeUser, Digest};
 use mc_crypto_keys::Kex;
@@ -31,7 +30,7 @@ impl State for Start {}
 pub struct AuthPending<KexAlgo, Cipher, DigestAlgo>
 where
     KexAlgo: Kex,
-    Cipher: AeadMut + NewAead + NoiseCipher + Sized,
+    Cipher: NoiseCipher,
     DigestAlgo: Digest + BlockSizeUser + Clone,
 {
     /// The handshake state
@@ -41,7 +40,7 @@ where
 impl<KexAlgo, Cipher, DigestAlgo> State for AuthPending<KexAlgo, Cipher, DigestAlgo>
 where
     KexAlgo: Kex,
-    Cipher: AeadMut + NewAead + NoiseCipher + Sized,
+    Cipher: NoiseCipher,
     DigestAlgo: Digest + BlockSizeUser + Clone,
 {
 }
@@ -49,7 +48,7 @@ where
 impl<KexAlgo, Cipher, DigestAlgo> AuthPending<KexAlgo, Cipher, DigestAlgo>
 where
     KexAlgo: Kex,
-    Cipher: AeadMut + NewAead + NoiseCipher + Sized,
+    Cipher: NoiseCipher,
     DigestAlgo: Digest + BlockSizeUser + Clone,
 {
     pub(crate) fn new(state: HandshakeState<KexAlgo, Cipher, DigestAlgo>) -> Self {
@@ -61,7 +60,7 @@ where
 /// an initiator.
 pub struct Ready<Cipher>
 where
-    Cipher: AeadMut + NewAead + NoiseCipher + Sized,
+    Cipher: NoiseCipher,
 {
     pub(crate) writer: CipherState<Cipher>,
     pub(crate) reader: CipherState<Cipher>,
@@ -70,7 +69,7 @@ where
 
 impl<Cipher> Ready<Cipher>
 where
-    Cipher: AeadMut + NewAead + NoiseCipher + Sized,
+    Cipher: NoiseCipher,
 {
     /// Retrieve the channel binding as a byte slice
     pub fn binding(&self) -> &[u8] {
@@ -87,4 +86,4 @@ where
     }
 }
 
-impl<Cipher> State for Ready<Cipher> where Cipher: AeadMut + NewAead + NoiseCipher + Sized {}
+impl<Cipher> State for Ready<Cipher> where Cipher: NoiseCipher {}

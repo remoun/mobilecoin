@@ -7,7 +7,6 @@ use crate::{
     mealy::Transition,
     state::{Ready, Start},
 };
-use aead::{AeadMut, NewAead};
 use alloc::vec::Vec;
 use core::convert::TryFrom;
 use digest::{core_api::BlockSizeUser, Digest};
@@ -31,7 +30,7 @@ trait ResponderTransitionMixin {
     where
         Handshake: HandshakePattern,
         KexAlgo: Kex,
-        Cipher: AeadMut + NewAead + NoiseCipher + Sized,
+        Cipher: NoiseCipher,
         DigestAlgo: Digest + BlockSizeUser + Clone,
         ProtocolName<Handshake, KexAlgo, Cipher, DigestAlgo>: AsRef<str>;
 
@@ -42,7 +41,7 @@ trait ResponderTransitionMixin {
     ) -> Result<(Ready<Cipher>, AuthResponseOutput), Error>
     where
         KexAlgo: Kex,
-        Cipher: AeadMut + NewAead + NoiseCipher + Sized,
+        Cipher: NoiseCipher,
         DigestAlgo: Digest + BlockSizeUser + Clone;
 }
 
@@ -55,7 +54,7 @@ impl ResponderTransitionMixin for Start {
     where
         Handshake: HandshakePattern,
         KexAlgo: Kex,
-        Cipher: AeadMut + NewAead + NoiseCipher + Sized,
+        Cipher: NoiseCipher,
         DigestAlgo: Digest + BlockSizeUser + Clone,
         ProtocolName<Handshake, KexAlgo, Cipher, DigestAlgo>: AsRef<str>,
     {
@@ -88,7 +87,7 @@ impl ResponderTransitionMixin for Start {
     ) -> Result<(Ready<Cipher>, AuthResponseOutput), Error>
     where
         KexAlgo: Kex,
-        Cipher: AeadMut + NewAead + NoiseCipher + Sized,
+        Cipher: NoiseCipher,
         DigestAlgo: Digest + BlockSizeUser + Clone,
     {
         // Encrypt the local report for output
@@ -124,7 +123,7 @@ impl<KexAlgo, Cipher, DigestAlgo>
     for Start
 where
     KexAlgo: Kex,
-    Cipher: AeadMut + NewAead + NoiseCipher + Sized,
+    Cipher: NoiseCipher,
     DigestAlgo: Digest + BlockSizeUser + Clone,
     ProtocolName<HandshakeIX, KexAlgo, Cipher, DigestAlgo>: AsRef<str>,
 {
@@ -173,7 +172,7 @@ impl<KexAlgo, Cipher, DigestAlgo>
     > for Start
 where
     KexAlgo: Kex,
-    Cipher: AeadMut + NewAead + NoiseCipher + Sized,
+    Cipher: NoiseCipher,
     DigestAlgo: Digest + BlockSizeUser + Clone,
     ProtocolName<HandshakeNX, KexAlgo, Cipher, DigestAlgo>: AsRef<str>,
 {

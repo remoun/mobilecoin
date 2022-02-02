@@ -117,13 +117,13 @@ impl<C> NoiseCipher for C where C: AeadMut + NewAead + Sized {}
 ///
 /// This is defined by [section 5.1](http://noiseprotocol.org/noise.html#the-cipherstate-object)
 /// of the specification.
-pub struct CipherState<Cipher: AeadMut + NewAead + Sized + NoiseCipher> {
+pub struct CipherState<Cipher: NoiseCipher> {
     cipher: Option<Cipher>,
     nonce: u64,
     bytes_sent: u64,
 }
 
-impl<Cipher: AeadMut + NewAead + Sized + NoiseCipher> CipherState<Cipher> {
+impl<Cipher: NoiseCipher> CipherState<Cipher> {
     /// The noise protocol `InitializeKey(k)` operation.
     ///
     /// This will reset the internal key, create a new AEAD cipher instance,
@@ -241,7 +241,7 @@ impl<Cipher: AeadMut + NewAead + Sized + NoiseCipher> CipherState<Cipher> {
 }
 
 /// Initialize a new `CipherState` with no existing data.
-impl<Cipher: AeadMut + NewAead + Sized + NoiseCipher> Default for CipherState<Cipher> {
+impl<Cipher: NoiseCipher> Default for CipherState<Cipher> {
     fn default() -> Self {
         Self {
             cipher: None,

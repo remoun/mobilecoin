@@ -8,7 +8,6 @@ use crate::{
     protocol_name::ProtocolName,
     symmetric_state::{SymmetricError, SymmetricOutput, SymmetricState},
 };
-use aead::{AeadMut, NewAead};
 use alloc::vec::Vec;
 use core::convert::{TryFrom, TryInto};
 use digest::{core_api::BlockSizeUser, Digest};
@@ -103,7 +102,7 @@ const HANDSHAKE_ERROR: [[HandshakeError; ErrorIdx::Last as usize]; 2usize] = [
 pub struct HandshakeOutput<KexAlgo, Cipher, DigestAlgo>
 where
     KexAlgo: Kex,
-    Cipher: AeadMut + NewAead + NoiseCipher + Sized,
+    Cipher: NoiseCipher,
     DigestAlgo: Digest + BlockSizeUser + Clone,
 {
     /// The payload is the read plaintext or written ciphertext
@@ -117,7 +116,7 @@ where
 pub enum HandshakeStatus<KexAlgo, Cipher, DigestAlgo>
 where
     KexAlgo: Kex,
-    Cipher: AeadMut + NewAead + NoiseCipher + Sized,
+    Cipher: NoiseCipher,
     DigestAlgo: Digest + BlockSizeUser + Clone,
 {
     InProgress(HandshakeState<KexAlgo, Cipher, DigestAlgo>),
@@ -130,7 +129,7 @@ where
 pub struct HandshakeState<KexAlgo, Cipher, DigestAlgo>
 where
     KexAlgo: Kex,
-    Cipher: AeadMut + NewAead + NoiseCipher + Sized,
+    Cipher: NoiseCipher,
     DigestAlgo: Digest + BlockSizeUser + Clone,
 {
     /// Whether this state machine is an initiator (true) or a responder (false)
@@ -162,7 +161,7 @@ where
 impl<KexAlgo, Cipher, DigestAlgo> HandshakeState<KexAlgo, Cipher, DigestAlgo>
 where
     KexAlgo: Kex,
-    Cipher: AeadMut + NewAead + NoiseCipher + Sized,
+    Cipher: NoiseCipher,
     DigestAlgo: Digest + BlockSizeUser + Clone,
 {
     /// Static method, dispatched from new(), used to perform step 4 of

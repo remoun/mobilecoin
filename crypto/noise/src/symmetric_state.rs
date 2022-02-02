@@ -10,7 +10,6 @@ use crate::{
     patterns::HandshakePattern,
     protocol_name::ProtocolName,
 };
-use aead::{AeadMut, NewAead};
 use alloc::vec::Vec;
 use core::{convert::TryInto, marker::PhantomData};
 use digest::{core_api::BlockSizeUser, Digest};
@@ -49,7 +48,7 @@ impl From<InvalidLength> for SymmetricError {
 pub struct SymmetricState<KexAlgo, Cipher, DigestAlgo>
 where
     KexAlgo: Kex,
-    Cipher: AeadMut + NewAead + NoiseCipher + Sized,
+    Cipher: NoiseCipher,
     DigestAlgo: Digest + BlockSizeUser + Clone,
 {
     hash: HandshakeHash<DigestAlgo>,
@@ -64,7 +63,7 @@ impl<Handshake, KexAlgo, Cipher, DigestAlgo>
 where
     Handshake: HandshakePattern,
     KexAlgo: Kex,
-    Cipher: AeadMut + NewAead + NoiseCipher + Sized,
+    Cipher: NoiseCipher,
     DigestAlgo: Digest + BlockSizeUser + Clone,
     ProtocolName<Handshake, KexAlgo, Cipher, DigestAlgo>: AsRef<str>,
 {
@@ -89,7 +88,7 @@ where
 impl<KexAlgo, Cipher, DigestAlgo> SymmetricState<KexAlgo, Cipher, DigestAlgo>
 where
     KexAlgo: Kex,
-    Cipher: AeadMut + NewAead + NoiseCipher + Sized,
+    Cipher: NoiseCipher,
     DigestAlgo: Digest + BlockSizeUser + Clone,
 {
     /// Retrieve the expected size (in bytes) of a public key to read.
@@ -240,7 +239,7 @@ where
 /// warning to call `GetHandshakeHash()` only after calling `Split()`.
 pub struct SymmetricOutput<Cipher, PubKey>
 where
-    Cipher: AeadMut + NewAead + NoiseCipher + Sized,
+    Cipher: NoiseCipher,
     PubKey: KexPublic,
 {
     pub initiator_cipher: CipherState<Cipher>,
@@ -251,7 +250,7 @@ where
 
 impl<Cipher, PubKey> SymmetricOutput<Cipher, PubKey>
 where
-    Cipher: AeadMut + NewAead + NoiseCipher + Sized,
+    Cipher: NoiseCipher,
     PubKey: KexPublic,
 {
     /// Bundle the given data into a handshake output structure.
@@ -280,7 +279,7 @@ impl<KexAlgo, Cipher, DigestAlgo> TryInto<SymmetricOutput<Cipher, KexAlgo::Publi
     for SymmetricState<KexAlgo, Cipher, DigestAlgo>
 where
     KexAlgo: Kex,
-    Cipher: AeadMut + NewAead + NoiseCipher + Sized,
+    Cipher: NoiseCipher,
     DigestAlgo: Digest + BlockSizeUser + Clone,
 {
     type Error = SymmetricError;

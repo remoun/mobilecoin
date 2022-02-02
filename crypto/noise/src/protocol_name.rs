@@ -6,7 +6,7 @@ use crate::patterns::{HandshakeIX, HandshakeNX, HandshakePattern};
 use aead::AeadMut;
 use aes_gcm::Aes256Gcm;
 use core::marker::PhantomData;
-use digest::{core_api::BlockSizeUser, Digest};
+use digest::Digest;
 use displaydoc::Display;
 use mc_crypto_keys::{Kex, X25519};
 use serde::{Deserialize, Serialize};
@@ -35,7 +35,7 @@ where
     Handshake: HandshakePattern,
     KexAlgo: Kex,
     Cipher: AeadMut,
-    DigestAlgo: Digest + BlockSizeUser + Clone,
+    DigestAlgo: Digest,
 {
     _pattern: PhantomData<fn() -> Handshake>,
     _kex: PhantomData<fn() -> KexAlgo>,
@@ -49,7 +49,7 @@ where
     Handshake: HandshakePattern,
     KexAlgo: Kex,
     Cipher: AeadMut,
-    DigestAlgo: Digest + BlockSizeUser + Clone,
+    DigestAlgo: Digest,
 {
     fn clone(&self) -> Self {
         Self {
@@ -67,7 +67,7 @@ where
     Handshake: HandshakePattern,
     KexAlgo: Kex,
     Cipher: AeadMut,
-    DigestAlgo: Digest + BlockSizeUser + Clone,
+    DigestAlgo: Digest,
 {
     fn default() -> Self {
         Self {

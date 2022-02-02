@@ -9,7 +9,7 @@ use core::{
     marker::PhantomData,
     ops::{Add, AddAssign},
 };
-use digest::{core_api::BlockSizeUser, Digest};
+use digest::Digest;
 use generic_array::GenericArray;
 use mc_crypto_keys::Kex;
 use secrecy::{ExposeSecret, SecretVec};
@@ -21,7 +21,7 @@ use zeroize::Zeroize;
 /// This type is not specifically defined by the noise framework, but the
 /// `h = HASH(h || data)` construction happens in a lot of places. This type,
 /// therefore, is the `h`.
-pub struct HandshakeHash<DigestAlgo: Digest + BlockSizeUser + Clone> {
+pub struct HandshakeHash<DigestAlgo: Digest> {
     hash: SecretVec<u8>,
     _digest: PhantomData<fn() -> DigestAlgo>,
 }
@@ -33,37 +33,28 @@ pub struct HandshakeHash<DigestAlgo: Digest + BlockSizeUser + Clone> {
 /// `SymmetricState::InitializedSymmetric`, defined at
 /// [section 5.2](http://noiseprotocol.org/noise.html#the-symmetricstate-object)
 /// of the specification.
-impl<DigestAlgo: Digest + BlockSizeUser + Clone> AsRef<[u8]> for HandshakeHash<DigestAlgo> {
+impl<DigestAlgo: Digest> AsRef<[u8]> for HandshakeHash<DigestAlgo> {
     fn as_ref(&self) -> &[u8] {
         self.hash.expose_secret().as_slice()
     }
 }
 
 /// New data can be mixed with the handshake hash via addition.
-impl<'data, DigestAlgo: Digest + BlockSizeUser + Clone> Add<&'data [u8]>
-    for HandshakeHash<DigestAlgo>
-{
+impl<'data, DigestAlgo: Digest> Add<&'data [u8]> for HandshakeHash<DigestAlgo> {
     type Output = Self;
 
     fn add(self, data: &[u8]) -> Self {
-        let mut hasher = DigestAlgo::new();
-        hasher.update(self.hash.expose_secret().as_slice());
-        hasher.update(data);
-        let mut result = hasher.finalize();
-        let mut target = self;
-        target.hash = SecretVec::new(result.to_vec());
-        result.zeroize();
-        target
+        let mut copy = self;
+        copy += data;
+        copy
     }
 }
 
 /// New data can be mixed with the handshake hash via add-assignment.
-impl<'data, DigestAlgo: Digest + BlockSizeUser + Clone> AddAssign<&'data [u8]>
-    for HandshakeHash<DigestAlgo>
-{
+impl<'data, DigestAlgo: Digest> AddAssign<&'data [u8]> for HandshakeHash<DigestAlgo> {
     fn add_assign(&mut self, data: &[u8]) {
         let mut hasher = DigestAlgo::new();
-        hasher.update(self.hash.expose_secret().as_slice());
+        hasher.update(self.as_ref());
         hasher.update(data);
         let mut result = hasher.finalize();
         self.hash = SecretVec::new(result.to_vec());
@@ -83,7 +74,7 @@ where
     Handshake: HandshakePattern,
     KexAlgo: Kex,
     Cipher: AeadMut,
-    DigestAlgo: Digest + BlockSizeUser + Clone,
+    DigestAlgo: Digest,
     ProtocolName<Handshake, KexAlgo, Cipher, DigestAlgo>: AsRef<str>,
 {
     fn from(
@@ -111,7 +102,7 @@ where
 }
 
 /// A HandshakeHash may be consumed to reveal the result.
-impl<DigestAlgo: Digest + BlockSizeUser + Clone> From<HandshakeHash<DigestAlgo>> for Vec<u8> {
+impl<DigestAlgo: Digest> From<HandshakeHash<DigestAlgo>> for Vec<u8> {
     fn from(src: HandshakeHash<DigestAlgo>) -> Vec<u8> {
         src.hash.expose_secret().clone()
     }
@@ -127,7 +118,7 @@ mod test {
     use mc_crypto_keys::X25519;
     use sha2::Sha512;
 
-    //  (echo -en
+    // (echo -en
     // "Noise_IX_25519_AESGCM_SHA512\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\
     // 0\0\0\0\0\0\0\0\0\0\0\0\0"; \   echo -n "data to be mixed") | sha512sum
     // -b

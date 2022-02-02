@@ -5,7 +5,6 @@
 use alloc::vec;
 
 use aead::{AeadMut, Error as AeadError, NewAead, Payload};
-use aes_gcm::Aes256Gcm;
 use alloc::vec::Vec;
 use core::cmp::min;
 use displaydoc::Display;
@@ -111,7 +110,7 @@ pub trait NoiseCipher: AeadMut + NewAead + Sized {
     }
 }
 
-impl NoiseCipher for Aes256Gcm {}
+impl<C> NoiseCipher for C where C: AeadMut + NewAead + Sized {}
 
 /// The Noise Protocol CipherState object, modified to support AEADs with
 /// differing key/nonce lengths.
@@ -255,6 +254,7 @@ impl<Cipher: AeadMut + NewAead + Sized + NoiseCipher> Default for CipherState<Ci
 #[cfg(test)]
 mod test {
     use super::*;
+    use aes_gcm::Aes256Gcm;
 
     #[test]
     fn default() {

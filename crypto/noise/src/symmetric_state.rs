@@ -5,14 +5,13 @@
 use alloc::vec;
 
 use crate::{
-    cipher_state::{CipherError, CipherState, NoiseCipher},
+    cipher_state::{CipherError, CipherState, NoiseCipher, NoiseDigest},
     handshake_hash::HandshakeHash,
     patterns::HandshakePattern,
     protocol_name::ProtocolName,
 };
 use alloc::vec::Vec;
 use core::{convert::TryInto, marker::PhantomData};
-use digest::{core_api::BlockSizeUser, Digest};
 use displaydoc::Display;
 use generic_array::typenum::Unsigned;
 use hkdf::{InvalidLength, SimpleHkdf};
@@ -49,7 +48,7 @@ pub struct SymmetricState<KexAlgo, Cipher, DigestAlgo>
 where
     KexAlgo: Kex,
     Cipher: NoiseCipher,
-    DigestAlgo: Digest + BlockSizeUser + Clone,
+    DigestAlgo: NoiseDigest,
 {
     hash: HandshakeHash<DigestAlgo>,
     chaining_key: SecretVec<u8>,
@@ -64,7 +63,7 @@ where
     Handshake: HandshakePattern,
     KexAlgo: Kex,
     Cipher: NoiseCipher,
-    DigestAlgo: Digest + BlockSizeUser + Clone,
+    DigestAlgo: NoiseDigest,
     ProtocolName<Handshake, KexAlgo, Cipher, DigestAlgo>: AsRef<str>,
 {
     /// The noise protocol `InitializeSymmetric()` operation.
@@ -89,7 +88,7 @@ impl<KexAlgo, Cipher, DigestAlgo> SymmetricState<KexAlgo, Cipher, DigestAlgo>
 where
     KexAlgo: Kex,
     Cipher: NoiseCipher,
-    DigestAlgo: Digest + BlockSizeUser + Clone,
+    DigestAlgo: NoiseDigest,
 {
     /// Retrieve the expected size (in bytes) of a public key to read.
     ///
@@ -280,7 +279,7 @@ impl<KexAlgo, Cipher, DigestAlgo> TryInto<SymmetricOutput<Cipher, KexAlgo::Publi
 where
     KexAlgo: Kex,
     Cipher: NoiseCipher,
-    DigestAlgo: Digest + BlockSizeUser + Clone,
+    DigestAlgo: NoiseDigest,
 {
     type Error = SymmetricError;
 

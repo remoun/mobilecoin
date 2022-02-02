@@ -5,11 +5,12 @@
 use crate::mealy::{Input as MealyInput, Output as MealyOutput};
 use alloc::vec::Vec;
 use core::marker::PhantomData;
-use digest::{core_api::BlockSizeUser, Digest};
 use mc_attest_core::VerificationReport;
 use mc_attest_verifier::Verifier;
 use mc_crypto_keys::Kex;
-use mc_crypto_noise::{HandshakeIX, HandshakeNX, HandshakePattern, NoiseCipher, ProtocolName};
+use mc_crypto_noise::{
+    HandshakeIX, HandshakeNX, HandshakePattern, NoiseCipher, NoiseDigest, ProtocolName,
+};
 
 /// An input used to inject the relevant local data needed to transform Start
 /// into an AuthPending for node-to-node authentication.
@@ -17,7 +18,7 @@ pub struct NodeInitiate<KexAlgo, Cipher, DigestAlgo>
 where
     KexAlgo: Kex,
     Cipher: NoiseCipher,
-    DigestAlgo: Digest + BlockSizeUser + Clone,
+    DigestAlgo: NoiseDigest,
 {
     /// This is the local node's identity key
     pub(crate) local_identity: KexAlgo::Private,
@@ -33,7 +34,7 @@ impl<KexAlgo, Cipher, DigestAlgo> NodeInitiate<KexAlgo, Cipher, DigestAlgo>
 where
     KexAlgo: Kex,
     Cipher: NoiseCipher,
-    DigestAlgo: Digest + BlockSizeUser + Clone,
+    DigestAlgo: NoiseDigest,
 {
     /// Create a new input event to initiate a node-to-node channel.
     pub fn new(local_identity: KexAlgo::Private, ias_report: VerificationReport) -> Self {
@@ -51,7 +52,7 @@ impl<KexAlgo, Cipher, DigestAlgo> MealyInput for NodeInitiate<KexAlgo, Cipher, D
 where
     KexAlgo: Kex,
     Cipher: NoiseCipher,
-    DigestAlgo: Digest + BlockSizeUser + Clone,
+    DigestAlgo: NoiseDigest,
 {
 }
 
@@ -61,7 +62,7 @@ pub struct ClientInitiate<KexAlgo, Cipher, DigestAlgo>
 where
     KexAlgo: Kex,
     Cipher: NoiseCipher,
-    DigestAlgo: Digest + BlockSizeUser + Clone,
+    DigestAlgo: NoiseDigest,
 {
     _kex: PhantomData<fn() -> KexAlgo>,
     _cipher: PhantomData<fn() -> Cipher>,
@@ -72,7 +73,7 @@ impl<KexAlgo, Cipher, DigestAlgo> Default for ClientInitiate<KexAlgo, Cipher, Di
 where
     KexAlgo: Kex,
     Cipher: NoiseCipher,
-    DigestAlgo: Digest + BlockSizeUser + Clone,
+    DigestAlgo: NoiseDigest,
 {
     fn default() -> Self {
         Self {
@@ -87,7 +88,7 @@ impl<KexAlgo, Cipher, DigestAlgo> MealyInput for ClientInitiate<KexAlgo, Cipher,
 where
     KexAlgo: Kex,
     Cipher: NoiseCipher,
-    DigestAlgo: Digest + BlockSizeUser + Clone,
+    DigestAlgo: NoiseDigest,
 {
 }
 
@@ -98,7 +99,7 @@ where
     Handshake: HandshakePattern,
     KexAlgo: Kex,
     Cipher: NoiseCipher,
-    DigestAlgo: Digest + BlockSizeUser + Clone,
+    DigestAlgo: NoiseDigest,
 {
     /// The actual AuthRequest data
     pub(crate) data: Vec<u8>,
@@ -113,7 +114,7 @@ where
     Handshake: HandshakePattern,
     KexAlgo: Kex,
     Cipher: NoiseCipher,
-    DigestAlgo: Digest + BlockSizeUser + Clone,
+    DigestAlgo: NoiseDigest,
 {
     fn from(data: Vec<u8>) -> Self {
         Self {
@@ -129,7 +130,7 @@ where
     Handshake: HandshakePattern,
     KexAlgo: Kex,
     Cipher: NoiseCipher,
-    DigestAlgo: Digest + BlockSizeUser + Clone,
+    DigestAlgo: NoiseDigest,
 {
     fn from(src: AuthRequestOutput<Handshake, KexAlgo, Cipher, DigestAlgo>) -> Vec<u8> {
         src.data
@@ -142,7 +143,7 @@ where
     Handshake: HandshakePattern,
     KexAlgo: Kex,
     Cipher: NoiseCipher,
-    DigestAlgo: Digest + BlockSizeUser + Clone,
+    DigestAlgo: NoiseDigest,
 {
     fn as_ref(&self) -> &[u8] {
         self.data.as_ref()
@@ -156,7 +157,7 @@ where
     Handshake: HandshakePattern,
     KexAlgo: Kex,
     Cipher: NoiseCipher,
-    DigestAlgo: Digest + BlockSizeUser + Clone,
+    DigestAlgo: NoiseDigest,
 {
 }
 
@@ -169,7 +170,7 @@ pub struct ClientAuthRequestInput<KexAlgo, Cipher, DigestAlgo>
 where
     KexAlgo: Kex,
     Cipher: NoiseCipher,
-    DigestAlgo: Digest + BlockSizeUser + Clone,
+    DigestAlgo: NoiseDigest,
 {
     /// This is the local node's identity key
     pub(crate) local_identity: KexAlgo::Private,
@@ -184,7 +185,7 @@ impl<KexAlgo, Cipher, DigestAlgo> MealyInput for ClientAuthRequestInput<KexAlgo,
 where
     KexAlgo: Kex,
     Cipher: NoiseCipher,
-    DigestAlgo: Digest + BlockSizeUser + Clone,
+    DigestAlgo: NoiseDigest,
 {
 }
 
@@ -192,7 +193,7 @@ impl<KexAlgo, Cipher, DigestAlgo> ClientAuthRequestInput<KexAlgo, Cipher, Digest
 where
     KexAlgo: Kex,
     Cipher: NoiseCipher,
-    DigestAlgo: Digest + BlockSizeUser + Clone,
+    DigestAlgo: NoiseDigest,
 {
     pub fn new(
         data: AuthRequestOutput<HandshakeNX, KexAlgo, Cipher, DigestAlgo>,
@@ -216,7 +217,7 @@ pub struct NodeAuthRequestInput<KexAlgo, Cipher, DigestAlgo>
 where
     KexAlgo: Kex,
     Cipher: NoiseCipher,
-    DigestAlgo: Digest + BlockSizeUser + Clone,
+    DigestAlgo: NoiseDigest,
 {
     /// This is the local node's identity key
     pub(crate) local_identity: KexAlgo::Private,
@@ -233,7 +234,7 @@ impl<KexAlgo, Cipher, DigestAlgo> MealyInput for NodeAuthRequestInput<KexAlgo, C
 where
     KexAlgo: Kex,
     Cipher: NoiseCipher,
-    DigestAlgo: Digest + BlockSizeUser + Clone,
+    DigestAlgo: NoiseDigest,
 {
 }
 
@@ -241,7 +242,7 @@ impl<KexAlgo, Cipher, DigestAlgo> NodeAuthRequestInput<KexAlgo, Cipher, DigestAl
 where
     KexAlgo: Kex,
     Cipher: NoiseCipher,
-    DigestAlgo: Digest + BlockSizeUser + Clone,
+    DigestAlgo: NoiseDigest,
 {
     pub fn new(
         data: AuthRequestOutput<HandshakeIX, KexAlgo, Cipher, DigestAlgo>,

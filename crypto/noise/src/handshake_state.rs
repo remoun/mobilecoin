@@ -3,14 +3,13 @@
 //! The HandshakeState object as described in the noise framework.
 
 use crate::{
-    cipher_state::NoiseCipher,
+    cipher_state::{NoiseCipher, NoiseDigest},
     patterns::{HandshakePattern, MessagePattern, PreMessageToken, Token},
     protocol_name::ProtocolName,
     symmetric_state::{SymmetricError, SymmetricOutput, SymmetricState},
 };
 use alloc::vec::Vec;
 use core::convert::{TryFrom, TryInto};
-use digest::{core_api::BlockSizeUser, Digest};
 use displaydoc::Display;
 use generic_array::typenum::Unsigned;
 use mc_crypto_keys::{Kex, KexReusablePrivate, ReprBytes};
@@ -103,7 +102,7 @@ pub struct HandshakeOutput<KexAlgo, Cipher, DigestAlgo>
 where
     KexAlgo: Kex,
     Cipher: NoiseCipher,
-    DigestAlgo: Digest + BlockSizeUser + Clone,
+    DigestAlgo: NoiseDigest,
 {
     /// The payload is the read plaintext or written ciphertext
     pub payload: Vec<u8>,
@@ -117,7 +116,7 @@ pub enum HandshakeStatus<KexAlgo, Cipher, DigestAlgo>
 where
     KexAlgo: Kex,
     Cipher: NoiseCipher,
-    DigestAlgo: Digest + BlockSizeUser + Clone,
+    DigestAlgo: NoiseDigest,
 {
     InProgress(HandshakeState<KexAlgo, Cipher, DigestAlgo>),
     Complete(SymmetricOutput<Cipher, KexAlgo::Public>),
@@ -130,7 +129,7 @@ pub struct HandshakeState<KexAlgo, Cipher, DigestAlgo>
 where
     KexAlgo: Kex,
     Cipher: NoiseCipher,
-    DigestAlgo: Digest + BlockSizeUser + Clone,
+    DigestAlgo: NoiseDigest,
 {
     /// Whether this state machine is an initiator (true) or a responder (false)
     is_initiator: bool,
@@ -162,7 +161,7 @@ impl<KexAlgo, Cipher, DigestAlgo> HandshakeState<KexAlgo, Cipher, DigestAlgo>
 where
     KexAlgo: Kex,
     Cipher: NoiseCipher,
-    DigestAlgo: Digest + BlockSizeUser + Clone,
+    DigestAlgo: NoiseDigest,
 {
     /// Static method, dispatched from new(), used to perform step 4 of
     /// `HandshakeState::Initialize()`.

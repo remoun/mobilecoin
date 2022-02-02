@@ -10,12 +10,11 @@ use crate::{
 };
 use alloc::vec::Vec;
 use core::convert::TryFrom;
-use digest::{core_api::BlockSizeUser, Digest};
 use mc_attest_core::{ReportDataMask, VerificationReport};
 use mc_crypto_keys::{Kex, ReprBytes};
 use mc_crypto_noise::{
     HandshakeIX, HandshakeNX, HandshakeOutput, HandshakePattern, HandshakeState, HandshakeStatus,
-    NoiseCipher, ProtocolName,
+    NoiseCipher, NoiseDigest, ProtocolName,
 };
 use prost::Message;
 use rand_core::{CryptoRng, RngCore};
@@ -34,7 +33,7 @@ where
     Handshake: HandshakePattern,
     KexAlgo: Kex,
     Cipher: NoiseCipher,
-    DigestAlgo: Digest + BlockSizeUser + Clone,
+    DigestAlgo: NoiseDigest,
 {
     match output.status {
         HandshakeStatus::InProgress(state) => Ok((
@@ -55,7 +54,7 @@ impl<KexAlgo, Cipher, DigestAlgo>
 where
     KexAlgo: Kex,
     Cipher: NoiseCipher,
-    DigestAlgo: Digest + BlockSizeUser + Clone,
+    DigestAlgo: NoiseDigest,
     ProtocolName<HandshakeNX, KexAlgo, Cipher, DigestAlgo>: AsRef<str>,
 {
     type Error = Error;
@@ -100,7 +99,7 @@ impl<KexAlgo, Cipher, DigestAlgo>
 where
     KexAlgo: Kex,
     Cipher: NoiseCipher,
-    DigestAlgo: Digest + BlockSizeUser + Clone,
+    DigestAlgo: NoiseDigest,
     ProtocolName<HandshakeIX, KexAlgo, Cipher, DigestAlgo>: AsRef<str>,
 {
     type Error = Error;
@@ -147,7 +146,7 @@ impl<KexAlgo, Cipher, DigestAlgo> Transition<Ready<Cipher>, AuthResponseInput, V
 where
     KexAlgo: Kex,
     Cipher: NoiseCipher,
-    DigestAlgo: Digest + BlockSizeUser + Clone,
+    DigestAlgo: NoiseDigest,
 {
     type Error = Error;
 

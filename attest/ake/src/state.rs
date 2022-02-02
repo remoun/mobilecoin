@@ -4,9 +4,8 @@
 
 use crate::mealy::State;
 use alloc::{string::String, vec::Vec};
-use digest::{core_api::BlockSizeUser, Digest};
 use mc_crypto_keys::Kex;
-use mc_crypto_noise::{CipherError, CipherState, HandshakeState, NoiseCipher};
+use mc_crypto_noise::{CipherError, CipherState, HandshakeState, NoiseCipher, NoiseDigest};
 
 /// The state of a node (initiator or responder) before anything has happened
 /// yet.
@@ -31,7 +30,7 @@ pub struct AuthPending<KexAlgo, Cipher, DigestAlgo>
 where
     KexAlgo: Kex,
     Cipher: NoiseCipher,
-    DigestAlgo: Digest + BlockSizeUser + Clone,
+    DigestAlgo: NoiseDigest,
 {
     /// The handshake state
     pub(crate) state: HandshakeState<KexAlgo, Cipher, DigestAlgo>,
@@ -41,7 +40,7 @@ impl<KexAlgo, Cipher, DigestAlgo> State for AuthPending<KexAlgo, Cipher, DigestA
 where
     KexAlgo: Kex,
     Cipher: NoiseCipher,
-    DigestAlgo: Digest + BlockSizeUser + Clone,
+    DigestAlgo: NoiseDigest,
 {
 }
 
@@ -49,7 +48,7 @@ impl<KexAlgo, Cipher, DigestAlgo> AuthPending<KexAlgo, Cipher, DigestAlgo>
 where
     KexAlgo: Kex,
     Cipher: NoiseCipher,
-    DigestAlgo: Digest + BlockSizeUser + Clone,
+    DigestAlgo: NoiseDigest,
 {
     pub(crate) fn new(state: HandshakeState<KexAlgo, Cipher, DigestAlgo>) -> Self {
         Self { state }

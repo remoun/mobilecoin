@@ -9,12 +9,11 @@ use crate::{
 };
 use alloc::vec::Vec;
 use core::convert::TryFrom;
-use digest::{core_api::BlockSizeUser, Digest};
 use mc_attest_core::{ReportDataMask, VerificationReport};
 use mc_crypto_keys::{Kex, ReprBytes};
 use mc_crypto_noise::{
     HandshakeIX, HandshakeNX, HandshakePattern, HandshakeState, HandshakeStatus, NoiseCipher,
-    ProtocolName,
+    NoiseDigest, ProtocolName,
 };
 use prost::Message;
 use rand_core::{CryptoRng, RngCore};
@@ -31,7 +30,7 @@ trait ResponderTransitionMixin {
         Handshake: HandshakePattern,
         KexAlgo: Kex,
         Cipher: NoiseCipher,
-        DigestAlgo: Digest + BlockSizeUser + Clone,
+        DigestAlgo: NoiseDigest,
         ProtocolName<Handshake, KexAlgo, Cipher, DigestAlgo>: AsRef<str>;
 
     fn handle_response<KexAlgo, Cipher, DigestAlgo>(
@@ -42,7 +41,7 @@ trait ResponderTransitionMixin {
     where
         KexAlgo: Kex,
         Cipher: NoiseCipher,
-        DigestAlgo: Digest + BlockSizeUser + Clone;
+        DigestAlgo: NoiseDigest;
 }
 
 impl ResponderTransitionMixin for Start {
@@ -55,7 +54,7 @@ impl ResponderTransitionMixin for Start {
         Handshake: HandshakePattern,
         KexAlgo: Kex,
         Cipher: NoiseCipher,
-        DigestAlgo: Digest + BlockSizeUser + Clone,
+        DigestAlgo: NoiseDigest,
         ProtocolName<Handshake, KexAlgo, Cipher, DigestAlgo>: AsRef<str>,
     {
         let handshake_state = HandshakeState::new(
@@ -88,7 +87,7 @@ impl ResponderTransitionMixin for Start {
     where
         KexAlgo: Kex,
         Cipher: NoiseCipher,
-        DigestAlgo: Digest + BlockSizeUser + Clone,
+        DigestAlgo: NoiseDigest,
     {
         // Encrypt the local report for output
         let mut report_bytes = Vec::with_capacity(ias_report.encoded_len());
@@ -124,7 +123,7 @@ impl<KexAlgo, Cipher, DigestAlgo>
 where
     KexAlgo: Kex,
     Cipher: NoiseCipher,
-    DigestAlgo: Digest + BlockSizeUser + Clone,
+    DigestAlgo: NoiseDigest,
     ProtocolName<HandshakeIX, KexAlgo, Cipher, DigestAlgo>: AsRef<str>,
 {
     type Error = Error;
@@ -173,7 +172,7 @@ impl<KexAlgo, Cipher, DigestAlgo>
 where
     KexAlgo: Kex,
     Cipher: NoiseCipher,
-    DigestAlgo: Digest + BlockSizeUser + Clone,
+    DigestAlgo: NoiseDigest,
     ProtocolName<HandshakeNX, KexAlgo, Cipher, DigestAlgo>: AsRef<str>,
 {
     type Error = Error;

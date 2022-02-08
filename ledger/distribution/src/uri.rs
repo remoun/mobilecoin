@@ -3,8 +3,8 @@
 
 //! Distribution target URI
 
+use aws_sdk_s3::Region;
 use displaydoc::Display;
-use rusoto_core::{region::ParseRegionError, Region};
 use std::{path::PathBuf, str::FromStr};
 use url::Url;
 
@@ -47,8 +47,8 @@ pub enum UriParseError {
     /// Missing path
     MissingPath,
 
-    /// Invalid S3 region: {0}
-    InvalidS3Region(ParseRegionError),
+    /// Invalid S3 region
+    InvalidS3Region,
 }
 
 impl std::error::Error for UriParseError {}
@@ -77,8 +77,8 @@ impl FromStr for Uri {
                 });
 
                 let region = region_param
-                    .map_or_else(|| Ok(Region::default()), |param| Region::from_str(&param))
-                    .map_err(UriParseError::InvalidS3Region)?;
+                    .map(Region::new)
+                    .ok_or(UriParseError::InvalidS3Region)?;
 
                 Destination::S3 {
                     path: PathBuf::from(path),

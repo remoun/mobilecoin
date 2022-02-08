@@ -7,6 +7,7 @@
 pub mod uri;
 
 use crate::uri::{Destination, Uri};
+use aws_sdk_s3::{Client, Region};
 use clap::{ArgEnum, Parser};
 use mc_api::{block_num_to_s3block_path, blockchain, merged_block_num_to_s3block_path};
 use mc_common::logger::{create_app_logger, log, o, Logger};
@@ -14,8 +15,7 @@ use mc_ledger_db::{Ledger, LedgerDB};
 use mc_transaction_core::{BlockData, BlockIndex};
 use mc_util_telemetry::{mark_span_as_active, start_block_span, tracer, Tracer};
 use protobuf::Message;
-use rusoto_core::{Region, RusotoError};
-use rusoto_s3::{PutObjectError, PutObjectRequest, S3Client, S3};
+use retry::{delay, retry, OperationResult};
 use serde::{Deserialize, Serialize};
 use std::{fs, path::PathBuf};
 
@@ -83,7 +83,7 @@ pub struct StateData {
 /// S3 block writer.
 pub struct S3BlockWriter {
     path: PathBuf,
-    s3_client: S3Client,
+    client: Client,
     logger: Logger,
 }
 
@@ -96,79 +96,78 @@ impl S3BlockWriter {
             region
         );
 
-        let s3_client = S3Client::new(region);
+        let config = aws_sdk_s3::Config::builder().region(region).build();
+        let client = Client::from_conf(config);
         S3BlockWriter {
             path,
-            s3_client,
+            client,
             logger,
         }
     }
 
-    fn write_bytes_to_s3(&self, path: &str, filename: &str, value: &[u8]) {
-        let result: Result<
-            retry::OperationResult<(), ()>,
-            retry::Error<retry::OperationResult<(), RusotoError<PutObjectError>>>,
-        > = retry::retry(
-            retry::delay::Exponential::from_millis(10).map(retry::delay::jitter),
-            || {
-                let req = PutObjectRequest {
-                    bucket: path.to_string(),
-                    key: String::from(filename),
-                    body: Some(value.to_vec().into()),
-                    acl: Some("public-read".to_string()),
-                    ..Default::default()
-                };
+    fn write_bytes_to_s3(&self, dest: PathBuf, value: Vec<u8>) {
+        let dir = dest
+            .parent()
+            .unwrap_or_else(|| panic!("failed getting parent for {:?}", dest));
+        let filename = dest
+            .file_name()
+            .unwrap_or_else(|| panic!("failed getting file name from {:?}", dest));
+        let bucket = dir
+            .to_str()
+            .unwrap_or_else(|| panic!("Failed to convert dir '{:?}' to str", dir));
+        let key = filename
+            .to_str()
+            .unwrap_or_else(|| panic!("Failed to convert filename '{:?}' to str", filename));
 
-                self.s3_client
-                    .put_object(req)
-                    .sync()
-                    .map(|_| retry::OperationResult::Ok(()))
-                    .map_err(|err: RusotoError<PutObjectError>| {
+        let runtime = tokio::runtime::Handle::current();
+        let result = retry(
+            delay::Exponential::from_millis(10).map(delay::jitter),
+            || {
+                let req = self
+                    .client
+                    .put_object()
+                    .acl(aws_sdk_s3::model::ObjectCannedAcl::PublicRead)
+                    .bucket(bucket)
+                    .key(key)
+                    .body(value.clone().into());
+
+                runtime.block_on(req.send()).map_or_else(
+                    |err| {
                         log::warn!(
                             self.logger,
                             "Failed writing {}: {:?}, retrying...",
-                            filename,
+                            key,
                             err
                         );
-                        retry::OperationResult::Retry(err)
-                    })
+                        OperationResult::Retry(err)
+                    },
+                    OperationResult::Ok,
+                )
             },
         );
 
         // We should always succeed since retrying should never stop until that happens.
-        assert!(result.is_ok());
+        result.expect("failed to write to S3");
     }
 }
 
 impl BlockHandler for S3BlockWriter {
     fn write_single_block(&mut self, block_data: &BlockData) {
-        log::info!(
-            self.logger,
-            "S3: Handling block {}",
-            block_data.block().index
-        );
-
+        let index = block_data.block().index;
+        log::info!(self.logger, "S3: Handling block with index {}", index);
+        let dest = self.path.join(block_num_to_s3block_path(index));
         let archive_block = blockchain::ArchiveBlock::from(block_data);
-
-        let dest = self
-            .path
-            .as_path()
-            .join(block_num_to_s3block_path(block_data.block().index));
-
-        let dir = dest.as_path().parent().expect("failed getting parent");
-        let filename = dest.file_name().unwrap();
-
-        self.write_bytes_to_s3(
-            dir.to_str().unwrap(),
-            filename.to_str().unwrap(),
-            &archive_block
-                .write_to_bytes()
-                .expect("failed to serialize ArchiveBlock"),
-        );
+        let bytes = archive_block
+            .write_to_bytes()
+            .expect("failed to serialize ArchiveBlock");
+        self.write_bytes_to_s3(dest, bytes);
     }
 
     fn write_multiple_blocks(&mut self, blocks_data: &[BlockData]) {
-        assert!(blocks_data.len() >= 2);
+        assert!(
+            blocks_data.len() >= 2,
+            "Merged blocks must have more than one Block"
+        );
 
         let first_block_index = blocks_data[0].block().index;
         let last_block_index = blocks_data.last().unwrap().block().index;
@@ -184,23 +183,15 @@ impl BlockHandler for S3BlockWriter {
             last_block_index,
         );
 
-        let archive_blocks = blockchain::ArchiveBlocks::from(blocks_data);
-
-        let dest = self.path.as_path().join(merged_block_num_to_s3block_path(
+        let dest = self.path.join(merged_block_num_to_s3block_path(
             blocks_data.len() as u64,
             first_block_index,
         ));
-
-        let dir = dest.as_path().parent().expect("failed getting parent");
-        let filename = dest.file_name().unwrap();
-
-        self.write_bytes_to_s3(
-            dir.to_str().unwrap(),
-            filename.to_str().unwrap(),
-            &archive_blocks
-                .write_to_bytes()
-                .expect("failed to serialize ArchiveBlocks"),
-        );
+        let archive_blocks = blockchain::ArchiveBlocks::from(blocks_data);
+        let bytes = archive_blocks
+            .write_to_bytes()
+            .expect("failed to serialize ArchiveBlocks");
+        self.write_bytes_to_s3(dest, bytes);
     }
 }
 
@@ -240,11 +231,12 @@ impl BlockHandler for LocalBlockWriter {
 
         fs::create_dir_all(dir)
             .unwrap_or_else(|e| panic!("failed creating directory {:?}: {:?}", dir, e));
-        fs::write(&dest, bytes).unwrap_or_else(|_| {
+        fs::write(&dest, bytes).unwrap_or_else(|err| {
             panic!(
-                "failed writing block #{} to {:?}",
+                "failed writing block #{} to {:?}: {}",
                 block_data.block().index,
-                dest
+                dest,
+                err
             )
         });
     }
@@ -280,17 +272,18 @@ impl BlockHandler for LocalBlockWriter {
 
         fs::create_dir_all(dir)
             .unwrap_or_else(|e| panic!("failed creating directory {:?}: {:?}", dir, e));
-        fs::write(&dest, bytes).unwrap_or_else(|_| {
+        fs::write(&dest, bytes).unwrap_or_else(|err| {
             panic!(
-                "failed writing merged block #{}-{} to {:?}",
-                first_block_index, last_block_index, dest
+                "failed writing merged block #{}-{} to {:?}: {}",
+                first_block_index, last_block_index, dest, err,
             )
         });
     }
 }
 
 // Implements the ledger db polling loop
-fn main() {
+#[tokio::main]
+async fn main() {
     let config = Config::parse();
 
     mc_common::setup_panic_handler();

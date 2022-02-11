@@ -6,8 +6,7 @@
 //! transaction data.
 
 use crate::{
-    ledger_sync::LedgerSync, transactions_fetcher_trait::TransactionsFetcher, LedgerSyncError,
-    NetworkState,
+    KafkaTransactionsListener, LedgerSync, LedgerSyncError, NetworkState, TransactionsFetcher,
 };
 use mc_common::{
     logger::{log, Logger},
@@ -18,7 +17,8 @@ use mc_connection::{
 };
 use mc_ledger_db::Ledger;
 use mc_transaction_core::{
-    compute_block_id, ring_signature::KeyImage, Block, BlockContents, BlockID, BlockIndex,
+    compute_block_id, ring_signature::KeyImage, Block, BlockContents, BlockData, BlockID,
+    BlockIndex,
 };
 use mc_util_telemetry::{
     block_span_builder, telemetry_static_key, tracer, Context, Key, Span, TraceContextExt, Tracer,
@@ -46,6 +46,7 @@ pub struct LedgerSyncService<L: Ledger, BC: BlockchainConnection, TF: Transactio
     ledger: L,
     manager: ConnectionManager<BC>,
     transactions_fetcher: Arc<TF>,
+    transactions_listener: Arc<KafkaTransactionsListener>,
     /// Timeout for network requests.
     get_blocks_timeout: Duration,
     get_transactions_timeout: Duration,
@@ -60,6 +61,7 @@ impl<L: Ledger, BC: BlockchainConnection + 'static, TF: TransactionsFetcher + 's
         ledger: L,
         manager: ConnectionManager<BC>,
         transactions_fetcher: TF,
+        transactions_listener: Arc<KafkaTransactionsListener>,
         logger: Logger,
     ) -> Self {
         assert!(
@@ -73,6 +75,7 @@ impl<L: Ledger, BC: BlockchainConnection + 'static, TF: TransactionsFetcher + 's
             ledger,
             manager,
             transactions_fetcher: Arc::new(transactions_fetcher),
+            transactions_listener,
             get_blocks_timeout: DEFAULT_GET_BLOCKS_TIMEOUT,
             get_transactions_timeout: DEFAULT_GET_TRANSACTIONS_TIMEOUT,
             logger,
@@ -299,6 +302,7 @@ impl<
             let block_index_to_opt_transactions: BTreeMap<BlockIndex, Option<BlockContents>> =
                 get_block_contents(
                     self.transactions_fetcher.clone(),
+                    self.transactions_listener.clone(),
                     &responder_ids,
                     &potentially_safe_blocks,
                     self.get_transactions_timeout,
@@ -547,6 +551,7 @@ fn group_by_block(
 /// until all transactions have been retrieved.
 fn get_block_contents<TF: TransactionsFetcher + 'static>(
     transactions_fetcher: Arc<TF>,
+    transactions_listener: Arc<KafkaTransactionsListener>,
     safe_responder_ids: &[ResponderId],
     blocks: &[Block],
     timeout: Duration,
@@ -592,6 +597,7 @@ fn get_block_contents<TF: TransactionsFetcher + 'static>(
         let thread_receiver = receiver.clone();
         let thread_logger = logger.clone();
         let thread_transactions_fetcher = transactions_fetcher.clone();
+        let thread_transactions_listener = transactions_listener.clone();
         let thread_safe_responder_ids = safe_responder_ids.to_owned();
 
         let thread_handle = thread::Builder::new()
@@ -628,52 +634,71 @@ fn get_block_contents<TF: TransactionsFetcher + 'static>(
                                 block.index
                             );
 
+                            let validate = |block_data: BlockData| {
+                                if block != *block_data.block() {
+                                    log::debug!(
+                                        thread_logger,
+                                        "Block mismatch: {:02x?} vs {:02x?}",
+                                        block,
+                                        block_data.block(),
+                                    );
+                                    return Err(LedgerSyncError::TransactionsAndBlockMismatch);
+                                }
+
+                                let contents_hash = block_data.contents().hash();
+                                if contents_hash != block.contents_hash {
+                                    log::debug!(
+                                        thread_logger,
+                                        "Contents and block mismatch: {:02x?} vs {:02x?}",
+                                        contents_hash,
+                                        block.contents_hash,
+                                    );
+                                    Err(LedgerSyncError::TransactionsAndBlockMismatch)
+                                } else {
+                                    Ok(block_data)
+                                }
+                            };
+                            let store_data = |block_data: BlockData| {
+                                // Log
+                                log::trace!(
+                                    thread_logger,
+                                    "Worker {} got contents for block {}",
+                                    worker_num,
+                                    block.index
+                                );
+
+                                // passing the actual block and not just a block index.
+                                let mut results = lock.lock().expect("mutex poisoned");
+                                let old_result = results
+                                    .insert(block.index, Some(block_data.contents().clone()));
+
+                                // We should encounter each block index only once.
+                                assert!(
+                                    old_result.is_none(),
+                                    "Got duplicate block for index {}",
+                                    block.index
+                                );
+
+                                // Signal condition variable to check if maybe we're done.
+                                condvar.notify_one();
+                            };
+
+                            if let Some(block_data) = thread_transactions_listener
+                                .get_cached_block(thread_safe_responder_ids.as_slice(), &block)
+                            {
+                                if let Ok(block_data) = validate(block_data) {
+                                    store_data(block_data);
+                                    continue;
+                                }
+                            }
+
                             match thread_transactions_fetcher
                                 .get_block_data(thread_safe_responder_ids.as_slice(), &block)
                                 .map_err(LedgerSyncError::from)
-                                .and_then(|block_data| {
-                                    if block != *block_data.block() {
-                                        log::debug!(
-                                            thread_logger,
-                                            "Block mismatch: {:02x?} vs {:02x?}",
-                                            block,
-                                            block_data.block(),
-                                        );
-                                        return Err(LedgerSyncError::TransactionsAndBlockMismatch);
-                                    }
-
-                                    let contents_hash = block_data.contents().hash();
-                                    if contents_hash != block.contents_hash {
-                                        log::debug!(
-                                            thread_logger,
-                                            "Contents and block mismatch: {:02x?} vs {:02x?}",
-                                            contents_hash,
-                                            block.contents_hash,
-                                        );
-                                        Err(LedgerSyncError::TransactionsAndBlockMismatch)
-                                    } else {
-                                        Ok(block_data)
-                                    }
-                                }) {
+                                .and_then(validate)
+                            {
                                 Ok(block_data) => {
-                                    // Log
-                                    log::trace!(
-                                        thread_logger,
-                                        "Worker {} got contents for block {}",
-                                        worker_num,
-                                        block.index
-                                    );
-
-                                    // passing the actual block and not just a block index.
-                                    let mut results = lock.lock().expect("mutex poisoned");
-                                    let old_result = results
-                                        .insert(block.index, Some(block_data.contents().clone()));
-
-                                    // We should encounter each block index only once.
-                                    assert!(old_result.is_none());
-
-                                    // Signal condition variable to check if maybe we're done.
-                                    condvar.notify_one();
+                                    store_data(block_data);
                                 }
 
                                 Err(err) => {
@@ -717,7 +742,7 @@ fn get_block_contents<TF: TransactionsFetcher + 'static>(
     log::trace!(logger, "Waiting on {} results", blocks.len());
     let &(ref lock, ref condvar) = &*results_and_condvar;
     let results = condvar
-        .wait_while(lock.lock().unwrap(), |ref mut results| {
+        .wait_while(lock.lock().unwrap(), |ref results| {
             results.len() != blocks.len()
         })
         .expect("waiting on condvar failed");
@@ -883,8 +908,15 @@ mod tests {
         let ledger = get_mock_ledger(25);
         let conn_manager = ConnectionManager::<MockPeerConnection>::new(vec![], logger.clone());
         let transactions_fetcher = MockTransactionsFetcher::new(ledger.clone());
-        let sync_service =
-            LedgerSyncService::new(ledger, conn_manager, transactions_fetcher, logger.clone());
+        let transactions_listener =
+            Arc::new(KafkaTransactionsListener::new(&[], logger.clone()).unwrap());
+        let sync_service = LedgerSyncService::new(
+            ledger,
+            conn_manager,
+            transactions_fetcher,
+            transactions_listener,
+            logger.clone(),
+        );
 
         assert_eq!(sync_service.is_behind(&network_state), false);
     }
@@ -909,8 +941,15 @@ mod tests {
         let ledger = get_mock_ledger(local_slot_index as usize);
         let conn_manager = ConnectionManager::<MockPeerConnection>::new(vec![], logger.clone());
         let transactions_fetcher = MockTransactionsFetcher::new(ledger.clone());
-        let sync_service =
-            LedgerSyncService::new(ledger, conn_manager, transactions_fetcher, logger.clone());
+        let transactions_listener =
+            Arc::new(KafkaTransactionsListener::new(&[], logger.clone()).unwrap());
+        let sync_service = LedgerSyncService::new(
+            ledger,
+            conn_manager,
+            transactions_fetcher,
+            transactions_listener,
+            logger.clone(),
+        );
 
         // Node A has externalized a higher slot.
         // The set {Node A} is blocking, but {Node A} \union {local node} is not a
@@ -1015,6 +1054,8 @@ mod tests {
         );
 
         let transactions_fetcher = Arc::new(MockTransactionsFetcher::new(mock_ledger.clone()));
+        let transactions_listener =
+            Arc::new(KafkaTransactionsListener::new(&[], logger.clone()).unwrap());
 
         let responder_ids: Vec<ResponderId> = conn_manager.responder_ids();
 
@@ -1024,6 +1065,7 @@ mod tests {
 
         let transactions_by_block = get_block_contents(
             transactions_fetcher,
+            transactions_listener,
             &responder_ids.as_slice(),
             &blocks,
             Duration::from_secs(1),
@@ -1087,6 +1129,8 @@ mod tests {
         );
 
         let transactions_fetcher = Arc::new(MockTransactionsFetcher::new(mock_ledger.clone()));
+        let transactions_listener =
+            Arc::new(KafkaTransactionsListener::new(&[], logger.clone()).unwrap());
 
         let responder_ids: Vec<ResponderId> = conn_manager.responder_ids();
 
@@ -1103,6 +1147,7 @@ mod tests {
 
         let transactions_by_block = get_block_contents(
             transactions_fetcher,
+            transactions_listener,
             &responder_ids.as_slice(),
             &blocks,
             Duration::from_secs(1),
@@ -1215,8 +1260,15 @@ mod tests {
         let ledger = get_mock_ledger(1);
         let conn_manager = ConnectionManager::new(peer_conns, logger.clone());
         let transactions_fetcher = MockTransactionsFetcher::new(ledger.clone());
-        let mut sync_service =
-            LedgerSyncService::new(ledger, conn_manager, transactions_fetcher, logger.clone());
+        let transactions_listener =
+            Arc::new(KafkaTransactionsListener::new(&[], logger.clone()).unwrap());
+        let mut sync_service = LedgerSyncService::new(
+            ledger,
+            conn_manager,
+            transactions_fetcher,
+            transactions_listener,
+            logger.clone(),
+        );
 
         let (responder_ids, block_index, potentially_safe_blocks) = sync_service
             .get_potentially_safe_blocks(&network_state, 100)
@@ -1294,8 +1346,15 @@ mod tests {
         let ledger = get_mock_ledger(10);
         let conn_manager = ConnectionManager::new(peer_conns, logger.clone());
         let transactions_fetcher = MockTransactionsFetcher::new(ledger.clone());
-        let mut sync_service =
-            LedgerSyncService::new(ledger, conn_manager, transactions_fetcher, logger.clone());
+        let transactions_listener =
+            Arc::new(KafkaTransactionsListener::new(&[], logger.clone()).unwrap());
+        let mut sync_service = LedgerSyncService::new(
+            ledger,
+            conn_manager,
+            transactions_fetcher,
+            transactions_listener,
+            logger.clone(),
+        );
 
         let (responder_ids, slot_index, blocks) = sync_service
             .get_potentially_safe_blocks(&network_state, 100)
@@ -1348,8 +1407,15 @@ mod tests {
         let ledger = get_mock_ledger(25);
         let conn_manager = ConnectionManager::new(peer_conns, logger.clone());
         let transactions_fetcher = MockTransactionsFetcher::new(ledger.clone());
-        let mut sync_service =
-            LedgerSyncService::new(ledger, conn_manager, transactions_fetcher, logger.clone());
+        let transactions_listener =
+            Arc::new(KafkaTransactionsListener::new(&[], logger.clone()).unwrap());
+        let mut sync_service = LedgerSyncService::new(
+            ledger,
+            conn_manager,
+            transactions_fetcher,
+            transactions_listener,
+            logger.clone(),
+        );
 
         if let Some((responder_ids, block_index, blocks)) =
             sync_service.get_potentially_safe_blocks(&network_state, 100)

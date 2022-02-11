@@ -1,10 +1,14 @@
 // Copyright (c) 2018-2021 The MobileCoin Foundation
 
+mod kafka_transactions_listener;
 mod ledger_sync;
 mod network_state;
 mod reqwest_transactions_fetcher;
 mod transactions_fetcher_trait;
 
+pub use kafka_transactions_listener::{
+    KafkaSubscriberConfig, KafkaTransactionListenerError, KafkaTransactionsListener,
+};
 pub use ledger_sync::{
     identify_safe_blocks, LedgerSync, LedgerSyncError, LedgerSyncService, LedgerSyncServiceThread,
     MockLedgerSync,

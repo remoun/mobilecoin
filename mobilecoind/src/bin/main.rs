@@ -5,7 +5,10 @@
 use mc_attest_verifier::{MrSignerVerifier, Verifier, DEBUG_ENCLAVE};
 use mc_common::logger::{create_app_logger, log, o, Logger};
 use mc_ledger_db::{Ledger, LedgerDB};
-use mc_ledger_sync::{LedgerSyncServiceThread, PollingNetworkState, ReqwestTransactionsFetcher};
+use mc_ledger_sync::{
+    KafkaTransactionsListener, LedgerSyncServiceThread, PollingNetworkState,
+    ReqwestTransactionsFetcher,
+};
 use mc_mobilecoind::{
     config::Config, database::Database, payments::TransactionsManager, service::Service,
 };
@@ -16,7 +19,8 @@ use std::{
 };
 use structopt::StructOpt;
 
-fn main() {
+#[tokio::main]
+async fn main() {
     let config = Config::from_args();
     if !cfg!(debug_assertions) && !config.offline {
         config.validate_host().expect("Could not validate host");
@@ -49,7 +53,11 @@ fn main() {
     )));
 
     let transactions_fetcher = ReqwestTransactionsFetcher::new(
-        config.tx_source_urls.clone().unwrap_or_default(),
+        config
+            .peers_config
+            .tx_source_urls
+            .clone()
+            .unwrap_or_default(),
         logger.clone(),
     )
     .expect("Failed creating ReqwestTransactionsFetcher");
@@ -61,11 +69,20 @@ fn main() {
     let _ledger_sync_service_thread = if config.offline {
         None
     } else {
+        let transactions_listener = Arc::new(
+            KafkaTransactionsListener::new(
+                &config.peers_config.get_kafka_sources(),
+                logger.clone(),
+            )
+            .unwrap(),
+        );
+
         Some(LedgerSyncServiceThread::new(
             ledger_db.clone(),
             peer_manager.clone(),
             network_state.clone(),
             transactions_fetcher.clone(),
+            transactions_listener,
             config.poll_interval,
             logger.clone(),
         ))

@@ -25,7 +25,8 @@ use std::{
 };
 use structopt::StructOpt;
 
-fn main() -> Result<(), ConsensusServiceError> {
+#[tokio::main]
+async fn main() -> Result<(), ConsensusServiceError> {
     mc_common::setup_panic_handler();
     let _sentry_guard = mc_common::sentry::init();
 

@@ -20,7 +20,9 @@ use mc_connection::{BlockchainConnection, ConnectionManager};
 use mc_consensus_scp::{scp_log::LoggingScpNode, Node, QuorumSet, ScpNode};
 use mc_crypto_keys::Ed25519Pair;
 use mc_ledger_db::Ledger;
-use mc_ledger_sync::{LedgerSyncService, ReqwestTransactionsFetcher};
+use mc_ledger_sync::{
+    KafkaSubscriberConfig, KafkaTransactionsListener, LedgerSyncService, ReqwestTransactionsFetcher,
+};
 use mc_peers::{
     Broadcast, ConsensusConnection, ConsensusMsg, ConsensusValue, VerifiedConsensusMsg,
 };
@@ -91,6 +93,7 @@ impl ByzantineLedger {
         broadcaster: Arc<Mutex<dyn Broadcast>>,
         msg_signer_key: Arc<Ed25519Pair>,
         tx_source_urls: Vec<String>,
+        kakfa_sources: &[KafkaSubscriberConfig],
         scp_debug_dir: Option<PathBuf>,
         logger: Logger,
     ) -> Self {
@@ -142,10 +145,17 @@ impl ByzantineLedger {
 
         // Start worker thread
         let worker_handle = {
+            let transactions_listener = Arc::new(
+                KafkaTransactionsListener::new(kakfa_sources, logger.clone())
+                    .expect("Failed to create KafkaTransactionsListener"),
+            );
+
             let ledger_sync_service = LedgerSyncService::new(
                 ledger.clone(),
                 peer_manager.clone(),
-                ReqwestTransactionsFetcher::new(tx_source_urls, logger.clone()).unwrap(), /* Unwrap? */
+                ReqwestTransactionsFetcher::new(tx_source_urls, logger.clone())
+                    .expect("Failed to create ReqwestTransactionFetcher"), /* Unwrap? */
+                transactions_listener,
                 logger.clone(),
             );
 
@@ -396,6 +406,7 @@ mod tests {
             broadcaster,
             msg_signer_key.clone(),
             Vec::new(),
+            &[],
             None,
             logger.clone(),
         );
@@ -478,6 +489,7 @@ mod tests {
             broadcaster,
             local_signer_key.clone(),
             Vec::new(),
+            &[],
             None,
             logger.clone(),
         );

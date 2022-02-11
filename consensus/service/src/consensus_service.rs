@@ -500,6 +500,7 @@ impl<
                 self.broadcaster.clone(),
                 self.config.msg_signer_key.clone(),
                 self.config.network().tx_source_urls,
+                &self.config.network().kafka_sources(),
                 self.config.scp_debug_dump.clone(),
                 self.logger.clone(),
             ))

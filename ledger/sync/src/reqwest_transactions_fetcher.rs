@@ -86,7 +86,7 @@ pub struct ReqwestTransactionsFetcher {
     /// Merged blocks bucket sizes to attempt fetching.
     merged_blocks_bucket_sizes: Vec<u64>,
 
-    /// Number of successful cache hits when attempting ot get block data.
+    /// Number of successful cache hits when attempting to get block data.
     /// Used for debugging purposes.
     hits: Arc<AtomicU64>,
 

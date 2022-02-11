@@ -162,11 +162,14 @@ fn main() {
         logger.clone(),
     )
     .expect("failed creating ReqwestTransactionsFetcher");
+    let transactions_listener =
+        Arc::new(mc_ledger_sync::KafkaTransactionsListener::new(&[], logger.clone()).unwrap());
 
     let mut sync_service = LedgerSyncService::new(
         ledger.clone(),
         conn_manager,
         transactions_fetcher,
+        transactions_listener,
         logger.clone(),
     );
     loop {

@@ -7,11 +7,16 @@ pub mod uri;
 
 use crate::uri::{Destination, Uri};
 use mc_api::{block_num_to_s3block_path, blockchain, merged_block_num_to_s3block_path};
-use mc_common::logger::{create_app_logger, log, o, Logger};
+use mc_common::{
+    logger::{create_app_logger, log, o, Logger},
+    trace_time,
+};
 use mc_ledger_db::{Ledger, LedgerDB};
+use mc_ledger_sync::KafkaSubscriberConfig;
 use mc_transaction_core::{BlockData, BlockIndex};
 use mc_util_telemetry::{mark_span_as_active, start_block_span, tracer, Tracer};
 use protobuf::Message;
+use rdkafka::producer::{FutureProducer, FutureRecord};
 use rusoto_core::{Region, RusotoError};
 use rusoto_s3::{PutObjectError, PutObjectRequest, S3Client, S3};
 use serde::{Deserialize, Serialize};
@@ -62,7 +67,7 @@ pub struct Config {
 
     /// Destination to upload to.
     #[structopt(long = "dest")]
-    pub destination: Uri,
+    pub destinations: Vec<Uri>,
 
     /// Block to start from.
     #[structopt(long, default_value = "zero")]
@@ -273,7 +278,7 @@ impl BlockHandler for LocalBlockWriter {
 
         let bytes = archive_blocks
             .write_to_bytes()
-            .expect("failed to serialize ArchiveBlock");
+            .expect("failed to serialize ArchiveBlocks");
 
         let dest = self.path.as_path().join(merged_block_num_to_s3block_path(
             blocks_data.len() as u64,
@@ -292,8 +297,56 @@ impl BlockHandler for LocalBlockWriter {
     }
 }
 
+pub struct KafkaBlockWriter {
+    topic: String,
+    producer: FutureProducer,
+    logger: Logger,
+}
+
+impl KafkaBlockWriter {
+    pub fn new(config: KafkaSubscriberConfig, logger: Logger) -> Result<Self, String> {
+        let topic = config.topic.clone();
+        let brokers = config.brokers;
+        if brokers.is_empty() {
+            return Err("Missing brokers".to_owned());
+        }
+        let producer: FutureProducer = rdkafka::ClientConfig::new()
+            .set("bootstrap.servers", brokers.join(","))
+            .set("message.timeout.ms", "5000")
+            .create()
+            .map_err(|e| format!("Failed to connect to Kafka: {}", e))?;
+        Ok(Self {
+            topic,
+            producer,
+            logger,
+        })
+    }
+}
+
+impl BlockHandler for KafkaBlockWriter {
+    fn write_single_block(&mut self, block_data: &BlockData) {
+        let key = format!("{}", block_data.block().index);
+        trace_time!(self.logger, "KafkaBlockWriter.write_single_block({})", key);
+
+        let archive_block = blockchain::ArchiveBlock::from(block_data);
+        let payload = archive_block
+            .write_to_bytes()
+            .expect("proto serialization failed");
+
+        let record = FutureRecord::to(&self.topic).key(&key).payload(&payload);
+        self.producer
+            .send_result(record)
+            .expect("Failed to send to Kafka");
+    }
+
+    fn write_multiple_blocks(&mut self, _blocks_data: &[BlockData]) {
+        log::info!(self.logger, "KafkaBlockWriter ignoring merged blocks");
+    }
+}
+
 // Implements the ledger db polling loop
-fn main() {
+#[tokio::main]
+async fn main() {
     let config = Config::from_args();
 
     mc_common::setup_panic_handler();
@@ -344,18 +397,29 @@ fn main() {
     };
 
     // Create block handler
-    let mut block_handler: Box<dyn BlockHandler> = match config.destination.destination {
-        Destination::S3 { path, region } => {
-            Box::new(S3BlockWriter::new(path, region, logger.clone()))
-        }
+    let mut block_handlers: Vec<Box<dyn BlockHandler>> = config
+        .destinations
+        .into_iter()
+        .map(|destination| -> Box<dyn BlockHandler> {
+            match destination.destination {
+                Destination::S3 { path, region } => {
+                    Box::new(S3BlockWriter::new(path, region, logger.clone()))
+                }
 
-        Destination::Local { path } => {
-            fs::create_dir_all(&path).unwrap_or_else(|_| {
-                panic!("Failed creating local destination directory {:?}", path)
-            });
-            Box::new(LocalBlockWriter::new(path, logger.clone()))
-        }
-    };
+                Destination::Local { path } => {
+                    fs::create_dir_all(&path).unwrap_or_else(|_| {
+                        panic!("Failed creating local destination directory {:?}", path)
+                    });
+                    Box::new(LocalBlockWriter::new(path, logger.clone()))
+                }
+
+                Destination::Kafka { config } => Box::new(
+                    KafkaBlockWriter::new(config, logger.clone())
+                        .expect("Failed to create KafkaBlockWriter"),
+                ),
+            }
+        })
+        .collect();
 
     // Poll ledger for new blocks and process them as they come.
     log::info!(
@@ -374,7 +438,10 @@ fn main() {
             let _active_span = mark_span_as_active(span);
 
             tracer.in_span("write_single_block", |_cx| {
-                block_handler.write_single_block(&block_data);
+                // TODO: Parallelize these writes.
+                block_handlers
+                    .iter_mut()
+                    .for_each(|handler| handler.write_single_block(&block_data));
             });
 
             let cur_block_index = block_data.block().index;
@@ -412,7 +479,10 @@ fn main() {
                 }
 
                 tracer.in_span("write_multiple_blocks", |_cx| {
-                    block_handler.write_multiple_blocks(&blocks_data);
+                    // TODO: Parallelize these writes.
+                    block_handlers
+                        .iter_mut()
+                        .for_each(|handler| handler.write_multiple_blocks(&blocks_data));
                 });
             }
 

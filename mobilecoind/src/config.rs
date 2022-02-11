@@ -9,6 +9,7 @@ use mc_connection::{ConnectionManager, HardcodedCredentialsProvider, ThickClient
 use mc_consensus_scp::QuorumSet;
 use mc_fog_report_connection::GrpcFogReportConnection;
 use mc_fog_report_validation::FogResolver;
+use mc_ledger_sync::KafkaSubscriberConfig;
 use mc_mobilecoind_api::MobilecoindUri;
 use mc_sgx_css::Signature;
 use mc_util_parse::{load_css_file, parse_duration_in_seconds};
@@ -18,7 +19,7 @@ use reqwest::{
     blocking::Client,
     header::{HeaderMap, HeaderValue, CONTENT_TYPE},
 };
-use std::{path::PathBuf, sync::Arc, time::Duration};
+use std::{convert::TryFrom, path::PathBuf, sync::Arc, time::Duration};
 use structopt::StructOpt;
 
 #[derive(Debug, StructOpt)]
@@ -48,12 +49,6 @@ pub struct Config {
     /// com:443"},{"type":"Node","args":"node3.test.mobilecoin.com:443"}]}
     #[structopt(long, parse(try_from_str=parse_quorum_set_from_json))]
     quorum_set: Option<QuorumSet<ResponderId>>,
-
-    /// URLs to use for transaction data.
-    ///
-    /// For example: https://s3-us-west-1.amazonaws.com/mobilecoin.chain/node1.test.mobilecoin.com/
-    #[structopt(long = "tx-source-url", required_unless = "offline")]
-    pub tx_source_urls: Option<Vec<String>>,
 
     /// How many seconds to wait between polling.
     #[structopt(long, default_value = "5", parse(try_from_str=parse_duration_in_seconds))]
@@ -133,22 +128,7 @@ impl Config {
         }
 
         // Otherwise create a quorum set that includes all of the peers we know about.
-        let node_ids = self
-            .peers_config
-            .peers
-            .clone()
-            .unwrap_or_default()
-            .iter()
-            .map(|p| {
-                p.responder_id().unwrap_or_else(|e| {
-                    panic!(
-                        "Could not get responder_id from uri {}: {:?}",
-                        p.to_string(),
-                        e
-                    )
-                })
-            })
-            .collect::<Vec<ResponderId>>();
+        let node_ids = self.peers_config.responder_ids();
         QuorumSet::new_with_node_ids(node_ids.len() as u32, node_ids)
     }
 
@@ -259,19 +239,31 @@ pub struct PeersConfig {
     /// validator nodes to connect to.
     #[structopt(long = "peer", required_unless = "offline")]
     pub peers: Option<Vec<ConsensusClientUri>>,
+
+    /// URLs to use for transaction data.
+    ///
+    /// For example: https://s3-us-west-1.amazonaws.com/mobilecoin.chain/node1.test.mobilecoin.com/
+    #[structopt(long = "tx-source-url", required_unless_one = &["offline", "kafka-source-url"])]
+    pub tx_source_urls: Option<Vec<String>>,
+
+    #[structopt(long = "kafka-source-url", required_unless_one = &["offline", "tx-source-url"])]
+    pub kafka_source_urls: Option<Vec<String>>,
 }
 
 impl PeersConfig {
     pub fn responder_ids(&self) -> Vec<ResponderId> {
         self.peers
-            .clone()
-            .unwrap_or_default()
-            .iter()
-            .map(|peer| {
-                peer.responder_id()
-                    .expect("Could not get responder_id from peer")
+            .as_ref()
+            .map(|peers| {
+                peers
+                    .iter()
+                    .map(|peer| {
+                        peer.responder_id()
+                            .expect("Could not get responder_id from peer")
+                    })
+                    .collect()
             })
-            .collect()
+            .unwrap_or_default()
     }
 
     pub fn create_peers(
@@ -281,20 +273,23 @@ impl PeersConfig {
         logger: Logger,
     ) -> Vec<ThickClient<HardcodedCredentialsProvider>> {
         self.peers
-            .clone()
-            .unwrap_or_default()
-            .iter()
-            .map(|client_uri| {
-                ThickClient::new(
-                    client_uri.clone(),
-                    verifier.clone(),
-                    grpc_env.clone(),
-                    HardcodedCredentialsProvider::from(client_uri),
-                    logger.clone(),
-                )
-                .expect("Could not create thick client.")
+            .as_ref()
+            .map(|peers| {
+                peers
+                    .iter()
+                    .map(|client_uri| {
+                        ThickClient::new(
+                            client_uri.clone(),
+                            verifier.clone(),
+                            grpc_env.clone(),
+                            HardcodedCredentialsProvider::from(client_uri),
+                            logger.clone(),
+                        )
+                        .expect("Could not create thick client.")
+                    })
+                    .collect()
             })
-            .collect()
+            .unwrap_or_default()
     }
 
     pub fn create_peer_manager(
@@ -311,5 +306,16 @@ impl PeersConfig {
         let peers = self.create_peers(verifier, grpc_env, logger.clone());
 
         ConnectionManager::new(peers, logger.clone())
+    }
+
+    pub fn get_kafka_sources(&self) -> Vec<KafkaSubscriberConfig> {
+        self.kafka_source_urls
+            .as_ref()
+            .map(|urls| {
+                urls.iter()
+                    .map(|url| KafkaSubscriberConfig::try_from(url).expect("meh"))
+                    .collect::<Vec<_>>()
+            })
+            .unwrap_or_default()
     }
 }

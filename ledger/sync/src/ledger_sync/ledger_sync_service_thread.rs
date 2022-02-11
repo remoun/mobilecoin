@@ -3,7 +3,10 @@
 //! An integration between `PollingNetworkState` and `LedgerSyncService` that
 //! performs the sync in a background thread.
 
-use crate::{LedgerSync, LedgerSyncService, PollingNetworkState, TransactionsFetcher};
+use crate::{
+    KafkaTransactionsListener, LedgerSync, LedgerSyncService, PollingNetworkState,
+    TransactionsFetcher,
+};
 use mc_common::logger::{log, Logger};
 use mc_connection::{BlockchainConnection, ConnectionManager};
 use mc_ledger_db::Ledger;
@@ -35,6 +38,7 @@ impl LedgerSyncServiceThread {
         manager: ConnectionManager<BC>,
         network_state: Arc<RwLock<PollingNetworkState<BC>>>,
         transactions_fetcher: TF,
+        transactions_listener: Arc<KafkaTransactionsListener>,
         poll_interval: Duration,
         logger: Logger,
     ) -> Self {
@@ -42,6 +46,7 @@ impl LedgerSyncServiceThread {
             ledger.clone(),
             manager,
             transactions_fetcher,
+            transactions_listener,
             logger.clone(),
         );
 

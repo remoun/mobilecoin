@@ -16,7 +16,10 @@ use mc_consensus_scp::QuorumSet;
 use mc_crypto_keys::{CompressedRistrettoPublic, RistrettoPublic};
 use mc_fog_report_validation::FogResolver;
 use mc_ledger_db::{Ledger, LedgerDB};
-use mc_ledger_sync::{LedgerSyncServiceThread, PollingNetworkState, ReqwestTransactionsFetcher};
+use mc_ledger_sync::{
+    KafkaTransactionsListener, LedgerSyncServiceThread, PollingNetworkState,
+    ReqwestTransactionsFetcher,
+};
 use mc_slam::SlamConfig;
 use mc_transaction_core::{
     constants::MILLIMOB_TO_PICOMOB,
@@ -289,11 +292,14 @@ fn main() {
 
         let mut next_block_idx = ledger_db.num_blocks().unwrap();
 
+        let transactions_listener =
+            Arc::new(KafkaTransactionsListener::new(&[], logger.clone()).unwrap());
         let _ledger_sync_service_thread = LedgerSyncServiceThread::new(
             ledger_db.clone(),
             peer_manager,
             network_state,
             transactions_fetcher,
+            transactions_listener,
             Duration::from_secs(1),
             logger.clone(),
         );

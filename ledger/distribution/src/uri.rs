@@ -1,14 +1,18 @@
 // Copyright (c) 2018-2021 The MobileCoin Foundation
 
+use core::convert::TryFrom;
 use displaydoc::Display;
 use rusoto_core::{region::ParseRegionError, Region};
 use std::{path::PathBuf, str::FromStr};
 use url::Url;
 
+use mc_ledger_sync::KafkaSubscriberConfig;
+
 #[derive(Clone, Debug)]
 pub enum Destination {
-    S3 { path: PathBuf, region: Region },
+    Kafka { config: KafkaSubscriberConfig },
     Local { path: PathBuf },
+    S3 { path: PathBuf, region: Region },
 }
 
 #[derive(Clone, Debug)]
@@ -27,6 +31,9 @@ pub enum UriParseError {
 
     /// Unknown scheme: {0}
     UnknownScheme(String),
+
+    /// Missing host
+    MissingBroker,
 
     /// Missing path
     MissingPath,
@@ -79,6 +86,11 @@ impl FromStr for Uri {
                 Destination::Local {
                     path: PathBuf::from(path),
                 }
+            }
+
+            "kafka" => {
+                let config = KafkaSubscriberConfig::try_from(src).expect("meh");
+                Destination::Kafka { config }
             }
 
             _ => return Err(UriParseError::UnknownScheme(url.scheme().to_string())),

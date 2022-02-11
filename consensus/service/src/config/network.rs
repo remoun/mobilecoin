@@ -4,9 +4,10 @@
 
 use mc_common::{HashMap, HashSet, NodeID, ResponderId};
 use mc_consensus_scp::{QuorumSet, QuorumSetMember};
+use mc_ledger_sync::KafkaSubscriberConfig;
 use mc_util_uri::{ConnectionUri, ConsensusPeerUri as PeerUri};
 use serde::{Deserialize, Serialize};
-use std::{fs, path::Path};
+use std::{convert::TryFrom, fs, path::Path};
 
 /// Consensus network configuration.
 #[derive(Clone, Debug, Serialize, Deserialize, Eq, PartialEq, Hash)]
@@ -19,6 +20,9 @@ pub struct NetworkConfig {
 
     /// List of URLs to use for transaction data.
     pub tx_source_urls: Vec<String>,
+
+    /// List of Kafka source URLs
+    pub kafka_source_urls: Vec<String>,
 
     /// Optional list of peers we are aware of.
     pub known_peers: Option<Vec<PeerUri>>,
@@ -153,6 +157,13 @@ impl NetworkConfig {
             new_members.push(new_member);
         }
         QuorumSet::new(src.threshold, new_members)
+    }
+
+    pub fn kafka_sources(&self) -> Vec<KafkaSubscriberConfig> {
+        self.kafka_source_urls
+            .iter()
+            .map(|s| KafkaSubscriberConfig::try_from(s).expect("meh"))
+            .collect()
     }
 }
 

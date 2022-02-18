@@ -197,6 +197,7 @@ class Node:
         peer_names = [peer.name for peer in self.peers]
         known_peers = [node.peer_uri() for node in network.nodes if node.name not in peer_names and node.name != self.name]
         tx_source_urls = [f'file://{node.ledger_distribution_dir}' for node in network.nodes if node.name in peer_names]
+        kafka_source_urls = [f'kafka://localhost:9092/node-ledger-{node.name}'  for node in network.nodes if node.name in peer_names]
 
         # Our quorum set and associated JSON
         quorum_set = {
@@ -204,6 +205,7 @@ class Node:
             'broadcast_peers': peer_uris,
             'known_peers': known_peers,
             'tx_source_urls': tx_source_urls,
+            'kafka_source_urls': kafka_source_urls,
         }
         network_json_path = os.path.join(WORK_DIR, f'node{self.node_num}-network.json')
         with open(network_json_path, 'w') as f:
@@ -262,6 +264,7 @@ class Node:
             f'cd {PROJECT_DIR} && exec {TARGET_DIR}/ledger-distribution',
             f'--ledger-path {self.ledger_dir}',
             f'--dest "file://{self.ledger_distribution_dir}"',
+            f'--dest "kafka://localhost:9092/node-ledger-{self.name}"',
             f'--state-file {WORK_DIR}/ledger-distribution-state-{self.node_num}',
         ])
         print(f'Starting local ledger distribution: {cmd}')
@@ -314,6 +317,7 @@ class Mobilecoind:
 
         peers = [f'--peer "insecure-mc://localhost:{node.client_port}/"' for node in network.nodes]
         tx_srcs = [f'--tx-source-url "file://{node.ledger_distribution_dir}"' for node in network.nodes]
+        tx_srcs += [f'--kafka-source-url "kafka://localhost:9092/node-ledger-{node.name}"' for node in network.nodes]
 
         cmd = ' '.join([
             f'cd {PROJECT_DIR} && exec {TARGET_DIR}/mobilecoind',
@@ -336,6 +340,7 @@ class Mobilecoind:
                 return self.stop()
             print('Waiting for watcher db to become available')
             time.sleep(1)
+
 
     def stop(self):
         if self.process:
@@ -558,8 +563,8 @@ class Network:
             self.build_binaries()
 
         self.start()
-        self.wait()
-        self.stop()
+        if not self.wait():
+            self.stop()
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Local network tester')

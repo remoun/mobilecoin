@@ -5,7 +5,7 @@
 
 use clap::{Parser, Subcommand};
 use mc_crypto_keys::CompressedRistrettoPublic;
-use mc_util_parse::parse_duration_in_seconds;
+use mc_util_parse::parse_duration;
 use std::time::Duration;
 
 /// Configuration parameters for the Fog ingest client
@@ -17,7 +17,7 @@ pub struct IngestConfig {
     pub uri: String,
 
     /// How long to retry if unavailable, this is useful for tests
-    #[clap(long, short, default_value = "10", parse(try_from_str = parse_duration_in_seconds), env = "MC_RETRY_SECONDS")]
+    #[clap(long, short, default_value = "10", parse(try_from_str = parse_duration), env = "MC_RETRY_SECONDS")]
     pub retry_seconds: Duration,
 
     /// The command to run.

@@ -13,7 +13,7 @@ use mc_fog_report_connection::GrpcFogReportConnection;
 use mc_fog_report_validation::FogResolver;
 use mc_mobilecoind_api::MobilecoindUri;
 use mc_sgx_css::Signature;
-use mc_util_parse::{load_css_file, parse_duration_in_seconds};
+use mc_util_parse::{load_css_file, parse_duration};
 use mc_util_uri::{ConnectionUri, ConsensusClientUri, FogUri};
 #[cfg(feature = "ip-check")]
 use reqwest::{
@@ -69,7 +69,7 @@ pub struct Config {
     pub tx_source_urls: Option<Vec<String>>,
 
     /// How many seconds to wait between polling.
-    #[clap(long, default_value = "5", parse(try_from_str = parse_duration_in_seconds), env = "MC_POLL_INTERVAL")]
+    #[clap(long, default_value = "5", parse(try_from_str = parse_duration), env = "MC_POLL_INTERVAL")]
     pub poll_interval: Duration,
 
     // Mobilecoind specific arguments

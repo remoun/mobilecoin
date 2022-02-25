@@ -8,7 +8,7 @@ use mc_attest_core::ProviderId;
 use mc_common::ResponderId;
 use mc_fog_sql_recovery_db::SqlRecoveryDbConnectionConfig;
 use mc_fog_uri::{FogIngestUri, IngestPeerUri};
-use mc_util_parse::parse_duration_in_seconds;
+use mc_util_parse::parse_duration;
 use mc_util_uri::AdminUri;
 use serde::Serialize;
 use std::{path::PathBuf, time::Duration};
@@ -85,13 +85,13 @@ pub struct IngestConfig {
 
     /// How often the active server checks up on each of the peer backups
     /// Defaults to once a minute
-    #[clap(long, default_value = "60", parse(try_from_str = parse_duration_in_seconds), env = "MC_PEER_CHECKUP_PERIOD")]
+    #[clap(long, default_value = "60", parse(try_from_str = parse_duration), env = "MC_PEER_CHECKUP_PERIOD")]
     pub peer_checkup_period: Duration,
 
     /// The amount of time we wait for the watcher db to catchup if it falls
     /// behind If this timeout is exceeded then the ETxOut's will have no
     /// timestamp
-    #[clap(long, default_value = "5", parse(try_from_str = parse_duration_in_seconds), env = "MC_WATCHER_TIMEOUT")]
+    #[clap(long, default_value = "5", parse(try_from_str = parse_duration), env = "MC_WATCHER_TIMEOUT")]
     pub watcher_timeout: Duration,
 
     /// Optional admin listening URI.

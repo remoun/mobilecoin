@@ -4,7 +4,7 @@
 //! Configuration parameters for the watcher test utility.
 
 use clap::Parser;
-use mc_util_parse::parse_duration_in_seconds;
+use mc_util_parse::parse_duration;
 use mc_util_uri::{ConsensusClientUri, WatcherUri};
 use serde::{Deserialize, Serialize};
 use std::{fs, path::PathBuf, str::FromStr, time::Duration};
@@ -36,7 +36,7 @@ pub struct WatcherConfig {
     pub max_block_height: Option<u64>,
 
     /// How many seconds to wait between polling.
-    #[clap(long, default_value = "1", parse(try_from_str = parse_duration_in_seconds), env = "MC_POLL_INTERVAL")]
+    #[clap(long, default_value = "1", parse(try_from_str = parse_duration), env = "MC_POLL_INTERVAL")]
     pub poll_interval: Duration,
     /// Store block data for every fetched block.
     #[clap(long, env = "MC_STORE_BLOCK_DATA")]

@@ -8,7 +8,7 @@ use mc_common::logger::{log, Logger};
 use mc_fog_sample_paykit::{AccountKey, TokenId};
 use mc_fog_uri::{FogLedgerUri, FogViewUri};
 use mc_util_grpc::GrpcRetryConfig;
-use mc_util_parse::parse_duration_in_seconds;
+use mc_util_parse::parse_duration;
 use mc_util_uri::{AdminUri, ConsensusClientUri};
 use serde::Serialize;
 use std::{path::PathBuf, time::Duration};
@@ -78,13 +78,13 @@ pub struct TestClientConfig {
     /// Seconds to wait for a transaction to clear, before it has exceeded
     /// deadline. The healthy status will be set false if we exceed this
     /// deadline.
-    #[clap(long, default_value = "5", parse(try_from_str = parse_duration_in_seconds), env = "MC_CONSENSUS_WAIT")]
+    #[clap(long, default_value = "5", parse(try_from_str = parse_duration), env = "MC_CONSENSUS_WAIT")]
     pub consensus_wait: Duration,
 
     /// Seconds to wait for ledger sync on fog
     /// This affects the double-spend test but not the continuous mode of
     /// operation.
-    #[clap(long, default_value = "5", parse(try_from_str = parse_duration_in_seconds), env = "MC_LEDGER_SYNC_WAIT")]
+    #[clap(long, default_value = "5", parse(try_from_str = parse_duration), env = "MC_LEDGER_SYNC_WAIT")]
     pub ledger_sync_wait: Duration,
 
     /// Number of transactions to attempt (only when not running continuously)
@@ -95,7 +95,7 @@ pub struct TestClientConfig {
     /// test transfers
     ///
     /// By default the pause is 15 minutes.
-    #[clap(long, default_value = "900", parse(try_from_str = parse_duration_in_seconds), env = "MC_TRANSFER_PERIOD")]
+    #[clap(long, default_value = "900", parse(try_from_str = parse_duration), env = "MC_TRANSFER_PERIOD")]
     pub transfer_period: Duration,
 
     /// Amount to transfer per transaction

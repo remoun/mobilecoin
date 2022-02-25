@@ -14,7 +14,7 @@ use mc_attest_core::ProviderId;
 use mc_common::{NodeID, ResponderId};
 use mc_crypto_keys::{DistinguishedEncoding, Ed25519Pair, Ed25519Private};
 use mc_transaction_core::BlockVersion;
-use mc_util_parse::parse_duration_in_seconds;
+use mc_util_parse::parse_duration;
 use mc_util_uri::{AdminUri, ConsensusClientUri as ClientUri, ConsensusPeerUri as PeerUri};
 use std::{fmt::Debug, path::PathBuf, str::FromStr, sync::Arc, time::Duration};
 
@@ -104,7 +104,7 @@ pub struct Config {
     /// Maximal client authentication token lifetime, in seconds (only relevant
     /// when --client-auth-token-secret is used. Defaults to 86400 - 24
     /// hours).
-    #[clap(long, default_value = "86400", parse(try_from_str = parse_duration_in_seconds), env = "MC_CLIENT_AUTH_TOKEN_MAX_LIFETIME")]
+    #[clap(long, default_value = "86400", parse(try_from_str = parse_duration), env = "MC_CLIENT_AUTH_TOKEN_MAX_LIFETIME")]
     pub client_auth_token_max_lifetime: Duration,
 
     /// The location for the network.toml/json configuration file.

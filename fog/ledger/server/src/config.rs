@@ -8,7 +8,7 @@ use clap::Parser;
 use mc_attest_core::ProviderId;
 use mc_common::ResponderId;
 use mc_fog_uri::FogLedgerUri;
-use mc_util_parse::parse_duration_in_seconds;
+use mc_util_parse::parse_duration;
 use mc_util_uri::AdminUri;
 use serde::Serialize;
 use std::{path::PathBuf, time::Duration};
@@ -56,7 +56,7 @@ pub struct LedgerServerConfig {
     /// Maximal client authentication token lifetime, in seconds (only relevant
     /// when --client-auth-token-secret is used. Defaults to 86400 - 24
     /// hours).
-    #[clap(long, default_value = "86400", parse(try_from_str = parse_duration_in_seconds), env = "MC_CLIENT_AUTH_TOKEN_MAX_LIFETIME")]
+    #[clap(long, default_value = "86400", parse(try_from_str = parse_duration), env = "MC_CLIENT_AUTH_TOKEN_MAX_LIFETIME")]
     pub client_auth_token_max_lifetime: Duration,
 
     /// The capacity to build the OMAP (ORAM hash table) with.

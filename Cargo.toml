@@ -103,6 +103,7 @@ members = [
     "ledger/migration",
     "ledger/sync",
     "ledger/streaming/api",
+    "ledger/streaming/client",
     "libmobilecoin",
     "mint-auditor",
     "mint-auditor/api",

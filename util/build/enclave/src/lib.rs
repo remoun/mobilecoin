@@ -91,10 +91,10 @@ pub enum Error {
     /// The enclave staticlib's crate name was in a screwy format
     TrustedCrateName,
 
-    /// The enclave staticlib's crate name was in a screwy format
+    /// Failed to link the enclave to the target location.
     TrustedLink,
 
-    /// The enclave staticlib's crate name was in a screwy format
+    /// Failed to build the trusted enclave failed to build.
     TrustedBuild,
 }
 
@@ -272,12 +272,6 @@ impl Builder {
             signature: None,
             lds: None,
         })
-    }
-
-    /// Set a new "base" target dir to use when building an enclave
-    pub fn target_dir(&mut self, target_dir: &Path) -> &mut Self {
-        self.cargo_builder.target_dir(target_dir);
-        self
     }
 
     /// Add rust flags to use when building an enclave.
@@ -642,13 +636,13 @@ impl Builder {
             )?;
         }
 
+        // Build the enclave staticlib.
+        self.build_enclave()?;
+
         let sim_postfix = match self.sgx_mode {
             SgxMode::Hardware => "",
             SgxMode::Simulation => "_sim",
         };
-
-        // "target/mc_foo_enclave"
-        let staticlib_target_dir = self.target_dir.join(&self.name);
 
         // e.g. "mc_foo_enclave_trusted"
         let staticlib_crate_name = self.staticlib.workspace_members[0]
@@ -657,17 +651,16 @@ impl Builder {
             .next()
             .ok_or(Error::TrustedCrateName)?;
 
-        // "target/name/<profile>/libmc_foo_enclave_trusted.a" -- not xplatform, but
+        // "target/<profile>/libmc_foo_enclave_trusted.a" -- not xplatform, but
         // neither is our use of SGX, so meh.
         let mut static_archive_name = "lib".to_owned();
-        // libnames are not kebab, crate names are
+        // crate names are kebab-case, libnames are not.
         static_archive_name.push_str(&staticlib_crate_name.replace("-", "_"));
 
-        let mut static_archive = staticlib_target_dir.join(ENCLAVE_TARGET_TRIPLE);
+        let mut static_archive = self.profile_target_dir.join(ENCLAVE_TARGET_TRIPLE);
         static_archive.push(&self.profile);
         static_archive.push(static_archive_name);
         static_archive.set_extension("a");
-        self.build_enclave()?;
 
         // Note: Some of the linker flags here are important for security [1]
         //
@@ -780,6 +773,8 @@ impl Builder {
 
     /// Run cargo to build the static archive.
     fn build_enclave(&mut self) -> Result<(), Error> {
+        self.cargo_builder.target_dir(&self.target_dir);
+
         if self.cargo_builder.construct().status()?.success() {
             Ok(())
         } else {

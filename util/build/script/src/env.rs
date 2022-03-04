@@ -8,7 +8,7 @@ use std::{
     borrow::ToOwned,
     collections::{hash_map::Iter as HashMapIter, hash_set::Iter as HashSetIter, HashMap, HashSet},
     convert::TryFrom,
-    env::{split_paths, var, var_os, vars, VarError},
+    env::{split_paths, var_os, vars, VarError},
     num::ParseIntError,
     path::{Path, PathBuf},
     str::FromStr,
@@ -101,10 +101,9 @@ impl From<TargetFamilyError> for EnvironmentError {
 
 fn read_depvars() -> HashMap<String, String> {
     vars()
-        .filter_map(|(mut key, value)| {
-            if key.starts_with("DEP_") {
-                key.replace_range(.."DEP_".len(), "");
-                Some((key, value))
+        .filter_map(|(key, value)| {
+            if let Some(key) = key.strip_prefix("DEP_") {
+                Some((key.to_owned(), value))
             } else {
                 None
             }
@@ -115,12 +114,9 @@ fn read_depvars() -> HashMap<String, String> {
 /// Collect all the cargo features currently set.
 fn read_features() -> HashSet<String> {
     vars()
-        .filter_map(|(mut key, _value)| {
-            if key.starts_with("CARGO_FEATURE_") {
-                key.replace_range(.."CARGO_FEATURE_".len(), "");
-                while let Some(pos) = key.find('_') {
-                    key.replace_range(pos..=pos, "-");
-                }
+        .filter_map(|(key, _value)| {
+            if let Some(key) = key.strip_prefix("CARGO_FEATURE_") {
+                let mut key = key.replace("_", "-");
                 key.make_ascii_lowercase();
                 Some(key)
             } else {
@@ -130,10 +126,13 @@ fn read_features() -> HashSet<String> {
         .collect()
 }
 
+fn var(key: &str) -> Result<String, EnvironmentError> {
+    std::env::var(key).map_err(|e| EnvironmentError::Var(key.to_owned(), e))
+}
+
 /// Parse an integer from a string
 fn parse_int_var<T: FromStr<Err = ParseIntError>>(env_var: &str) -> Result<T, EnvironmentError> {
-    var(env_var)
-        .map_err(|e| EnvironmentError::Var(env_var.to_owned(), e))?
+    var(env_var)?
         .parse::<T>()
         .map_err(|e| EnvironmentError::ParseInt(env_var.to_owned(), e))
 }
@@ -216,13 +215,9 @@ impl Default for Environment {
 impl Environment {
     /// Construct a new build configuration structure, or die trying.
     pub fn new() -> Result<Environment, EnvironmentError> {
-        let out_dir = PathBuf::from(
-            var(ENV_OUT_DIR).map_err(|e| EnvironmentError::Var(ENV_OUT_DIR.to_owned(), e))?,
-        );
-        let target =
-            var(ENV_TARGET).map_err(|e| EnvironmentError::Var(ENV_TARGET.to_owned(), e))?;
-        let profile =
-            var(ENV_PROFILE).map_err(|e| EnvironmentError::Var(ENV_PROFILE.to_owned(), e))?;
+        let out_dir = PathBuf::from(var(ENV_OUT_DIR)?);
+        let target = var(ENV_TARGET)?;
+        let profile = var(ENV_PROFILE)?;
         let profile_target_dir = out_dir
             .as_path()
             .ancestors()
@@ -273,32 +268,24 @@ impl Environment {
 
         Ok(Self {
             // CARGO_*
-            cargo_path: var(ENV_CARGO)
-                .map_err(|e| EnvironmentError::Var(ENV_CARGO.to_owned(), e))?
-                .into(),
+            cargo_path: var(ENV_CARGO)?.into(),
             locked: var(ENV_CARGO_LOCKED).is_ok(),
 
             // CARGO_MANIFEST_*
-            manifest_dir: var(ENV_CARGO_MANIFEST_DIR)
-                .map_err(|e| EnvironmentError::Var(ENV_CARGO_MANIFEST_DIR.to_owned(), e))?
-                .into(),
+            manifest_dir: var(ENV_CARGO_MANIFEST_DIR)?.into(),
             manifest_links: var(ENV_CARGO_MANIFEST_LINKS).ok(),
 
             // Other variables
             debug: var(ENV_DEBUG).is_ok(),
-            host: var(ENV_HOST).map_err(|e| EnvironmentError::Var(ENV_HOST.to_owned(), e))?,
+            host: var(ENV_HOST)?,
             linker,
             num_jobs: parse_int_var(ENV_NUM_JOBS)?,
             out_path: out_dir,
             opt_level: parse_int_var(ENV_OPT_LEVEL)?,
             profile,
-            rustc: var(ENV_RUSTC)
-                .map_err(|e| EnvironmentError::Var(ENV_RUSTC.to_owned(), e))?
-                .into(),
-            rustdoc: var(ENV_RUSTDOC)
-                .map_err(|e| EnvironmentError::Var(ENV_RUSTDOC.to_owned(), e))?
-                .into(),
-            target: var(ENV_TARGET).map_err(|e| EnvironmentError::Var(ENV_TARGET.to_owned(), e))?,
+            rustc: var(ENV_RUSTC)?.into(),
+            rustdoc: var(ENV_RUSTDOC)?.into(),
+            target: var(ENV_TARGET)?,
 
             // CARGO_FEATURE_*
             features,
@@ -306,8 +293,7 @@ impl Environment {
             depvars,
 
             // CARGO_PKG_*
-            pkg_version: var(ENV_CARGO_PKG_VERSION)
-                .map_err(|e| EnvironmentError::Var(ENV_CARGO_PKG_VERSION.to_owned(), e))?,
+            pkg_version: var(ENV_CARGO_PKG_VERSION)?,
             version_major: parse_int_var(ENV_CARGO_PKG_VERSION_MAJOR)?,
             version_minor: parse_int_var(ENV_CARGO_PKG_VERSION_MINOR)?,
             version_patch: parse_int_var(ENV_CARGO_PKG_VERSION_PATCH)?,
@@ -319,58 +305,37 @@ impl Environment {
                         Some(value)
                     }
                 }
-                Err(VarError::NotPresent) => None,
+                Err(EnvironmentError::Var(_, VarError::NotPresent)) => None,
                 Err(other) => {
-                    return Err(EnvironmentError::Var(
-                        ENV_CARGO_PKG_VERSION_PRE.to_owned(),
-                        other,
-                    ))
+                    return Err(other);
                 }
             },
-            authors: var(ENV_CARGO_PKG_AUTHORS)
-                .map_err(|e| EnvironmentError::Var(ENV_CARGO_PKG_AUTHORS.to_owned(), e))?
+            authors: var(ENV_CARGO_PKG_AUTHORS)?
                 .split(':')
                 .map(ToOwned::to_owned)
                 .collect(),
-            name: var(ENV_CARGO_PKG_NAME)
-                .map_err(|e| EnvironmentError::Var(ENV_CARGO_PKG_NAME.to_owned(), e))?,
-            description: var(ENV_CARGO_PKG_DESCRIPTION)
-                .map_err(|e| EnvironmentError::Var(ENV_CARGO_PKG_DESCRIPTION.to_owned(), e))?,
-            homepage: var(ENV_CARGO_PKG_HOMEPAGE)
-                .map_err(|e| EnvironmentError::Var(ENV_CARGO_PKG_HOMEPAGE.to_owned(), e))?,
-            repository: var(ENV_CARGO_PKG_REPOSITORY)
-                .map_err(|e| EnvironmentError::Var(ENV_CARGO_PKG_REPOSITORY.to_owned(), e))?,
+            name: var(ENV_CARGO_PKG_NAME)?,
+            description: var(ENV_CARGO_PKG_DESCRIPTION)?,
+            homepage: var(ENV_CARGO_PKG_HOMEPAGE)?,
+            repository: var(ENV_CARGO_PKG_REPOSITORY)?,
 
             // CARGO_CFG_*
             debug_assertions: var(ENV_CARGO_CFG_DEBUG_ASSERTIONS).is_ok(),
             proc_macro: var(ENV_CARGO_CFG_PROC_MACRO).is_ok(),
-            target_arch: var(ENV_CARGO_CFG_TARGET_ARCH)
-                .map_err(|e| EnvironmentError::Var(ENV_CARGO_CFG_TARGET_ARCH.to_owned(), e))?,
-            target_endian: Endianness::try_from(
-                var(ENV_CARGO_CFG_TARGET_ENDIAN)
-                    .map_err(|e| EnvironmentError::Var(ENV_CARGO_CFG_TARGET_ENDIAN.to_owned(), e))?
-                    .as_str(),
-            )?,
-            target_env: var(ENV_CARGO_CFG_TARGET_ENV)
-                .map_err(|e| EnvironmentError::Var(ENV_CARGO_CFG_TARGET_ENV.to_owned(), e))?,
-            target_family: TargetFamily::try_from(
-                var(ENV_CARGO_CFG_TARGET_FAMILY)
-                    .map_err(|e| EnvironmentError::Var(ENV_CARGO_CFG_TARGET_FAMILY.to_owned(), e))?
-                    .as_ref(),
-            )?,
-            target_features: var(ENV_CARGO_CFG_TARGET_FEATURE)
-                .map_err(|e| EnvironmentError::Var(ENV_CARGO_CFG_TARGET_FEATURE.to_owned(), e))?
+            target_arch: var(ENV_CARGO_CFG_TARGET_ARCH)?,
+            target_endian: Endianness::try_from(var(ENV_CARGO_CFG_TARGET_ENDIAN)?.as_str())?,
+            target_env: var(ENV_CARGO_CFG_TARGET_ENV)?,
+            target_family: TargetFamily::try_from(var(ENV_CARGO_CFG_TARGET_FAMILY)?.as_ref())?,
+            target_features: var(ENV_CARGO_CFG_TARGET_FEATURE)?
                 .split(',')
                 .map(ToOwned::to_owned)
                 .collect(),
             target_has_atomic,
             target_has_atomic_load_store,
-            target_os: var(ENV_CARGO_CFG_TARGET_OS)
-                .map_err(|e| EnvironmentError::Var(ENV_CARGO_CFG_TARGET_OS.to_owned(), e))?,
+            target_os: var(ENV_CARGO_CFG_TARGET_OS)?,
             target_pointer_width: parse_int_var(ENV_CARGO_CFG_TARGET_POINTER_WIDTH)?,
             target_thread_local: var(ENV_CARGO_CFG_TARGET_THREAD_LOCAL).is_ok(),
-            target_vendor: var(ENV_CARGO_CFG_TARGET_VENDOR)
-                .map_err(|e| EnvironmentError::Var(ENV_CARGO_CFG_TARGET_VENDOR.to_owned(), e))?,
+            target_vendor: var(ENV_CARGO_CFG_TARGET_VENDOR)?,
 
             // Derived variables
             target_dir,

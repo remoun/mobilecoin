@@ -1,0 +1,57 @@
+name: Set up Rust and associated tools
+
+on:
+  workflow_call:
+    inputs:
+      env_file:
+        description: Path to write env vars
+        required: true
+        type: string
+      sccache:
+        description: Whether to use sccache
+        type: boolean
+        default: true
+        required: false
+
+jobs:
+  setup:
+    steps:
+      - name: Install Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          components: [rustfmt, clippy]
+      - name: Set up sccache
+        if: ${{ inputs.sccache }}
+        run: |
+          command -v sccache >/dev/null || rustup run --install stable cargo install sccache
+          # Set up env vars
+          ENV_FILE=${{ inputs.env_file }}
+          echo 'export RUSTC_WRAPPER=sccache' >> $ENV_FILE
+          echo 'export CMAKE_C_COMPILER_LAUNCHER=sccache' >> $ENV_FILE
+          echo 'export CMAKE_CXX_COMPILER_LAUNCHER=sccache' >> $ENV_FILE
+          # sccache doesn't support incremental building
+          echo 'export CARGO_INCREMENTAL=0' >> $ENV_FILE
+          # Set cache dir explicitly so that all platforms use the same location
+          echo 'export SCCACHE_DIR=$HOME/.cache/sccache' >> $ENV_FILE
+          # Tune some params
+          echo 'export SCCACHE_IDLE_TIMEOUT=1200' >> $ENV_FILE
+          echo 'export SCCACHE_CACHE_SIZE=1G' >> $ENV_FILE
+          echo 'export SCCACHE_ERROR_LOG=/tmp/sccache.log' >> $ENV_FILE
+      - name: Set up other dependencies
+        run: |
+          command -v cargo2junit >/dev/null || rustup run --install stable cargo install cargo2junit
+          command -v cargo-cache >/dev/null || rustup run --install stable cargo install cargo-cache
+      - name: Set up env vars
+        run: |
+          ENV_FILE=${{ inputs.env_file }}
+          # build config
+          echo 'export IAS_MODE=DEV' >> $ENV_FILE
+          echo 'export SGX_MODE=SW' >> $ENV_FILE
+          # test/run config
+          echo 'export RUST_BACKTRACE=1' >> $ENV_FILE
+          echo 'export SKIP_SLOW_TESTS=1' >> $ENV_FILE
+
+          HOST_TARGET_TRIPLE="$(rustc -Vv | sed -n 's/^host: //p')"
+          echo "export HOST_TARGET_TRIPLE=\"$HOST_TARGET_TRIPLE\"" >> $ENV_FILE
+      - name: Set up dependency cache
+        uses: Swatinem/rust-cache@v1

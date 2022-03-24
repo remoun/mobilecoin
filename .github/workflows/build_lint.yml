@@ -7,6 +7,7 @@ on:
       - master
       - main
       - develop
+      - add-gh-ci # DO NOT MERGE
   workflow_dispatch:
 
 env:

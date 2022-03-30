@@ -4548,15 +4548,21 @@ version = "1.3.0-pre0"
 dependencies = [
  "cargo-emit",
  "displaydoc",
- "futures 0.3.21",
+ "futures",
  "grpcio",
  "mc-api",
+ "mc-attest-core",
  "mc-common",
  "mc-consensus-scp",
+ "mc-crypto-digestible",
+ "mc-crypto-keys",
  "mc-transaction-core",
  "mc-util-build-grpc",
  "mc-util-build-script",
+ "mc-util-from-random",
  "protobuf",
+ "rand_core 0.6.3",
+ "rand_hc 0.3.1",
 ]
 
 [[package]]
@@ -4565,16 +4571,19 @@ version = "1.3.0-pre0"
 dependencies = [
  "cargo-emit",
  "displaydoc",
- "futures 0.3.21",
+ "futures",
  "grpcio",
  "mc-common",
+ "mc-crypto-keys",
  "mc-ledger-streaming-api",
  "mc-transaction-core",
  "mc-util-build-grpc",
  "mc-util-build-script",
+ "mc-util-from-random",
  "mc-util-grpc",
  "mc-util-uri",
- "protobuf",
+ "rand_core 0.6.3",
+ "rand_hc 0.3.1",
 ]
 
 [[package]]

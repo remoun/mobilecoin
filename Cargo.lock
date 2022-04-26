@@ -5039,6 +5039,8 @@ dependencies = [
  "grpcio",
  "mc-api",
  "mc-attest-core",
+ "mc-blockchain-test-utils",
+ "mc-blockchain-types",
  "mc-common",
  "mc-consensus-scp",
  "mc-crypto-digestible",
@@ -5048,11 +5050,8 @@ dependencies = [
  "mc-transaction-core",
  "mc-util-build-grpc",
  "mc-util-build-script",
- "mc-util-from-random",
+ "mc-util-test-helper",
  "protobuf",
- "rand 0.8.5",
- "rand_core 0.6.3",
- "rand_hc 0.3.1",
 ]
 
 [[package]]
@@ -5065,6 +5064,7 @@ dependencies = [
  "grpcio",
  "hashbrown 0.12.1",
  "mc-api",
+ "mc-blockchain-types",
  "mc-common",
  "mc-consensus-scp",
  "mc-crypto-keys",
@@ -5099,7 +5099,6 @@ dependencies = [
  "mc-api",
  "mc-common",
  "mc-crypto-keys",
- "mc-crypto-rand",
  "mc-ledger-db",
  "mc-ledger-streaming-api",
  "mc-util-build-grpc",

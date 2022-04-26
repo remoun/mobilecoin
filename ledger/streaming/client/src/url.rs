@@ -3,7 +3,7 @@
 //! Helper for `ArchiveBlock` and `ArchiveBlocks` URLs.
 
 use mc_api::{block_num_to_s3block_path, merged_block_num_to_s3block_path};
-use mc_transaction_core::BlockIndex;
+use mc_blockchain_types::BlockIndex;
 use std::{fmt::Display, str::FromStr};
 use url::Url;
 

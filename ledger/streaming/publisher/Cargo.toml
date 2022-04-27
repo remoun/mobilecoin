@@ -37,6 +37,7 @@ cargo-emit = "0.2"
 
 [dev-dependencies]
 mc-common = { path = "../../../common", features = ["loggers"] }
+mc-ledger-db = { path = "../../../ledger/db", features = ["test_utils"] }
 mc-ledger-streaming-api = { path = "../api", features = ["test_utils"] }
 
 async_executors = { version = "0.5", features = ["async_std", "tokio_ct", "tokio_tp"] }

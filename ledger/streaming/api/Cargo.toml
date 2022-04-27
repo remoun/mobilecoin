@@ -42,5 +42,6 @@ cargo-emit = "0.2"
 mc-blockchain-test-utils = { path = "../../../blockchain/test-utils" }
 mc-common = { path = "../../../common", features = ["loggers"] }
 mc-consensus-scp = { path = "../../../consensus/scp", features = ["test_utils"] }
+mc-ledger-db = { path = "../../../ledger/db", features = ["test_utils"] }
 mc-ledger-streaming-api = { path = "../api", features = ["test_utils"] }
 mc-util-test-helper = { path = "../../../util/test-helper" }

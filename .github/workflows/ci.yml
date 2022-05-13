@@ -25,6 +25,15 @@ jobs:
     - uses: actions/setup-python@v3
     - uses: pre-commit/action@v2.0.3
 
+  spelling:
+    name: Spell Check
+    runs-on: [self-hosted, Linux, small]
+    steps:
+    - name: Checkout Actions Repository
+      uses: actions/checkout@v3
+    - name: Spell Check Repo
+      uses: crate-ci/typos@master
+
   build-dev:
     runs-on: [self-hosted, Linux, large]
     container: mobilecoin/builder-install:v0.0.10

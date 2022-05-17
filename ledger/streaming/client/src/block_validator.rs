@@ -11,7 +11,7 @@ use mc_ledger_db::Ledger;
 use mc_ledger_streaming_api::{
     BlockData, BlockStream, Error as StreamError, Result as StreamResult,
 };
-use mc_transaction_core::{compute_block_id, ring_signature::KeyImage, BlockID};
+use mc_transaction_core::{ring_signature::KeyImage, BlockID};
 
 /// Create stream factory for validating individual blocks within a stream.
 /// Valid blocks will passed on, blocks that don't pass will pass an error.
@@ -113,20 +113,10 @@ impl<US: BlockStream + 'static, L: Ledger + Clone + 'static> BlockStream for Blo
                                 }
                             }
 
-                            // Compute the hash of the block
-                            let derived_block_id = compute_block_id(
-                                block.version,
-                                &block.parent_id,
-                                block.index,
-                                block.cumulative_txo_count,
-                                &block.root_element,
-                                &block_contents.hash(),
-                            );
-
                             // The block's ID must agree with the merkle hash of its transactions.
-                            if block.id != derived_block_id {
-                                return future::ready(Some(Err(StreamError::BlockValidation(
-                                    "Hash of transactions don't match claimed block id".to_string(),
+                            if !block.is_block_id_valid() {
+                                return future::ready(Some(Err(Error::BlockValidation(
+                                    "Invalid BlockID".to_string(),
                                 ))));
                             }
 

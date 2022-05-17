@@ -8,10 +8,9 @@ use mc_transaction_core::{
     constants::TOTAL_MOB,
     mint::MintTx,
     ring_signature::KeyImage,
-    tokens::Mob,
     tx::{TxOut, TxOutMembershipElement, TxOutMembershipProof},
     Amount, Block, BlockContents, BlockData, BlockID, BlockIndex, BlockSignature, BlockVersion,
-    Token, TokenId,
+    TokenId,
 };
 use mc_util_from_random::FromRandom;
 use rand::{rngs::StdRng, SeedableRng};
@@ -235,70 +234,7 @@ pub fn get_mock_ledger(n_blocks: usize) -> MockLedger {
 /// Creates a sequence of `Block`s and the transactions corresponding to each
 /// block.
 pub fn get_test_ledger_blocks(n_blocks: usize) -> Vec<(Block, BlockContents)> {
-    let mut rng: StdRng = SeedableRng::from_seed([1u8; 32]);
-
-    // The owner of all outputs in the mock ledger.
-    let account_key = AccountKey::random(&mut rng);
-    let value = 134_217_728; // 2^27
-    let token_id = Mob::ID;
-
-    let mut block_ids: Vec<BlockID> = Vec::with_capacity(n_blocks);
-    let mut blocks_and_contents: Vec<(Block, BlockContents)> = Vec::with_capacity(n_blocks);
-
-    for block_index in 0..n_blocks {
-        if block_index == 0 {
-            // Create the origin block.
-            let mut tx_out = TxOut::new(
-                Amount { value, token_id },
-                &account_key.default_subaddress(),
-                &RistrettoPrivate::from_random(&mut rng),
-                Default::default(),
-            )
-            .unwrap();
-            // Version 0 tx_out in the origin block don't have memos
-            tx_out.e_memo = None;
-
-            let outputs = vec![tx_out];
-            let origin_block = Block::new_origin_block(&outputs);
-            let block_contents = BlockContents {
-                outputs,
-                ..Default::default()
-            };
-            block_ids.push(origin_block.id.clone());
-            blocks_and_contents.push((origin_block, block_contents));
-        } else {
-            // Create a normal block.
-            let tx_out = TxOut::new(
-                Amount {
-                    value: 16,
-                    token_id,
-                },
-                &account_key.default_subaddress(),
-                &RistrettoPrivate::from_random(&mut rng),
-                Default::default(),
-            )
-            .unwrap();
-
-            let outputs = vec![tx_out];
-            let key_images = vec![KeyImage::from(rng.next_u64())];
-            let block_contents = BlockContents {
-                key_images,
-                outputs,
-                ..Default::default()
-            };
-
-            let block = Block::new_with_parent(
-                BlockVersion::ZERO,
-                &blocks_and_contents[block_index - 1].0,
-                &TxOutMembershipElement::default(),
-                &block_contents,
-            );
-            block_ids.push(block.id.clone());
-            blocks_and_contents.push((block, block_contents));
-        }
-    }
-
-    blocks_and_contents
+    get_custom_test_ledger_blocks(BlockVersion::ZERO, 1, 1, n_blocks, 1, 1)
 }
 
 /// Get blocks with custom content in order to simulate conditions seen in
@@ -311,6 +247,7 @@ pub fn get_test_ledger_blocks(n_blocks: usize) -> Vec<(Block, BlockContents)> {
 /// * `key_images_per_block` - number of key images per block
 /// * `max_token_id` - number of distinct token ids in blocks
 pub fn get_custom_test_ledger_blocks(
+    block_version: BlockVersion,
     outputs_per_recipient_per_block: usize,
     num_accounts: usize,
     num_blocks: usize,
@@ -320,42 +257,48 @@ pub fn get_custom_test_ledger_blocks(
     let mut rng: StdRng = SeedableRng::from_seed([1u8; 32]);
 
     // Number of total tx outputs in all blocks
-    let num_outputs: u64 =
-        (num_accounts * outputs_per_recipient_per_block * num_blocks * (max_token_id as usize + 1))
-            as u64;
-    assert!(num_outputs >= 16);
-
+    let num_outputs: u64 = (num_accounts as u64)
+        * (outputs_per_recipient_per_block as u64)
+        * (num_blocks as u64)
+        * (max_token_id + 1);
     // Initialize other defaults
     let picomob_per_output: u64 = (TOTAL_MOB / num_outputs) * 1_000_000_000_000;
     let recipients = (0..num_accounts)
         .map(|_| AccountKey::random(&mut rng).default_subaddress())
         .collect::<Vec<_>>();
-    let block_version = BlockVersion::MAX;
-    let mut blocks_and_contents: Vec<(Block, BlockContents)> = Vec::new();
-    let mut previous_block: Option<Block> = None;
 
     // Create the tx outs for all of the simulated blocks
-    for _ in 0..num_blocks as u64 {
-        let mut outputs: Vec<TxOut> = Vec::new();
-        for recipient in &recipients {
-            let tx_private_key = RistrettoPrivate::from_random(&mut rng);
-            for _ in 0..outputs_per_recipient_per_block {
-                // Create outputs for each token id in round-robin fashion
-                for token_id in 0..=max_token_id {
-                    let amount = Amount {
-                        value: picomob_per_output,
-                        token_id: token_id.into(),
-                    };
-                    let output = TxOut::new(amount, recipient, &tx_private_key, Default::default());
-                    outputs.push(output.unwrap());
-                }
-            }
-        }
+    (0..num_blocks).scan(None, |previous_block: &mut Option<Block>, _block_index| {
+        let outputs: Vec<TxOut> = recipients
+            .iter()
+            .flat_map(|recipient| {
+                let tx_private_key = RistrettoPrivate::from_random(&mut rng);
+                (0..outputs_per_recipient_per_block)
+                    .flat_map(|_| {
+                        // Create outputs for each token id in round-robin fashion
+                        (0..=max_token_id)
+                            .map(|token_id| {
+                                let amount = Amount {
+                                    value: picomob_per_output,
+                                    token_id: token_id.into(),
+                                };
+                                let mut tx_out =                                 TxOut::new(amount, recipient, &tx_private_key, Default::default())
+                                    .unwrap_or_else(|err| panic!("TxOut::new({:?}, {:?}, &tx_private_key, Default::default()) failed: {}", amount, recipient, err));
+                                    if !block_version.e_memo_feature_is_supported() {
+                                        tx_out.e_memo = None;
+                                    }
+                                    tx_out
+                            })
+                            .collect::<Vec<_>>()
+                    })
+                    .collect::<Vec<_>>()
+            })
+            .collect();
 
         // Create key images unless we're at the origin block
         let key_images: Vec<KeyImage> = if previous_block.is_some() {
             (0..key_images_per_block)
-                .map(|_i| KeyImage::from(rng.next_u64()))
+                .map(|_| rng.next_u64().into())
                 .collect()
         } else {
             Default::default()
@@ -363,22 +306,20 @@ pub fn get_custom_test_ledger_blocks(
 
         let block_contents = BlockContents {
             key_images,
-            outputs: outputs.clone(),
+            outputs,
             ..Default::default()
         };
 
         // Create a block with the desired contents
-        let block = match previous_block {
-            Some(parent) => {
-                Block::new_with_parent(block_version, &parent, &Default::default(), &block_contents)
-            }
-            None => Block::new_origin_block(&outputs),
-        };
-
-        previous_block = Some(block.clone());
-        blocks_and_contents.push((block, block_contents));
-    }
-    blocks_and_contents
+        let block = previous_block.as_ref().map_or_else(
+            || Block::new_origin_block(&block_contents.outputs),
+            |parent| {
+                Block::new_with_parent(block_version, parent, &Default::default(), &block_contents)
+            },
+        );
+        *previous_block = Some(block.clone());
+        Some((block, block_contents))
+    }).collect()
 }
 
 #[cfg(test)]

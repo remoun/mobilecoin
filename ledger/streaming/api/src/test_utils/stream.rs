@@ -5,6 +5,7 @@
 use crate::{BlockData, BlockStream, Result};
 use futures::Stream;
 use mc_ledger_db::test_utils::mock_ledger::get_custom_test_ledger_blocks;
+use mc_transaction_core::BlockVersion;
 
 /// Mock implementation of BlockStream, backed by pre-defined data.
 #[derive(Clone, Debug)]
@@ -43,6 +44,7 @@ impl MockStream {
         max_token_id: u64,
     ) -> MockStream {
         let blocks = get_custom_test_ledger_blocks(
+            BlockVersion::MAX,
             outputs_per_recipient_per_block,
             num_accounts,
             num_blocks,

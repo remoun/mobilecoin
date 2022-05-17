@@ -8,9 +8,7 @@ use mc_common::{
     HashSet,
 };
 use mc_ledger_db::Ledger;
-use mc_ledger_streaming_api::{
-    BlockData, BlockStream, Error as StreamError, Result as StreamResult,
-};
+use mc_ledger_streaming_api::{BlockData, BlockStream, Error, Result};
 use mc_transaction_core::{ring_signature::KeyImage, BlockID};
 
 /// Create stream factory for validating individual blocks within a stream.
@@ -34,10 +32,10 @@ impl<US: BlockStream + 'static, L: Ledger + 'static> BlockValidator<US, L> {
 }
 
 impl<US: BlockStream + 'static, L: Ledger + Clone + 'static> BlockStream for BlockValidator<US, L> {
-    type Stream<'s> = impl Stream<Item = StreamResult<BlockData>> + 's;
+    type Stream<'s> = impl Stream<Item = Result<BlockData>> + 's;
 
     /// Get block stream that performs validation
-    fn get_block_stream(&self, starting_height: u64) -> StreamResult<Self::Stream<'_>> {
+    fn get_block_stream(&self, starting_height: u64) -> Result<Self::Stream<'_>> {
         //get block id from ledger if it exists, else initialize to an empty value
         let ledger = self.ledger.clone();
         let prev_block_id = if self.ledger.is_some() && starting_height > 0 {
@@ -48,7 +46,7 @@ impl<US: BlockStream + 'static, L: Ledger + Clone + 'static> BlockStream for Blo
         let additional_key_images: HashSet<KeyImage> = HashSet::default();
 
         log::info!(self.logger, "Creating block validation stream");
-        let stream = self.upstream.get_block_stream(starting_height)?;
+        let stream = self.upstream.get_stream(starting_height)?;
 
         Ok(
             stream.scan(
@@ -82,7 +80,7 @@ impl<US: BlockStream + 'static, L: Ledger + Clone + 'static> BlockStream for Blo
 
                             // Check if parent block matches last block seen
                             if &block.parent_id != prev_block_id {
-                                return future::ready(Some(Err(StreamError::BlockValidation(
+                                return future::ready(Some(Err(Error::BlockValidation(
                                     "Block parent ID doesn't match".to_string(),
                                 ))));
                             }
@@ -97,16 +95,16 @@ impl<US: BlockStream + 'static, L: Ledger + Clone + 'static> BlockStream for Blo
                                                 || additional_key_images.contains(key_image)
                                             {
                                                 return future::ready(Some(Err(
-                                                    StreamError::BlockValidation(
+                                                    Error::BlockValidation(
                                                         "Contains spent key image".to_string(),
                                                     ),
                                                 )));
                                             }
                                         }
                                         Err(err) => {
-                                            return future::ready(Some(Err(
-                                                StreamError::DBAccess(err.to_string()),
-                                            )));
+                                            return future::ready(Some(Err(Error::DBAccess(
+                                                err.to_string(),
+                                            ))));
                                         }
                                     }
                                     additional_key_images.insert(*key_image);
@@ -211,7 +209,7 @@ mod tests {
             let mut stream = block_validator.get_block_stream(2).unwrap();
             if let Some(data) = stream.next().await {
                 log::info!(logger, "{:?}", data);
-                assert!(matches!(data, Err(StreamError::BlockValidation(_))));
+                assert!(matches!(data, Err(Error::BlockValidation(_))));
             }
         });
     }
@@ -228,7 +226,7 @@ mod tests {
         futures::executor::block_on(async move {
             let mut stream = block_validator.get_block_stream(1).unwrap();
             if let Some(data) = stream.next().await {
-                assert!(matches!(data, Err(StreamError::BlockValidation(_))));
+                assert!(matches!(data, Err(Error::BlockValidation(_))));
             }
         });
     }

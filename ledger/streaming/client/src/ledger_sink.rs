@@ -9,9 +9,7 @@ use futures::{
 };
 use mc_common::logger::{log, Logger};
 use mc_ledger_db::Ledger;
-use mc_ledger_streaming_api::{
-    BlockData, BlockStream, Error as StreamError, Result as StreamResult,
-};
+use mc_ledger_streaming_api::{BlockData, BlockIndex, BlockStream, Error, Result};
 
 /// A block sink that takes blocks from a passed stream and puts them into
 /// ledger db. This sink should live downstream from a verification source that
@@ -31,8 +29,130 @@ pub struct DbStream<US: BlockStream + 'static, L: Ledger + 'static> {
     logger: Logger,
 }
 
+impl<US: Streamer<Result<BlockData>, BlockIndex> + 'static, L: Ledger + Clone + 'static>
+    DbStream<US, L>
+{
+    /// Initialize a stream factory from an upstream source
+    pub fn new(upstream: US, ledger: L, pass_through_synced_blocks: bool, logger: Logger) -> Self {
+        Self {
+            upstream,
+            ledger,
+            pass_through_synced_blocks,
+            logger,
+        }
+    }
+
+    /// Replace ledger
+    pub fn reinitialize_ledger(&mut self, ledger: L) {
+        self.ledger = ledger;
+    }
+}
+
+impl<US: Streamer<Result<BlockData>, BlockIndex> + 'static, L: Ledger + Clone + 'static>
+    Streamer<Result<BlockData>, BlockIndex> for DbStream<US, L>
+{
+    type Stream<'s> = impl Stream<Item = Result<BlockData>> + 's;
+
+    /// Get block stream that performs block sinking
+    fn get_block_stream(&self, starting_height: u64) -> Result<Self::Stream<'_>> {
+        let num_blocks = self.ledger.num_blocks().unwrap();
+
+        // Check to ensure we don't start more than 1 block ahead of what's currently in
+        // the ledger (doing so will cause errors if we try to append a block)
+        if num_blocks > 0 && starting_height > num_blocks {
+            let err = Error::DBAccess(format!(
+                "attempted to start at block {} but ledger height is {}",
+                starting_height, num_blocks,
+            ));
+            log::error!(self.logger, "{:?}", err);
+            return Err(err);
+        }
+
+        // If our local ledger is already ahead, but we still want to forward on blocks,
+        // determine at which block we'll start syncing.
+        let sync_start_height = if self.pass_through_synced_blocks && num_blocks > 0 {
+            num_blocks
+        } else {
+            // If we're not okay with it, throw an error
+            if starting_height < num_blocks {
+                let err = Error::DBAccess(format!(
+                    "ledger height is currently: {} attempted to start at: {}",
+                    num_blocks, starting_height
+                ));
+                log::error!(self.logger, "{:?}", err);
+                return Err(err);
+            }
+            starting_height
+        };
+
+        // Get the upstream, start our thread, and initialize our sink management object
+        log::info!(self.logger, "creating ledger sink stream & thread");
+        let (tx, rcv) = start_sink_thread(self.ledger.clone(), self.logger.clone());
+        let state = SinkState::new(tx, rcv, 0, 0, sync_start_height, self.logger.clone());
+        let stream = Box::pin(self.upstream.get_block_stream(starting_height).unwrap());
+
+        // Create the stream
+        let output_stream = futures::stream::unfold(
+            (stream, state),
+            |(mut stream, mut state)| async move {
+                if let Some(result) = stream.next().await {
+                    if let Ok(block_data) = result {
+                        state.last_block_received = block_data.block().index;
+                        if state.can_start_sync() {
+                            // If we're above what's in the ledger, starting syncing the blocks
+                            if state.sender.send(block_data).await.is_err() {
+                                //TODO: Discuss whether thread error should stop stream or
+                                // self-heal TODO: it's
+                                // possible just to restart the upstream & thread here
+                                // TODO: so that the downstream doesn't necessarily notice
+                                log::error!(
+                                    state.logger,
+                                    "ledger sync thread stopped, aborting stream"
+                                );
+                                return None;
+                            }
+                        } else {
+                            // Else pass them through
+                            return Some((Ok(block_data), (stream, state)));
+                        }
+                    } else {
+                        return Some((result, (stream, state)));
+                    }
+                } else {
+                    // If we're behind, wait for the rest of the blocks to sync then end
+                    if state.is_behind() {
+                        log::warn!(
+                            state.logger,
+                            "upstream terminated with {} blocks received, waiting to sync up to block {}",
+                            state.last_block_received,
+                            state.last_block_synced,
+                        );
+                    } else {
+                        log::warn!(state.logger,
+                            "upstream ended, ending downstream - blocks received: {}, blocks synced: {}",
+                            state.last_block_received,
+                            state.last_block_synced,
+                        );
+                        return None;
+                    }
+                }
+                if let Some(block_data) = state.receiver.recv().await {
+                    log::debug!(state.logger, "block {} synced", block_data.block().index);
+                    state.last_block_synced = block_data.block().index;
+                    Some((Ok(block_data), (stream, state)))
+                } else {
+                    // TODO: Discuss whether we want to heal the stream or not
+                    log::error!(state.logger, "sink thread stopped, ending stream");
+                    None
+                }
+            },
+        );
+        Ok(Box::pin(output_stream))
+    }
+}
+
 /// Object to manage the state of the ledger sink process
-struct SinkManager {
+struct SinkState {
     /// Channel to send blocks ledger sink thread to be synced
     sender: Sender<BlockData>,
 
@@ -52,8 +172,8 @@ struct SinkManager {
     logger: Logger,
 }
 
-impl SinkManager {
-    /// Create new manager for the block sink
+impl SinkState {
+    /// Create new instance.
     fn new(
         sender: Sender<BlockData>,
         receiver: Receiver<BlockData>,
@@ -62,7 +182,7 @@ impl SinkManager {
         sync_start_height: u64,
         logger: Logger,
     ) -> Self {
-        SinkManager {
+        SinkState {
             sender,
             receiver,
             last_block_received,
@@ -83,124 +203,6 @@ impl SinkManager {
     }
 }
 
-impl<US: BlockStream + 'static, L: Ledger + Clone + 'static> BlockStream for DbStream<US, L> {
-    type Stream<'s> = impl Stream<Item = StreamResult<BlockData>> + 's;
-
-    /// Get block stream that performs block sinking
-    fn get_block_stream(&self, starting_height: u64) -> StreamResult<Self::Stream<'_>> {
-        let num_blocks = self.ledger.num_blocks().unwrap();
-
-        // Check to ensure we don't start more than 1 block ahead of what's currently in
-        // the ledger (doing so will cause errors if we try to append a block)
-        if num_blocks > 0 && starting_height > num_blocks {
-            let err = StreamError::DBAccess(format!(
-                "attempted to start at block {} but ledger height is {}",
-                starting_height, num_blocks,
-            ));
-            log::error!(self.logger, "{:?}", err);
-            return Err(err);
-        }
-
-        // If our local ledger is already ahead, but we still want to forward on blocks,
-        // determine at which block we'll start syncing.
-        let sync_start_height = if self.pass_through_synced_blocks && num_blocks > 0 {
-            num_blocks
-        } else {
-            // If we're not okay with it, throw an error
-            if starting_height < num_blocks {
-                let err = StreamError::DBAccess(format!(
-                    "ledger height is currently: {} attempted to start at: {}",
-                    num_blocks, starting_height
-                ));
-                log::error!(self.logger, "{:?}", err);
-                return Err(err);
-            }
-            starting_height
-        };
-
-        // Get the upstream, start our thread, and initialize our sink management object
-        log::info!(self.logger, "creating ledger sink stream & thread");
-        let (tx, rcv) = start_sink_thread(self.ledger.clone(), self.logger.clone());
-        let manager = SinkManager::new(tx, rcv, 0, 0, sync_start_height, self.logger.clone());
-        let stream = Box::pin(self.upstream.get_block_stream(starting_height).unwrap());
-
-        // Create the stream
-        let output_stream = futures::stream::unfold(
-            (stream, manager),
-            |(mut stream, mut manager)| async move {
-                if let Some(result) = stream.next().await {
-                    if let Ok(block_data) = result {
-                        manager.last_block_received = block_data.block().index;
-                        if manager.can_start_sync() {
-                            // If we're above what's in the ledger, starting syncing the blocks
-                            if manager.sender.send(block_data).await.is_err() {
-                                //TODO: Discuss whether thread error should stop stream or
-                                // self-heal TODO: it's
-                                // possible just to restart the upstream & thread here
-                                // TODO: so that the downstream doesn't necessarily notice
-                                log::error!(
-                                    manager.logger,
-                                    "ledger sync thread stopped, aborting stream"
-                                );
-                                return None;
-                            }
-                        } else {
-                            // Else pass them through
-                            return Some((Ok(block_data), (stream, manager)));
-                        }
-                    } else {
-                        return Some((result, (stream, manager)));
-                    }
-                } else {
-                    // If we're behind, wait for the rest of the blocks to sync then end
-                    if manager.is_behind() {
-                        log::warn!(
-                            manager.logger,
-                            "upstream terminated with {} blocks received, waiting to sync up to block {}",
-                            manager.last_block_received,
-                            manager.last_block_synced,
-                        );
-                    } else {
-                        log::warn!(manager.logger,
-                            "upstream ended, ending downstream - blocks received: {}, blocks synced: {}",
-                            manager.last_block_received,
-                            manager.last_block_synced,
-                        );
-                        return None;
-                    }
-                }
-                if let Some(block_data) = manager.receiver.next().await {
-                    log::debug!(manager.logger, "block {} synced", block_data.block().index);
-                    manager.last_block_synced = block_data.block().index;
-                    Some((Ok(block_data), (stream, manager)))
-                } else {
-                    // TODO: Discuss whether we want to heal the stream or not
-                    log::error!(manager.logger, "sink thread stopped, ending stream");
-                    None
-                }
-            },
-        );
-        Ok(Box::pin(output_stream))
-    }
-}
-
-impl<US: BlockStream + 'static, L: Ledger + Clone + 'static> DbStream<US, L> {
-    /// Initialize a stream factory from an upstream source
-    pub fn new(upstream: US, ledger: L, pass_through_synced_blocks: bool, logger: Logger) -> Self {
-        Self {
-            upstream,
-            ledger,
-            pass_through_synced_blocks,
-            logger,
-        }
-    }
-
-    /// Replace ledger
-    pub fn reinitialize_ledger(&mut self, ledger: L) {
-        self.ledger = ledger;
-    }
-}
-
 fn start_sink_thread(
     mut ledger: impl Ledger + 'static,
     logger: Logger,
@@ -214,7 +216,6 @@ fn start_sink_thread(
         log::debug!(logger, "starting ledger sink thread");
         while let Some(block_data) = futures::executor::block_on(async { rcv_in.next().await }) {
             let signature = block_data.signature().as_ref().cloned();
-
             // If there's an error syncing the blocks, end thread
             if let Err(err) =
                 ledger.append_block(block_data.block(), block_data.contents(), signature)
@@ -318,6 +319,6 @@ mod tests {
         let dest_ledger = get_mock_ledger(1);
         let bs = DbStream::new(upstream, dest_ledger, true, logger);
         let block_stream = bs.get_block_stream(2);
-        assert!(matches!(block_stream, Err(StreamError::DBAccess(_))));
+        assert!(matches!(block_stream, Err(Error::DBAccess(_))));
     }
 }

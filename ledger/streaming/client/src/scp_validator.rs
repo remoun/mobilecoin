@@ -9,9 +9,7 @@ use mc_common::{
     HashMap, NodeID,
 };
 use mc_consensus_scp::{GenericNodeId, QuorumSet, QuorumSetMember, SlotIndex};
-use mc_ledger_streaming_api::{
-    BlockData, BlockStream, Error as StreamError, Result as StreamResult,
-};
+use mc_ledger_streaming_api::{BlockData, BlockStream, Error, Result};
 use mc_transaction_core::BlockID;
 use std::future;
 
@@ -248,10 +246,10 @@ impl<US: BlockStream + 'static, ID: GenericNodeId + Send> BlockStream for SCPVal
     type Stream<'s>
     where
         ID: 's,
-    = impl Stream<Item = StreamResult<BlockData>> + 's;
+    = impl Stream<Item = Result<BlockData>> + 's;
 
     /// Get block stream that performs validation
-    fn get_block_stream(&self, starting_height: u64) -> StreamResult<Self::Stream<'_>> {
+    fn get_block_stream(&self, starting_height: u64) -> Result<Self::Stream<'_>> {
         // Merge all streams into one
         let mut merged_streams = stream::SelectAll::new();
         for stream_factory in &self.upstreams {
@@ -291,7 +289,7 @@ impl<US: BlockStream + 'static, ID: GenericNodeId + Send> BlockStream for SCPVal
                 }
 
                 if scp_state.is_behind() {
-                    return future::ready(Some(Ready::Ready(Err(StreamError::ConsensusBlocked(
+                    return future::ready(Some(Ready::Ready(Err(Error::ConsensusBlocked(
                         scp_state.highest_externalized_slot(),
                         scp_state.highest_block_received(),
                     )))));

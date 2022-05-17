@@ -3,8 +3,7 @@
 extern crate test;
 
 use futures::{executor::block_on, StreamExt};
-use hashbrown::HashMap;
-use mc_common::logger::log;
+use mc_common::{logger::log, HashMap};
 use mc_consensus_scp::test_utils::test_node_id;
 use mc_ledger_db::test_utils::get_mock_ledger;
 use mc_ledger_streaming_api::{

@@ -4,10 +4,9 @@
 //! a single stream
 
 use futures::{stream, Stream, StreamExt};
-use hashbrown::HashMap;
 use mc_common::{
     logger::{log, Logger},
-    NodeID,
+    HashMap, NodeID,
 };
 use mc_consensus_scp::{GenericNodeId, QuorumSet, QuorumSetMember, SlotIndex};
 use mc_ledger_streaming_api::{

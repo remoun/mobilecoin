@@ -139,10 +139,8 @@ fn bench_simulated_pipeline(b: &mut Bencher) {
     let fetcher = HttpBlockFetcher::new(archive_peer.clone(), logger.clone()).unwrap();
     executor.block_on(async {
         for i in 0..1000 {
-            let block_url = archive_peer.block_url(i).unwrap();
-            let object: StreamResult<ArchiveBlock> =
-                fetcher.fetch_protobuf_object(&block_url).await;
-            archive_blocks.push(object);
+            let block = fetcher.fetch_single(i).await;
+            archive_blocks.push(block);
         }
     });
 

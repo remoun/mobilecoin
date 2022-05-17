@@ -233,7 +233,7 @@ impl HttpBlockFetcher {
     }
 
     /// Fetch protobuf for block ranges
-    pub async fn fetch_protobuf_object<M>(&self, url: &Url) -> Result<M>
+    async fn fetch_protobuf_object<M>(&self, url: &Url) -> Result<M>
     where
         M: Message,
     {

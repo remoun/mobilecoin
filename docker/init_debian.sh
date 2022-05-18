@@ -9,6 +9,8 @@
 
 set -e  # Die on any errors
 
+BASE_DIR=$(cd $(dirname "$0") 2>/dev/null && pwd)
+
 cd /tmp
 
 # Certain Installers make 'installations' easier by having a nice front-end. While this is great when you have a manual install, this becomes an issue during automated installations.
@@ -28,7 +30,9 @@ apt-get install --yes \
   cmake \
   curl \
   git \
+  golang \
   jq \
+  kcov \
   libclang-dev \
   libcurl4-openssl-dev \
   libdw-dev \
@@ -37,7 +41,6 @@ apt-get install --yes \
   libprotobuf-c-dev \
   libprotobuf-dev \
   libssl-dev \
-  libssl1.1 \
   libsystemd-dev \
   libtool \
   libxml2-dev \
@@ -47,6 +50,7 @@ apt-get install --yes \
   ninja-build \
   ocaml-native-compilers \
   ocamlbuild \
+  openssl \
   patch \
   pkg-config \
   postgresql \
@@ -55,7 +59,7 @@ apt-get install --yes \
   protobuf-c-compiler \
   protobuf-compiler \
   psmisc \
-  python \
+  python3 \
   python3-pip \
   sqlite3 \
   systemd \
@@ -73,25 +77,8 @@ pip3 install awscli black
 # filebeat is used for logs when running slam scripts locally
 # via https://www.elastic.co/guide/en/beats/filebeat/current/setup-repositories.html
 wget -qO - https://artifacts.elastic.co/GPG-KEY-elasticsearch | apt-key add -
-echo "deb https://artifacts.elastic.co/packages/7.x/apt stable main" >> /etc/apt/sources.list.d/elastic-7.x.list
+echo "deb https://artifacts.elastic.co/packages/7.x/apt stable main" > /etc/apt/sources.list.d/elastic-7.x.list
 apt-get update && apt-get install filebeat
-
-# Install go 1.16 release
-GO_PKG=go1.16.4.linux-amd64.tar.gz
-wget https://golang.org/dl/$GO_PKG -O go.tgz
-tar -C /usr/local -xzf go.tgz
-rm -rf go.tgz
-
-# Install SQLite release.
-SQLITE=sqlite-autoconf-3350400
-SQLITE_PKG=$SQLITE.tar.gz
-wget https://www.sqlite.org/2021/$SQLITE_PKG
-tar xf $SQLITE_PKG
-pushd $SQLITE
-./configure
-make install
-popd
-rm -r $SQLITE*
 
 # set rust toolchain, defaulting to nightly
 RUST_TOOLCHAIN=${RUST_TOOLCHAIN:-nightly}
@@ -111,15 +98,5 @@ rustup component add \
 cargo install sccache cargo-cache cargo2junit cargo-tree cargo-feature-analyst cbindgen && \
 cargo install diesel_cli --no-default-features --features postgres
 
-# Install kcov. So that we don't have to do this again with every build in ci.
-# TODO: Replace with `apt-get install kcov` when we upgrade builder image to
-# Ubuntu 20
-mkdir -p /tmp/kcov
-cd /tmp/kcov
-wget https://github.com/SimonKagstrom/kcov/archive/v36.tar.gz
-tar xvf v36.tar.gz
-cd kcov-36
-cmake .
-make install
-
+. $BASE_DIR/install_sgx.sh
 echo "Successfully installed packages."

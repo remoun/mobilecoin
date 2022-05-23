@@ -11,6 +11,7 @@ readme = "README.md"
 test_utils = []
 
 [dependencies]
+mc-blockchain-types = { path = "../../blockchain/types" }
 mc-common = { path = "../../common", features = ["log"] }
 mc-crypto-digestible = { path = "../../crypto/digestible", features = ["derive"] }
 mc-crypto-keys = { path = "../../crypto/keys" }

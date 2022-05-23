@@ -419,9 +419,53 @@ impl<ID: GenericNodeId + AsRef<ResponderId>> From<&QuorumSet<ID>> for QuorumSet<
                 }
             })
             .collect();
-        QuorumSet {
-            threshold: src.threshold,
-            members,
+        Self::new(src.threshold, members)
+    }
+}
+
+impl From<&QuorumSet> for mc_blockchain_types::QuorumSet {
+    fn from(src: &QuorumSet) -> Self {
+        use mc_blockchain_types::QuorumSetMember::*;
+
+        let members = src
+            .members
+            .iter()
+            .map(|m| match m {
+                QuorumSetMember::Node(id) => Node(id.into()),
+                QuorumSetMember::InnerSet(qs) => InnerSet(qs.into()),
+            })
+            .collect();
+
+        Self::new(src.threshold, members)
+    }
+}
+
+impl TryFrom<&mc_blockchain_types::QuorumSet> for QuorumSet {
+    type Error = mc_common::ResponderIdParseError;
+
+    fn try_from(src: &mc_blockchain_types::QuorumSet) -> Result<Self, Self::Error> {
+        use mc_blockchain_types::QuorumSetMember::*;
+
+        let members = src
+            .members
+            .iter()
+            .filter_map(|m| {
+                m.member.as_ref().map(|m| {
+                    Ok(match m {
+                        Node(id) => QuorumSetMember::Node(id.try_into()?),
+                        InnerSet(qs) => QuorumSetMember::InnerSet(qs.try_into()?),
+                    })
+                })
+            })
+            .collect::<Result<_, _>>()?;
+
+        let set = Self::new(src.threshold, members);
+        if set.is_valid() {
+            Ok(set)
+        } else {
+            Err(mc_common::ResponderIdParseError::InvalidFormat(
+                "Invalid QuorumSet".to_string(),
+            ))
         }
     }
 }
@@ -1105,5 +1149,36 @@ mod quorum_set_tests {
             ],
         );
         assert!(!qs.is_valid());
+    }
+
+    #[test]
+    fn convert_transaction_quorum_set() {
+        let qs = QuorumSet::new(
+            2,
+            vec![
+                QuorumSetMember::Node(test_node_id(1)),
+                QuorumSetMember::InnerSet(QuorumSet::new(
+                    2,
+                    vec![
+                        QuorumSetMember::Node(test_node_id(3)),
+                        QuorumSetMember::Node(test_node_id(2)),
+                        QuorumSetMember::InnerSet(QuorumSet::new_with_node_ids(
+                            2,
+                            vec![test_node_id(5), test_node_id(7), test_node_id(6)],
+                        )),
+                    ],
+                )),
+                QuorumSetMember::Node(test_node_id(0)),
+            ],
+        );
+        assert!(qs.is_valid());
+
+        let tqs = mc_blockchain_types::QuorumSet::from(&qs);
+        assert!(tqs.is_valid());
+
+        // Round-tripping through mc_blockchain_types::QuorumSet should be the identity
+        // function.
+        let recovered = QuorumSet::try_from(&tqs).expect("scp to txn");
+        assert_eq!(qs, recovered);
     }
 }

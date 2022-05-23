@@ -8,13 +8,11 @@ use mc_attest_core::VerificationReport;
 use mc_blockchain_types::{Block, BlockID, BlockIndex};
 use mc_consensus_api::consensus_common::LastBlockInfoResponse;
 use mc_transaction_core::{tokens::Mob, tx::Tx, Token, TokenId};
-use mc_util_serial::prost::alloc::fmt::Formatter;
 use mc_util_uri::ConnectionUri;
 use std::{
     collections::BTreeMap,
-    fmt::{Debug, Display, Result as FmtResult},
+    fmt::{Debug, Display, Formatter, Result as FmtResult},
     hash::Hash,
-    iter::FromIterator,
     ops::Range,
     result::Result as StdResult,
     time::Duration,
@@ -100,13 +98,12 @@ impl From<LastBlockInfoResponse> for BlockInfo {
     fn from(src: LastBlockInfoResponse) -> Self {
         // Needed for nodes that do not yet return the fee map.
         let minimum_fees = if src.minimum_fees.is_empty() {
-            BTreeMap::from_iter([(Mob::ID, src.mob_minimum_fee)])
+            [(Mob::ID, src.mob_minimum_fee)].into()
         } else {
-            BTreeMap::from_iter(
-                src.minimum_fees
-                    .iter()
-                    .map(|(token_id, fee)| (TokenId::from(*token_id), *fee)),
-            )
+            src.minimum_fees
+                .iter()
+                .map(|(token_id, fee)| (TokenId::from(*token_id), *fee))
+                .collect()
         };
 
         BlockInfo {

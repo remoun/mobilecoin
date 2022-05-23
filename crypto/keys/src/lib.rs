@@ -56,7 +56,7 @@ mod traits;
 mod x25519;
 
 pub use crate::{
-    ed25519::{Ed25519Pair, Ed25519Private, Ed25519Public, Ed25519Signature, SignatureError},
+    ed25519::{Ed25519Pair, Ed25519Private, Ed25519Public, Ed25519Signature},
     ristretto::*,
     traits::*,
     x25519::*,

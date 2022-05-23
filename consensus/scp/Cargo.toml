@@ -11,6 +11,7 @@ readme = "README.md"
 test_utils = ["mc-consensus-scp-core/test_utils"]
 
 [dependencies]
+mc-blockchain-types = { path = "../../blockchain/types" }
 mc-common = { path = "../../common", features = ["log"] }
 mc-consensus-scp-core = { path = "core" }
 mc-crypto-digestible = { path = "../../crypto/digestible", features = ["derive"] }

@@ -3,11 +3,9 @@
 //! This module implements the common keys traits for the Ed25519 digital
 //! signature scheme.
 
-pub use ed25519::signature::Error as SignatureError;
-
 use alloc::vec;
 
-use crate::traits::*;
+use crate::{traits::*, Signature as SignatureTrait, SignatureError};
 use alloc::vec::Vec;
 use core::{
     cmp::Ordering,
@@ -17,7 +15,7 @@ use core::{
 };
 use digest::generic_array::typenum::{U32, U64};
 use ed25519::{
-    signature::{DigestSigner, DigestVerifier, Signature as SignatureTrait, Signer, Verifier},
+    signature::{DigestSigner, DigestVerifier, Signer, Verifier},
     Signature,
 };
 use ed25519_dalek::{

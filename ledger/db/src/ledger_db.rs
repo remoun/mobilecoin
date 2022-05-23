@@ -9,7 +9,8 @@ use lmdb::{
     Transaction, WriteFlags,
 };
 use mc_blockchain_types::{
-    Block, BlockContents, BlockData, BlockID, BlockIndex, BlockSignature, MAX_BLOCK_VERSION,
+    Block, BlockContents, BlockData, BlockID, BlockIndex, BlockMetadata, BlockSignature,
+    BlockVersion, MAX_BLOCK_VERSION,
 };
 use mc_common::{logger::global_log, HashMap};
 use mc_crypto_keys::CompressedRistrettoPublic;
@@ -39,6 +40,7 @@ pub const MAX_LMDB_DATABASES: u32 = 27; // maximum number of databases in the lm
 pub const COUNTS_DB_NAME: &str = "ledger_db:counts";
 pub const BLOCKS_DB_NAME: &str = "ledger_db:blocks";
 pub const BLOCK_SIGNATURES_DB_NAME: &str = "ledger_db:block_signatures";
+pub const BLOCK_METADATA_DB_NAME: &str = "ledger_db:block_metadata";
 pub const KEY_IMAGES_DB_NAME: &str = "ledger_db:key_images";
 pub const KEY_IMAGES_BY_BLOCK_DB_NAME: &str = "ledger_db:key_images_by_block";
 pub const TX_OUTS_BY_BLOCK_DB_NAME: &str = "ledger_db:tx_outs_by_block";
@@ -104,6 +106,9 @@ pub struct LedgerDB {
     /// Block signatures by number. `block number -> BlockSignature`
     block_signatures: Database,
 
+    /// Block metadata by number. `block number -> BlockMetadata`
+    block_metadata: Database,
+
     /// Key Images
     key_images: Database,
 
@@ -143,11 +148,12 @@ impl Ledger for LedgerDB {
     /// * `block` - A block.
     /// * `block_contents` - The contents of the block.
     /// * `signature` - This node's signature over the block.
-    fn append_block(
+    fn append_block<'b>(
         &mut self,
-        block: &Block,
-        block_contents: &BlockContents,
-        signature: Option<BlockSignature>,
+        block: &'b Block,
+        block_contents: &'b BlockContents,
+        signature: Option<&'b BlockSignature>,
+        metadata: Option<&'b BlockMetadata>,
     ) -> Result<(), Error> {
         let start_time = Instant::now();
 
@@ -165,7 +171,7 @@ impl Ledger for LedgerDB {
         let mut db_transaction = self.env.begin_rw_txn()?;
 
         // Validate the block is safe to append.
-        self.validate_append_block(block, block_contents, &db_transaction)?;
+        self.validate_append_block(block, block_contents, metadata, &db_transaction)?;
 
         // Write key images included in block.
         self.write_key_images(block.index, &block_contents.key_images, &mut db_transaction)?;
@@ -191,7 +197,7 @@ impl Ledger for LedgerDB {
         )?;
 
         // Write block.
-        self.write_block(block, signature.as_ref(), &mut db_transaction)?;
+        self.write_block(block, signature, metadata, &mut db_transaction)?;
 
         // Commit.
         db_transaction.commit()?;
@@ -241,10 +247,16 @@ impl Ledger for LedgerDB {
         self.get_block_contents_impl(&db_transaction, block_number)
     }
 
-    /// Gets a block signature by its index in the blockchain.
+    /// Gets a block's signature by its index in the blockchain.
     fn get_block_signature(&self, block_number: u64) -> Result<BlockSignature, Error> {
         let db_transaction = self.env.begin_ro_txn()?;
         self.get_block_signature_impl(&db_transaction, block_number)
+    }
+
+    /// Gets a block's metadata by its index in the blockchain.
+    fn get_block_metadata(&self, block_number: u64) -> Result<BlockMetadata, Error> {
+        let db_transaction = self.env.begin_ro_txn()?;
+        self.get_block_metadata_impl(&db_transaction, block_number)
     }
 
     /// Gets a block and all of its associated data by its index in the
@@ -259,9 +271,13 @@ impl Ledger for LedgerDB {
             Err(Error::NotFound) => Ok(None),
             Err(err) => Err(err),
         }?;
+        let metadata = match self.get_block_metadata_impl(&db_transaction, block_number) {
+            Ok(metadata) => Ok(Some(metadata)),
+            Err(Error::NotFound) => Ok(None),
+            Err(err) => Err(err),
+        }?;
 
-        // FIXME: Add metadata.
-        Ok(BlockData::new(block, contents, signature, None))
+        Ok(BlockData::new(block, contents, signature, metadata))
     }
 
     /// Gets block index by a TxOut global index.
@@ -425,6 +441,7 @@ impl LedgerDB {
         let counts = env.open_db(Some(COUNTS_DB_NAME))?;
         let blocks = env.open_db(Some(BLOCKS_DB_NAME))?;
         let block_signatures = env.open_db(Some(BLOCK_SIGNATURES_DB_NAME))?;
+        let block_metadata = env.open_db(Some(BLOCK_METADATA_DB_NAME))?;
         let key_images = env.open_db(Some(KEY_IMAGES_DB_NAME))?;
         let key_images_by_block = env.open_db(Some(KEY_IMAGES_BY_BLOCK_DB_NAME))?;
         let tx_outs_by_block = env.open_db(Some(TX_OUTS_BY_BLOCK_DB_NAME))?;
@@ -442,6 +459,7 @@ impl LedgerDB {
             counts,
             blocks,
             block_signatures,
+            block_metadata,
             key_images,
             key_images_by_block,
             tx_outs_by_block,
@@ -468,6 +486,7 @@ impl LedgerDB {
         let counts = env.create_db(Some(COUNTS_DB_NAME), DatabaseFlags::empty())?;
         env.create_db(Some(BLOCKS_DB_NAME), DatabaseFlags::empty())?;
         env.create_db(Some(BLOCK_SIGNATURES_DB_NAME), DatabaseFlags::empty())?;
+        env.create_db(Some(BLOCK_METADATA_DB_NAME), DatabaseFlags::empty())?;
         env.create_db(Some(KEY_IMAGES_DB_NAME), DatabaseFlags::empty())?;
         env.create_db(Some(KEY_IMAGES_BY_BLOCK_DB_NAME), DatabaseFlags::empty())?;
         env.create_db(Some(TX_OUTS_BY_BLOCK_DB_NAME), DatabaseFlags::empty())?;
@@ -513,6 +532,7 @@ impl LedgerDB {
         &self,
         block: &Block,
         signature: Option<&BlockSignature>,
+        metadata: Option<&BlockMetadata>,
         db_transaction: &mut RwTransaction,
     ) -> Result<(), lmdb::Error> {
         // Update total number of blocks.
@@ -537,6 +557,15 @@ impl LedgerDB {
                 self.block_signatures,
                 &u64_to_key_bytes(block.index),
                 &encode(signature),
+                WriteFlags::empty(),
+            )?;
+        }
+
+        if let Some(metadata) = metadata {
+            db_transaction.put(
+                self.block_metadata,
+                &u64_to_key_bytes(block.index),
+                &encode(metadata),
                 WriteFlags::empty(),
             )?;
         }
@@ -626,6 +655,7 @@ impl LedgerDB {
         &self,
         block: &Block,
         block_contents: &BlockContents,
+        metadata: Option<&BlockMetadata>,
         db_transaction: &impl Transaction,
     ) -> Result<(), Error> {
         // Check version is correct
@@ -742,6 +772,12 @@ impl LedgerDB {
             }
         }
 
+        let block_version = BlockVersion::try_from(block.version)
+            .or(Err(Error::InvalidBlockVersion(block.version)))?;
+        if block_version.require_block_metadata() && metadata.is_none() {
+            return Err(Error::BlockMetadataRequired);
+        }
+
         // All good
         Ok(())
     }
@@ -822,6 +858,19 @@ impl LedgerDB {
         Ok(signature)
     }
 
+    /// Implementation of the `get_block_metadata` method that operates inside
+    /// a given transaction.
+    fn get_block_metadata_impl(
+        &self,
+        db_transaction: &impl Transaction,
+        block_number: u64,
+    ) -> Result<BlockMetadata, Error> {
+        let key = u64_to_key_bytes(block_number);
+        let metadata_bytes = db_transaction.get(self.block_metadata, &key)?;
+        let metadata = decode(metadata_bytes)?;
+        Ok(metadata)
+    }
+
     /// Returns true if the Ledger contains the given TxOut public key.
     fn contains_tx_out_public_key_impl(
         &self,
@@ -874,7 +923,7 @@ mod ledger_db_test {
     use super::*;
     use core::convert::TryFrom;
     use mc_account_keys::AccountKey;
-    use mc_blockchain_types::{compute_block_id, BlockVersion};
+    use mc_blockchain_types::compute_block_id;
     use mc_crypto_keys::{Ed25519Pair, RistrettoPrivate};
     use mc_transaction_core::{
         membership_proofs::compute_implied_merkle_root, tokens::Mob, Amount, Token,
@@ -963,7 +1012,8 @@ mod ledger_db_test {
             };
             assert_eq!(block_index, block.index);
 
-            db.append_block(&block, &block_contents, None)
+            // FIXME: Add metadata, too.
+            db.append_block(&block, &block_contents, None, None)
                 .expect("failed writing initial transactions");
             blocks.push(block.clone());
             blocks_contents.push(block_contents);
@@ -1025,7 +1075,7 @@ mod ledger_db_test {
             get_origin_block_and_contents(&origin_account_key);
 
         ledger_db
-            .append_block(&origin_block, &origin_block_contents, None)
+            .append_block(&origin_block, &origin_block_contents, None, None)
             .unwrap();
 
         assert_eq!(1, ledger_db.num_blocks().unwrap());
@@ -1067,7 +1117,7 @@ mod ledger_db_test {
         );
 
         ledger_db
-            .append_block(&block, &block_contents, None)
+            .append_block(&block, &block_contents, None, None)
             .unwrap();
 
         assert_eq!(2, ledger_db.num_blocks().unwrap());
@@ -1122,7 +1172,7 @@ mod ledger_db_test {
             get_origin_block_and_contents(&origin_account_key);
 
         ledger_db
-            .append_block(&origin_block, &origin_block_contents, None)
+            .append_block(&origin_block, &origin_block_contents, None, None)
             .unwrap();
 
         let origin_tx_out = origin_block_contents.outputs.get(0).unwrap().clone();
@@ -1146,7 +1196,7 @@ mod ledger_db_test {
         );
 
         ledger_db
-            .append_block(&block1, &block_contents1, None)
+            .append_block(&block1, &block_contents1, None, None)
             .unwrap();
 
         assert_eq!(2, ledger_db.num_blocks().unwrap());
@@ -1206,7 +1256,7 @@ mod ledger_db_test {
         );
 
         ledger_db
-            .append_block(&block2, &block_contents2, None)
+            .append_block(&block2, &block_contents2, None, None)
             .unwrap();
 
         assert_eq!(3, ledger_db.num_blocks().unwrap());
@@ -1284,7 +1334,7 @@ mod ledger_db_test {
             get_origin_block_and_contents(&origin_account_key);
 
         ledger_db
-            .append_block(&origin_block, &origin_block_contents, None)
+            .append_block(&origin_block, &origin_block_contents, None, None)
             .unwrap();
 
         // === Append a block with only a single MintConfigTx. ===
@@ -1303,7 +1353,7 @@ mod ledger_db_test {
         );
 
         ledger_db
-            .append_block(&block1, &block_contents1, None)
+            .append_block(&block1, &block_contents1, None, None)
             .unwrap();
 
         // Try appending a block that contains the same set mint config tx.
@@ -1326,7 +1376,7 @@ mod ledger_db_test {
 
         // This should fail.
         ledger_db
-            .append_block(&block2, &block_contents2, None)
+            .append_block(&block2, &block_contents2, None, None)
             .unwrap();
     }
 
@@ -1347,7 +1397,7 @@ mod ledger_db_test {
             get_origin_block_and_contents(&origin_account_key);
 
         ledger_db
-            .append_block(&origin_block, &origin_block_contents, None)
+            .append_block(&origin_block, &origin_block_contents, None, None)
             .unwrap();
 
         let origin_tx_out = origin_block_contents.outputs.get(0).unwrap().clone();
@@ -1372,7 +1422,7 @@ mod ledger_db_test {
         );
 
         ledger_db
-            .append_block(&block1, &block_contents1, None)
+            .append_block(&block1, &block_contents1, None, None)
             .unwrap();
 
         // === Append a block with only a single MintTx. ===
@@ -1392,7 +1442,7 @@ mod ledger_db_test {
         );
 
         ledger_db
-            .append_block(&block2, &block_contents2, None)
+            .append_block(&block2, &block_contents2, None, None)
             .unwrap();
 
         assert_eq!(3, ledger_db.num_blocks().unwrap());
@@ -1457,7 +1507,7 @@ mod ledger_db_test {
         );
 
         ledger_db
-            .append_block(&block3, &block_contents3, None)
+            .append_block(&block3, &block_contents3, None, None)
             .unwrap();
 
         assert_eq!(4, ledger_db.num_blocks().unwrap());
@@ -1521,7 +1571,7 @@ mod ledger_db_test {
         );
 
         ledger_db
-            .append_block(&block4, &block_contents4, None)
+            .append_block(&block4, &block_contents4, None, None)
             .unwrap();
 
         assert_eq!(5, ledger_db.num_blocks().unwrap());
@@ -1597,7 +1647,7 @@ mod ledger_db_test {
         );
 
         ledger_db
-            .append_block(&block5, &block_contents5, None)
+            .append_block(&block5, &block_contents5, None, None)
             .unwrap();
 
         assert_eq!(6, ledger_db.num_blocks().unwrap());
@@ -1677,7 +1727,7 @@ mod ledger_db_test {
         );
 
         ledger_db
-            .append_block(&block6, &block_contents6, None)
+            .append_block(&block6, &block_contents6, None, None)
             .unwrap();
 
         assert_eq!(7, ledger_db.num_blocks().unwrap());
@@ -1746,7 +1796,7 @@ mod ledger_db_test {
             get_origin_block_and_contents(&origin_account_key);
 
         ledger_db
-            .append_block(&origin_block, &origin_block_contents, None)
+            .append_block(&origin_block, &origin_block_contents, None, None)
             .unwrap();
 
         // === Create and append a non-origin block. ===
@@ -1776,7 +1826,7 @@ mod ledger_db_test {
         );
 
         ledger_db
-            .append_block(&block1, &block_contents1, None)
+            .append_block(&block1, &block_contents1, None, None)
             .unwrap();
 
         assert_eq!(2, ledger_db.num_blocks().unwrap());
@@ -1883,7 +1933,7 @@ mod ledger_db_test {
         );
 
         ledger_db
-            .append_block(&block2, &block_contents2, None)
+            .append_block(&block2, &block_contents2, None, None)
             .unwrap();
 
         assert_eq!(3, ledger_db.num_blocks().unwrap());
@@ -1987,7 +2037,7 @@ mod ledger_db_test {
             get_origin_block_and_contents(&origin_account_key);
 
         ledger_db
-            .append_block(&origin_block, &origin_block_contents, None)
+            .append_block(&origin_block, &origin_block_contents, None, None)
             .unwrap();
 
         // === Append a block wth a MintConfigTx transaction. This is needed since
@@ -2007,7 +2057,7 @@ mod ledger_db_test {
         );
 
         ledger_db
-            .append_block(&block1, &block_contents1, None)
+            .append_block(&block1, &block_contents1, None, None)
             .unwrap();
 
         // === Append a block with two MintTxs but only a single TxOut. ===
@@ -2029,7 +2079,7 @@ mod ledger_db_test {
 
         // This should fail.
         ledger_db
-            .append_block(&block2, &block_contents2, None)
+            .append_block(&block2, &block_contents2, None, None)
             .unwrap();
     }
 
@@ -2051,7 +2101,7 @@ mod ledger_db_test {
             get_origin_block_and_contents(&origin_account_key);
 
         ledger_db
-            .append_block(&origin_block, &origin_block_contents, None)
+            .append_block(&origin_block, &origin_block_contents, None, None)
             .unwrap();
 
         // === Append a block wth a MintConfigTx transaction. This is needed since
@@ -2071,7 +2121,7 @@ mod ledger_db_test {
         );
 
         ledger_db
-            .append_block(&block1, &block_contents1, None)
+            .append_block(&block1, &block_contents1, None, None)
             .unwrap();
 
         // === Append a block with only a single MintTx. ===
@@ -2091,7 +2141,7 @@ mod ledger_db_test {
         );
 
         ledger_db
-            .append_block(&block2, &block_contents2, None)
+            .append_block(&block2, &block_contents2, None, None)
             .unwrap();
 
         // === Append another block that includes the previous MintTx.
@@ -2123,7 +2173,7 @@ mod ledger_db_test {
 
         // This is expected to fail.
         ledger_db
-            .append_block(&block3, &block_contents3, None)
+            .append_block(&block3, &block_contents3, None, None)
             .unwrap();
     }
 
@@ -2145,7 +2195,7 @@ mod ledger_db_test {
             get_origin_block_and_contents(&origin_account_key);
 
         ledger_db
-            .append_block(&origin_block, &origin_block_contents, None)
+            .append_block(&origin_block, &origin_block_contents, None, None)
             .unwrap();
 
         // === Append a block wth a MintConfigTx transaction. This is needed since
@@ -2165,7 +2215,7 @@ mod ledger_db_test {
         );
 
         ledger_db
-            .append_block(&block1, &block_contents1, None)
+            .append_block(&block1, &block_contents1, None, None)
             .unwrap();
 
         // === Append a block with only a single MintTx signed by an unknown signer. ===
@@ -2191,7 +2241,7 @@ mod ledger_db_test {
 
         // This should fail.
         ledger_db
-            .append_block(&block2, &block_contents2, None)
+            .append_block(&block2, &block_contents2, None, None)
             .unwrap();
     }
 
@@ -2211,7 +2261,7 @@ mod ledger_db_test {
             get_origin_block_and_contents(&origin_account_key);
 
         ledger_db
-            .append_block(&origin_block, &origin_block_contents, None)
+            .append_block(&origin_block, &origin_block_contents, None, None)
             .unwrap();
 
         let origin_tx_out = origin_block_contents.outputs.get(0).unwrap().clone();
@@ -2236,7 +2286,7 @@ mod ledger_db_test {
         );
 
         ledger_db
-            .append_block(&block1, &block_contents1, None)
+            .append_block(&block1, &block_contents1, None, None)
             .unwrap();
 
         // === Append a block with only a single MintTx. ===
@@ -2261,7 +2311,7 @@ mod ledger_db_test {
         );
 
         ledger_db
-            .append_block(&block2, &block_contents2, None)
+            .append_block(&block2, &block_contents2, None, None)
             .unwrap();
 
         // === Append another block with a MintTx that will exceed the mint limit, we
@@ -2287,7 +2337,7 @@ mod ledger_db_test {
         );
 
         assert_eq!(
-            ledger_db.append_block(&block3, &block_contents3, None),
+            ledger_db.append_block(&block3, &block_contents3, None, None),
             Err(Error::MintLimitExceeded(
                 11,
                 mint_config_tx1.prefix.configs[0].mint_limit - 10,
@@ -2336,7 +2386,7 @@ mod ledger_db_test {
         );
 
         ledger_db
-            .append_block(&block3, &block_contents3, None)
+            .append_block(&block3, &block_contents3, None, None)
             .unwrap();
 
         // Amount minted should not update.
@@ -2379,7 +2429,7 @@ mod ledger_db_test {
             get_origin_block_and_contents(&origin_account_key);
 
         ledger_db
-            .append_block(&origin_block, &origin_block_contents, None)
+            .append_block(&origin_block, &origin_block_contents, None, None)
             .unwrap();
 
         // === Append a block with no contents. ===
@@ -2394,7 +2444,7 @@ mod ledger_db_test {
         );
 
         ledger_db
-            .append_block(&block1, &block_contents1, None)
+            .append_block(&block1, &block_contents1, None, None)
             .unwrap();
     }
 
@@ -2415,7 +2465,7 @@ mod ledger_db_test {
             get_origin_block_and_contents(&origin_account_key);
 
         ledger_db
-            .append_block(&origin_block, &origin_block_contents, None)
+            .append_block(&origin_block, &origin_block_contents, None, None)
             .unwrap();
 
         // === Attempt to append a block without key images ===
@@ -2436,7 +2486,7 @@ mod ledger_db_test {
 
         // This is expected to fail.
         ledger_db
-            .append_block(&block, &block_contents, None)
+            .append_block(&block, &block_contents, None, None)
             .unwrap();
     }
 
@@ -2566,7 +2616,7 @@ mod ledger_db_test {
         let (origin_block, origin_block_contents) =
             get_origin_block_and_contents(&origin_account_key);
         ledger_db
-            .append_block(&origin_block, &origin_block_contents, None)
+            .append_block(&origin_block, &origin_block_contents, None, None)
             .unwrap();
 
         // Write the next block, containing several key images.
@@ -2591,7 +2641,7 @@ mod ledger_db_test {
         );
 
         ledger_db
-            .append_block(&block, &block_contents, None)
+            .append_block(&block, &block_contents, None, None)
             .unwrap();
 
         // The ledger should each key image.
@@ -2630,7 +2680,7 @@ mod ledger_db_test {
             Block::new_with_parent(BLOCK_VERSION, &parent, &Default::default(), &block_contents);
 
         ledger_db
-            .append_block(&block, &block_contents, None)
+            .append_block(&block, &block_contents, None, None)
             .unwrap();
 
         let returned_key_images = ledger_db.get_key_images_by_block(block.index).unwrap();
@@ -2648,7 +2698,7 @@ mod ledger_db_test {
         let (origin_block, origin_block_contents) =
             get_origin_block_and_contents(&origin_account_key);
         ledger_db
-            .append_block(&origin_block, &origin_block_contents, None)
+            .append_block(&origin_block, &origin_block_contents, None, None)
             .unwrap();
 
         // Write the next block, containing several key images but no outputs.
@@ -2669,7 +2719,7 @@ mod ledger_db_test {
         );
 
         assert_eq!(
-            ledger_db.append_block(&block, &block_contents, None),
+            ledger_db.append_block(&block, &block_contents, None, None),
             Err(Error::NoOutputs)
         );
     }
@@ -2697,7 +2747,7 @@ mod ledger_db_test {
         );
 
         assert_eq!(
-            ledger_db.append_block(&block, &block_contents, None),
+            ledger_db.append_block(&block, &block_contents, None, None),
             Err(Error::InvalidBlockVersion(block.version))
         );
     }
@@ -2717,7 +2767,7 @@ mod ledger_db_test {
             get_origin_block_and_contents(&origin_account_key);
 
         ledger_db
-            .append_block(&origin_block, &origin_block_contents, None)
+            .append_block(&origin_block, &origin_block_contents, None, None)
             .unwrap();
 
         let mut last_block = origin_block;
@@ -2746,7 +2796,7 @@ mod ledger_db_test {
                 );
 
                 ledger_db
-                    .append_block(&last_block, &block_contents, None)
+                    .append_block(&last_block, &block_contents, None, None)
                     .unwrap();
             }
 
@@ -2788,7 +2838,7 @@ mod ledger_db_test {
                 &block_contents,
             );
             assert_eq!(
-                ledger_db.append_block(&invalid_block, &block_contents, None),
+                ledger_db.append_block(&invalid_block, &block_contents, None, None),
                 Err(Error::InvalidBlockVersion(invalid_block.version))
             );
 
@@ -2800,7 +2850,7 @@ mod ledger_db_test {
                     &block_contents,
                 );
                 assert_eq!(
-                    ledger_db.append_block(&invalid_block, &block_contents, None),
+                    ledger_db.append_block(&invalid_block, &block_contents, None, None),
                     Err(Error::InvalidBlockVersion(invalid_block.version))
                 );
             }
@@ -2808,7 +2858,7 @@ mod ledger_db_test {
     }
 
     #[test]
-    fn test_append_block_at_wrong_location() {
+    fn append_block_at_wrong_location() {
         let mut rng: StdRng = SeedableRng::from_seed([1u8; 32]);
         let mut ledger_db = create_db();
 
@@ -2839,14 +2889,14 @@ mod ledger_db_test {
         );
 
         assert_eq!(
-            ledger_db.append_block(&new_block, &block_contents, None),
+            ledger_db.append_block(&new_block, &block_contents, None, None),
             Err(Error::InvalidBlockIndex(new_block.index))
         );
 
         // Appending a non-contiguous location should fail.
         new_block.index = 3 * n_blocks;
         assert_eq!(
-            ledger_db.append_block(&new_block, &block_contents, None),
+            ledger_db.append_block(&new_block, &block_contents, None, None),
             Err(Error::InvalidBlockIndex(new_block.index))
         );
     }
@@ -2854,7 +2904,7 @@ mod ledger_db_test {
     #[test]
     /// Appending a block with a spent key image should return
     /// Error::KeyImageAlreadySpent.
-    fn test_append_block_with_spent_key_image() {
+    fn append_block_with_spent_key_image() {
         let mut rng: StdRng = SeedableRng::from_seed([1u8; 32]);
         let mut ledger_db = create_db();
 
@@ -2863,7 +2913,7 @@ mod ledger_db_test {
         let (origin_block, origin_block_contents) =
             get_origin_block_and_contents(&origin_account_key);
         ledger_db
-            .append_block(&origin_block, &origin_block_contents, None)
+            .append_block(&origin_block, &origin_block_contents, None, None)
             .unwrap();
 
         // Write the next block, containing several key images.
@@ -2890,7 +2940,7 @@ mod ledger_db_test {
         );
 
         ledger_db
-            .append_block(&block_one, &block_one_contents, None)
+            .append_block(&block_one, &block_one_contents, None, None)
             .unwrap();
 
         // The next block reuses a key image.
@@ -2912,7 +2962,7 @@ mod ledger_db_test {
         );
 
         assert_eq!(
-            ledger_db.append_block(&block_two, &block_two_contents, None),
+            ledger_db.append_block(&block_two, &block_two_contents, None, None),
             Err(Error::KeyImageAlreadySpent)
         );
     }
@@ -2929,7 +2979,7 @@ mod ledger_db_test {
         let (origin_block, origin_block_contents) =
             get_origin_block_and_contents(&origin_account_key);
         ledger_db
-            .append_block(&origin_block, &origin_block_contents, None)
+            .append_block(&origin_block, &origin_block_contents, None, None)
             .unwrap();
 
         // The next block reuses a public key.
@@ -2955,7 +3005,7 @@ mod ledger_db_test {
         );
 
         assert_eq!(
-            ledger_db.append_block(&block_one, &block_one_contents, None),
+            ledger_db.append_block(&block_one, &block_one_contents, None, None),
             Err(Error::DuplicateOutputPublicKey)
         );
     }
@@ -2974,7 +3024,7 @@ mod ledger_db_test {
             let mut block = origin_block.clone();
             block.id.0[0] += 1;
             assert_eq!(
-                ledger_db.append_block(&block, &origin_block_contents, None),
+                ledger_db.append_block(&block, &origin_block_contents, None, None),
                 Err(Error::InvalidBlockID(block.id.clone()))
             );
         }
@@ -2984,13 +3034,13 @@ mod ledger_db_test {
             let mut block = origin_block.clone();
             block.contents_hash.0[0] += 1;
             assert_eq!(
-                ledger_db.append_block(&block, &origin_block_contents, None),
+                ledger_db.append_block(&block, &origin_block_contents, None, None),
                 Err(Error::InvalidBlockContents)
             );
         }
 
         assert_eq!(
-            ledger_db.append_block(&origin_block, &origin_block_contents, None),
+            ledger_db.append_block(&origin_block, &origin_block_contents, None, None),
             Ok(())
         );
 
@@ -3020,7 +3070,7 @@ mod ledger_db_test {
             );
 
             assert_eq!(
-                ledger_db.append_block(&block_one_bad, &block_contents, None),
+                ledger_db.append_block(&block_one_bad, &block_contents, None, None),
                 Err(Error::InvalidParentBlockID(block_one_bad.parent_id.clone()))
             );
 
@@ -3035,7 +3085,7 @@ mod ledger_db_test {
             );
 
             assert_eq!(
-                ledger_db.append_block(&block_one_good, &block_contents, None),
+                ledger_db.append_block(&block_one_good, &block_contents, None, None),
                 Ok(())
             );
         }
@@ -3051,7 +3101,7 @@ mod ledger_db_test {
         let (origin_block, origin_block_contents) =
             get_origin_block_and_contents(&origin_account_key);
         ledger_db
-            .append_block(&origin_block, &origin_block_contents, None)
+            .append_block(&origin_block, &origin_block_contents, None, None)
             .unwrap();
 
         // Make random recipients
@@ -3074,7 +3124,9 @@ mod ledger_db_test {
 
         for (block, block_contents) in &results {
             println!("block {} containing {:?}", block.index, block_contents);
-            ledger_db.append_block(block, block_contents, None).unwrap();
+            ledger_db
+                .append_block(block, block_contents, None, None)
+                .unwrap();
             assert_eq!(block.cumulative_txo_count, ledger_db.num_txos().unwrap());
         }
     }
@@ -3089,7 +3141,7 @@ mod ledger_db_test {
         let (origin_block, origin_block_contents) =
             get_origin_block_and_contents(&origin_account_key);
         ledger_db
-            .append_block(&origin_block, &origin_block_contents, None)
+            .append_block(&origin_block, &origin_block_contents, None, None)
             .unwrap();
 
         // Make random recipients
@@ -3111,7 +3163,9 @@ mod ledger_db_test {
         );
 
         for (block, block_contents) in &results {
-            ledger_db.append_block(block, block_contents, None).unwrap();
+            ledger_db
+                .append_block(block, block_contents, None, None)
+                .unwrap();
         }
 
         // The root element should be the same for all TxOuts in the ledger.

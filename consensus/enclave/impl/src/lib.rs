@@ -1567,7 +1567,9 @@ mod tests {
                         &Default::default(),
                         &block_contents,
                     );
-                    ledger.append_block(&block, &block_contents, None).unwrap();
+                    ledger
+                        .append_block(&block, &block_contents, None, None)
+                        .unwrap();
 
                     let tx = create_transaction(
                         block_version,

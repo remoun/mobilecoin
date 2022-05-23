@@ -117,6 +117,12 @@ impl BlockVersion {
     pub fn signed_input_rules_are_supported(&self) -> bool {
         self.0 >= 3
     }
+
+    /// Whether [Block.metadata] is required.
+    /// TODO: link to MCIP
+    pub fn require_block_metadata(&self) -> bool {
+        false
+    }
 }
 
 impl Deref for BlockVersion {

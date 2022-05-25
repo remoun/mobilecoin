@@ -102,6 +102,7 @@ impl TryFrom<&ArchiveBlocks> for Vec<BlockData> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use mc_blockchain_test_utils::make_block_metadata;
     use mc_blockchain_types::{
         Block, BlockContents, BlockData, BlockID, BlockSignature, BlockVersion,
     };
@@ -165,8 +166,8 @@ mod tests {
             let signature =
                 BlockSignature::from_block_and_keypair(&block, &(signer.into())).unwrap();
 
-            // FIXME: Add metadata.
-            let block_data = BlockData::new(block, block_contents, signature, None);
+            let metadata = make_block_metadata(block.id.clone(), &mut rng);
+            let block_data = BlockData::new(block, block_contents, signature, metadata);
             blocks_data.push(block_data);
         }
 

@@ -3,7 +3,10 @@
 mod mint;
 
 pub use mc_account_keys::{AccountKey, PublicAddress, DEFAULT_SUBADDRESS_INDEX};
-pub use mc_blockchain_types::{Block, BlockContents, BlockID, BlockIndex, BlockVersion};
+pub use mc_blockchain_types::{
+    Block, BlockContents, BlockID, BlockIndex, BlockMetadata, BlockMetadataContents, BlockVersion,
+    QuorumNode, QuorumSet, VerificationReport,
+};
 pub use mc_crypto_ring_signature_signer::NoKeysRingSigner;
 pub use mc_fog_report_validation_test_utils::MockFogResolver;
 pub use mc_transaction_core::{
@@ -14,6 +17,7 @@ pub use mc_transaction_core::{
     tx::{Tx, TxOut, TxOutMembershipElement, TxOutMembershipHash},
     Amount, Token,
 };
+pub use mc_util_serial::round_trip_message;
 pub use mint::{
     create_mint_config_tx, create_mint_config_tx_and_signers, create_mint_tx,
     create_mint_tx_to_recipient, mint_config_tx_to_validated,

@@ -878,7 +878,6 @@ mod tests {
             &block_contents,
         );
 
-        // FIXME: Add metadata, too.
         ledger
             .append_block(&block, &block_contents, None, None)
             .unwrap();

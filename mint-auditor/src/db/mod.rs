@@ -224,11 +224,14 @@ mod tests {
     use mc_account_keys::{burn_address, AccountKey};
     use mc_common::logger::{test_with_logger, Logger};
     use mc_crypto_keys::RistrettoPrivate;
-    use mc_ledger_db::Ledger;
+    use mc_ledger_db::{
+        test_utils::{create_ledger, initialize_ledger},
+        Ledger,
+    };
     use mc_transaction_core::{tx::TxOut, Amount, BlockVersion, TokenId};
     use mc_transaction_core_test_utils::{
-        create_ledger, create_mint_config_tx_and_signers, create_mint_tx, create_test_tx_out,
-        initialize_ledger, mint_config_tx_to_validated as to_validated, KeyImage,
+        create_mint_config_tx_and_signers, create_mint_tx, create_test_tx_out,
+        mint_config_tx_to_validated as to_validated, KeyImage,
     };
     use mc_util_from_random::FromRandom;
     use rand_core::SeedableRng;
@@ -302,7 +305,7 @@ mod tests {
         );
 
         ledger_db
-            .append_block(&block, &block_contents, None)
+            .append_block(&block, &block_contents, None, None)
             .unwrap();
 
         let (mint_audit_data, balance_map) = mint_audit_db
@@ -333,7 +336,7 @@ mod tests {
             Block::new_with_parent(BLOCK_VERSION, &block, &Default::default(), &block_contents);
 
         ledger_db
-            .append_block(&block, &block_contents, None)
+            .append_block(&block, &block_contents, None, None)
             .unwrap();
 
         let (mint_audit_data, balance_map) = mint_audit_db
@@ -390,7 +393,7 @@ mod tests {
             Block::new_with_parent(BLOCK_VERSION, &block, &Default::default(), &block_contents);
 
         ledger_db
-            .append_block(&block, &block_contents, None)
+            .append_block(&block, &block_contents, None, None)
             .unwrap();
 
         let (mint_audit_data, balance_map) = mint_audit_db
@@ -448,7 +451,7 @@ mod tests {
         let block =
             Block::new_with_parent(BLOCK_VERSION, &block, &Default::default(), &block_contents);
         ledger_db
-            .append_block(&block, &block_contents, None)
+            .append_block(&block, &block_contents, None, None)
             .unwrap();
 
         let (mint_audit_data, balance_map) = mint_audit_db
@@ -628,7 +631,7 @@ mod tests {
             &block_contents,
         );
         ledger_db
-            .append_block(&block, &block_contents, None)
+            .append_block(&block, &block_contents, None, None)
             .unwrap();
         mint_audit_db
             .sync_block(&block, &block_contents, &ledger_db)
@@ -650,7 +653,7 @@ mod tests {
             Block::new_with_parent(BLOCK_VERSION, &block, &Default::default(), &block_contents);
 
         ledger_db
-            .append_block(&block, &block_contents, None)
+            .append_block(&block, &block_contents, None, None)
             .unwrap();
 
         let (mint_audit_data, balance_map) = mint_audit_db
@@ -710,7 +713,7 @@ mod tests {
             Block::new_with_parent(BLOCK_VERSION, &block, &Default::default(), &block_contents);
 
         ledger_db
-            .append_block(&block, &block_contents, None)
+            .append_block(&block, &block_contents, None, None)
             .unwrap();
 
         let (mint_audit_data, balance_map) = mint_audit_db
@@ -760,7 +763,7 @@ mod tests {
         let block =
             Block::new_with_parent(BLOCK_VERSION, &block, &Default::default(), &block_contents);
         ledger_db
-            .append_block(&block, &block_contents, None)
+            .append_block(&block, &block_contents, None, None)
             .unwrap();
 
         mint_audit_db
@@ -825,7 +828,7 @@ mod tests {
         );
 
         ledger_db
-            .append_block(&block, &block_contents, None)
+            .append_block(&block, &block_contents, None, None)
             .unwrap();
         mint_audit_db
             .sync_block(&block, &block_contents, &ledger_db)
@@ -885,7 +888,7 @@ mod tests {
             Block::new_with_parent(BLOCK_VERSION, &block, &Default::default(), &block_contents);
 
         ledger_db
-            .append_block(&block, &block_contents, None)
+            .append_block(&block, &block_contents, None, None)
             .unwrap();
         mint_audit_db
             .sync_block(&block, &block_contents, &ledger_db)
@@ -943,7 +946,7 @@ mod tests {
             Block::new_with_parent(BLOCK_VERSION, &block, &Default::default(), &block_contents);
 
         ledger_db
-            .append_block(&block, &block_contents, None)
+            .append_block(&block, &block_contents, None, None)
             .unwrap();
         mint_audit_db
             .sync_block(&block, &block_contents, &ledger_db)
@@ -1016,7 +1019,7 @@ mod tests {
         );
 
         ledger_db
-            .append_block(&block, &block_contents, None)
+            .append_block(&block, &block_contents, None, None)
             .unwrap();
         mint_audit_db
             .sync_block(&block, &block_contents, &ledger_db)
@@ -1045,7 +1048,7 @@ mod tests {
             .sync_block(&block, &block_contents, &ledger_db)
             .unwrap();
         ledger_db
-            .append_block(&block, &block_contents, None)
+            .append_block(&block, &block_contents, None, None)
             .unwrap();
 
         assert_eq!(

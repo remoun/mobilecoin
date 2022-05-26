@@ -157,12 +157,15 @@ mod tests {
     use mc_account_keys::AccountKey;
     use mc_blockchain_types::{Block, BlockContents, BlockVersion};
     use mc_common::logger::{test_with_logger, Logger};
-    use mc_ledger_db::Ledger;
+    use mc_ledger_db::{
+        test_utils::{create_ledger, initialize_ledger},
+        Ledger,
+    };
     use mc_mint_auditor_api::mint_auditor_grpc::MintAuditorApiClient;
     use mc_transaction_core::TokenId;
     use mc_transaction_core_test_utils::{
-        create_ledger, create_mint_config_tx_and_signers, create_mint_tx, create_test_tx_out,
-        initialize_ledger, mint_config_tx_to_validated as to_validated,
+        create_mint_config_tx_and_signers, create_mint_tx, create_test_tx_out,
+        mint_config_tx_to_validated as to_validated,
     };
     use rand_core::SeedableRng;
     use rand_hc::Hc128Rng;
@@ -239,7 +242,7 @@ mod tests {
         );
 
         ledger_db
-            .append_block(&block, &block_contents, None)
+            .append_block(&block, &block_contents, None, None)
             .unwrap();
         mint_audit_db
             .sync_block(&block, &block_contents, &ledger_db)
@@ -265,7 +268,7 @@ mod tests {
         );
 
         ledger_db
-            .append_block(&block, &block_contents, None)
+            .append_block(&block, &block_contents, None, None)
             .unwrap();
         mint_audit_db
             .sync_block(&block, &block_contents, &ledger_db)

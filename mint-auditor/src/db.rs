@@ -365,11 +365,14 @@ mod tests {
     use mc_blockchain_types::BlockVersion;
     use mc_common::logger::{test_with_logger, Logger};
     use mc_crypto_keys::RistrettoPrivate;
-    use mc_ledger_db::Ledger;
+    use mc_ledger_db::{
+        test_utils::{create_ledger, initialize_ledger},
+        Ledger,
+    };
     use mc_transaction_core::{tx::TxOut, Amount, TokenId};
     use mc_transaction_core_test_utils::{
-        create_ledger, create_mint_config_tx_and_signers, create_mint_tx, create_test_tx_out,
-        initialize_ledger, mint_config_tx_to_validated as to_validated,
+        create_mint_config_tx_and_signers, create_mint_tx, create_test_tx_out,
+        mint_config_tx_to_validated as to_validated,
     };
     use mc_util_from_random::FromRandom;
     use rand_core::SeedableRng;

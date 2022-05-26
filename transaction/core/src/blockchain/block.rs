@@ -55,36 +55,20 @@ impl Block {
     /// # Arguments
     /// * `outputs` - Outputs "minted" by the origin block.
     pub fn new_origin_block(outputs: &[TxOut]) -> Self {
-        let version = 0; // The origin block is always 0
-        let parent_id = BlockID::default();
-        let index: BlockIndex = 0;
-        let cumulative_txo_count = outputs.len() as u64;
-        let root_element = TxOutMembershipElement::default();
-
         // The origin block does not contain anything but TxOuts.
         let block_contents = BlockContents {
             outputs: outputs.to_vec(),
             ..Default::default()
         };
 
-        let contents_hash = block_contents.hash();
-        let id = compute_block_id(
-            version,
-            &parent_id,
-            index,
-            cumulative_txo_count,
-            &root_element,
-            &contents_hash,
-        );
-        Self {
-            id,
-            version,
-            parent_id,
-            index,
-            cumulative_txo_count,
-            root_element,
-            contents_hash,
-        }
+        Self::new(
+            BlockVersion::ZERO, // The origin block is always 0
+            &BlockID::default(),
+            0,
+            outputs.len() as u64,
+            &TxOutMembershipElement::default(),
+            &block_contents,
+        )
     }
 
     /// Creates a new `Block` intermediate in the block chain, from a parent

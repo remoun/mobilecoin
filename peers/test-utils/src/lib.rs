@@ -2,6 +2,7 @@
 
 //! Mock Peer test utilities
 
+use mc_blockchain_types::{Block, BlockID, BlockIndex};
 use mc_common::{NodeID, ResponderId};
 use mc_connection::{
     BlockInfo, BlockchainConnection, Connection, Error as ConnectionError,
@@ -19,7 +20,7 @@ use mc_ledger_db::{test_utils::mock_ledger::MockLedger, Ledger};
 use mc_peers::{
     ConsensusConnection, ConsensusMsg, ConsensusValue, Error as PeerError, Result as PeerResult,
 };
-use mc_transaction_core::{tx::TxHash, Block, BlockID, BlockIndex};
+use mc_transaction_core::tx::TxHash;
 use mc_util_from_random::FromRandom;
 use mc_util_uri::{ConnectionUri, ConsensusPeerUri as PeerUri};
 use rand::SeedableRng;

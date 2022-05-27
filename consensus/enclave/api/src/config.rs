@@ -1,9 +1,9 @@
 use crate::{FeeMap, GovernorsMap};
 use alloc::{format, string::String};
+use mc_blockchain_types::BlockVersion;
 use mc_common::ResponderId;
 use mc_crypto_digestible::{Digestible, MerlinTranscript};
 use mc_crypto_keys::Ed25519Signature;
-use mc_transaction_core::BlockVersion;
 use serde::{Deserialize, Serialize};
 
 /// Configuration for the enclave which is used to help determine which

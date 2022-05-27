@@ -4,6 +4,7 @@
 
 use crate::{database::Database, error::Error, monitor_store::MonitorId, utxo_store::UnspentTxOut};
 use mc_account_keys::{AccountKey, PublicAddress};
+use mc_blockchain_types::{BlockIndex, BlockVersion};
 use mc_common::{
     logger::{log, o, Logger},
     HashMap, HashSet,
@@ -22,7 +23,7 @@ use mc_transaction_core::{
     onetime_keys::recover_onetime_private_key,
     ring_signature::KeyImage,
     tx::{Tx, TxOut, TxOutConfirmationNumber, TxOutMembershipProof},
-    Amount, BlockIndex, BlockVersion, TokenId,
+    Amount, TokenId,
 };
 use mc_transaction_std::{
     EmptyMemoBuilder, InputCredentials, MemoBuilder, ReservedSubaddresses, TransactionBuilder,

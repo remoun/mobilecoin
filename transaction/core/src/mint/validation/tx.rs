@@ -13,10 +13,11 @@ use crate::{
             error::Error,
         },
     },
-    BlockVersion, TokenId,
+    BlockVersion,
 };
 use mc_crypto_keys::Ed25519Public;
 use mc_crypto_multisig::SignerSet;
+use mc_transaction_types::TokenId;
 
 /// Determines if the transaction is valid, with respect to the provided
 /// context.

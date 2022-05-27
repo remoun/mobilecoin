@@ -11,9 +11,9 @@ pub use crate::{error::Error, network::NetworkConfig, tokens::TokensConfig};
 
 use clap::Parser;
 use mc_attest_core::ProviderId;
+use mc_blockchain_types::BlockVersion;
 use mc_common::{NodeID, ResponderId};
 use mc_crypto_keys::{DistinguishedEncoding, Ed25519Pair, Ed25519Private};
-use mc_transaction_core::BlockVersion;
 use mc_util_parse::parse_duration_in_seconds;
 use mc_util_uri::{AdminUri, ConsensusClientUri as ClientUri, ConsensusPeerUri as PeerUri};
 use std::{fmt::Debug, path::PathBuf, str::FromStr, sync::Arc, time::Duration};

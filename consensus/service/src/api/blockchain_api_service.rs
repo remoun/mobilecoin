@@ -3,6 +3,7 @@
 //! Serves blockchain-related API requests.
 
 use grpcio::{RpcContext, RpcStatus, RpcStatusCode, UnarySink};
+use mc_blockchain_types::BlockVersion;
 use mc_common::logger::{log, Logger};
 use mc_consensus_api::{
     blockchain,
@@ -12,7 +13,7 @@ use mc_consensus_api::{
 };
 use mc_consensus_enclave::FeeMap;
 use mc_ledger_db::Ledger;
-use mc_transaction_core::{tokens::Mob, BlockVersion, Token};
+use mc_transaction_core::{tokens::Mob, Token};
 use mc_util_grpc::{rpc_logger, send_result, Authenticator};
 use mc_util_metrics::{self, SVC_COUNTERS};
 use protobuf::RepeatedField;
@@ -95,7 +96,7 @@ impl<L: Ledger + Clone> BlockchainApiService<L> {
         let end_index = offset + cmp::min(limit, self.max_page_size as u32) as u64;
 
         // Get "persistence type" blocks.
-        let mut block_entities: Vec<mc_transaction_core::Block> = vec![];
+        let mut block_entities: Vec<mc_blockchain_types::Block> = vec![];
         for block_index in start_index..end_index {
             match self.ledger.get_block(block_index as u64) {
                 Ok(block) => block_entities.push(block),
@@ -183,9 +184,10 @@ impl<L: Ledger + Clone> BlockchainApi for BlockchainApiService<L> {
 mod tests {
     use super::*;
     use grpcio::{ChannelBuilder, Environment, Error as GrpcError, Server, ServerBuilder};
+    use mc_blockchain_types::BlockVersion;
     use mc_common::{logger::test_with_logger, time::SystemTimeProvider};
     use mc_consensus_api::consensus_common_grpc::{self, BlockchainApiClient};
-    use mc_transaction_core::{BlockVersion, TokenId};
+    use mc_transaction_core::TokenId;
     use mc_transaction_core_test_utils::{create_ledger, initialize_ledger, AccountKey};
     use mc_util_grpc::{AnonymousAuthenticator, TokenAuthenticator};
     use rand::{rngs::StdRng, SeedableRng};

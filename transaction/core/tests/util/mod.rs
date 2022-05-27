@@ -1,7 +1,8 @@
 // Copyright (c) 2018-2022 The MobileCoin Foundation
 
+use mc_blockchain_types::BlockVersion;
 use mc_ledger_db::{Ledger, LedgerDB};
-use mc_transaction_core::{tx::Tx, BlockVersion};
+use mc_transaction_core::tx::Tx;
 use mc_transaction_core_test_utils::{
     create_ledger, create_transaction, create_transaction_with_amount_and_comparer,
     initialize_ledger, AccountKey,

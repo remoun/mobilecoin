@@ -1,11 +1,11 @@
 // Copyright (c) 2018-2022 The MobileCoin Foundation
 
 use mc_account_keys::AccountKey;
+use mc_blockchain_types::{Block, BlockContents, BlockVersion};
 use mc_crypto_digestible_test_utils::*;
 use mc_crypto_keys::RistrettoPrivate;
 use mc_transaction_core::{
-    encrypted_fog_hint::EncryptedFogHint, tokens::Mob, tx::TxOut, Amount, Block, BlockContents,
-    BlockVersion, Token,
+    encrypted_fog_hint::EncryptedFogHint, tokens::Mob, tx::TxOut, Amount, Token,
 };
 use mc_util_from_random::FromRandom;
 use mc_util_test_helper::{RngCore, RngType as FixedRng, SeedableRng};

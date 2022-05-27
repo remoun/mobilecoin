@@ -3,8 +3,8 @@
 //! Mint auditor error data type.
 
 use displaydoc::Display;
+use mc_blockchain_types::BlockIndex;
 use mc_ledger_db::Error as LedgerDbError;
-use mc_transaction_core::BlockIndex;
 use mc_util_lmdb::MetadataStoreError;
 use mc_util_serial::DecodeError;
 use std::io::Error as IoError;

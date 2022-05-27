@@ -2,8 +2,9 @@
 
 //! Error type for mint transactions validation.
 
-use crate::{BlockVersion, TokenId};
+use crate::BlockVersion;
 use displaydoc::Display;
+use mc_transaction_types::TokenId;
 use serde::{Deserialize, Serialize};
 
 /// Error type for mint transactions validation.

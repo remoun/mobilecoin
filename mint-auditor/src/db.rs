@@ -7,9 +7,9 @@ use lmdb::{
     Database, DatabaseFlags, Environment, EnvironmentFlags, RwTransaction, Transaction, WriteFlags,
 };
 use mc_account_keys::burn_address_view_private;
+use mc_blockchain_types::{Block, BlockContents, BlockIndex};
 use mc_common::logger::{log, Logger};
 use mc_ledger_db::{u64_to_key_bytes, Error as LedgerDbError, MintConfigStore};
-use mc_transaction_core::{Block, BlockContents, BlockIndex};
 use mc_util_lmdb::{MetadataStore, MetadataStoreSettings};
 use mc_util_serial::{decode, encode, Message};
 use serde::{Deserialize, Serialize};
@@ -362,10 +362,11 @@ impl MintAuditorDb {
 mod tests {
     use super::*;
     use mc_account_keys::{burn_address, AccountKey};
+    use mc_blockchain_types::BlockVersion;
     use mc_common::logger::{test_with_logger, Logger};
     use mc_crypto_keys::RistrettoPrivate;
     use mc_ledger_db::Ledger;
-    use mc_transaction_core::{tx::TxOut, Amount, BlockVersion, TokenId};
+    use mc_transaction_core::{tx::TxOut, Amount, TokenId};
     use mc_transaction_core_test_utils::{
         create_ledger, create_mint_config_tx_and_signers, create_mint_tx, create_test_tx_out,
         initialize_ledger, mint_config_tx_to_validated as to_validated,

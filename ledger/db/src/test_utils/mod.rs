@@ -5,6 +5,7 @@ pub use mock_ledger::{get_mock_ledger, get_test_ledger_blocks, MockLedger};
 
 use crate::{Ledger, LedgerDB};
 use mc_account_keys::{AccountKey, PublicAddress, DEFAULT_SUBADDRESS_INDEX};
+use mc_blockchain_test_utils::make_block_metadata;
 use mc_blockchain_types::{Block, BlockContents, BlockData, BlockIndex, BlockVersion};
 use mc_crypto_keys::{CompressedRistrettoPublic, RistrettoPrivate, RistrettoPublic};
 use mc_transaction_core::{
@@ -299,7 +300,7 @@ pub fn initialize_ledger<L: Ledger, R: RngCore + CryptoRng>(
         parent = Some(block.clone());
         to_spend = Some(block_contents.outputs[0].clone());
 
-        let metadata = mc_transaction_core_test_utils::make_block_metadata(block.id.clone(), rng);
+        let metadata = make_block_metadata(block.id.clone(), rng);
         let block_data = BlockData::new(block, block_contents, None, metadata);
 
         ledger

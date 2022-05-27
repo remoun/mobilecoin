@@ -5,17 +5,18 @@ authors = ["MobileCoin"]
 edition = "2021"
 
 [features]
-test_utils = []
+test_utils = ["mc-blockchain-test-utils", "mc-transaction-core-test-utils", "mc-transaction-std/test-only"]
 # The migration_support feature exposes some internals that should only be used by the `mc-ledger-migration` tool.
 migration_support = []
 
 [dependencies]
 mc-account-keys = { path = "../../account-keys" }
+mc-blockchain-test-utils = { path = "../../blockchain/test-utils", optional = true }
 mc-blockchain-types = { path = "../../blockchain/types" }
 mc-common = { path = "../../common", features = ["log"] }
 mc-crypto-keys = { path = "../../crypto/keys" }
 mc-transaction-core = { path = "../../transaction/core" }
-mc-transaction-core-test-utils = { path = "../../transaction/core/test-utils" }
+mc-transaction-core-test-utils = { path = "../../transaction/core/test-utils", optional = true }
 mc-transaction-std = { path = "../../transaction/std" }
 mc-util-from-random = { path = "../../util/from-random" }
 mc-util-lmdb = { path = "../../util/lmdb" }
@@ -33,6 +34,9 @@ rand = "0.8"
 tempdir = "0.3"
 
 [dev-dependencies]
+mc-blockchain-test-utils = { path = "../../blockchain/test-utils" }
 mc-crypto-keys = { path = "../../crypto/keys" }
 mc-crypto-multisig = { path = "../../crypto/multisig" }
 mc-crypto-rand = { path = "../../crypto/rand" }
+mc-transaction-core-test-utils = { path = "../../transaction/core/test-utils" }
+mc-transaction-std = { path = "../../transaction/std", features = ["test-only"] }

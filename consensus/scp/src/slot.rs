@@ -14,7 +14,7 @@ use crate::{
     slot_state::SlotState,
     utils,
 };
-use core::cmp;
+use core::cmp::{max, min};
 use maplit::{btreeset, hashset};
 use mc_common::{
     logger::{log, o, Logger},
@@ -787,7 +787,7 @@ impl<V: Value, ValidationError: Display> Slot<V, ValidationError> {
                         h.N,
                     );
                 }
-                self.H = Some(core::cmp::max(&h, current_h).clone());
+                self.H = Some(max(&h, current_h).clone());
             } else {
                 self.H = Some(h);
             }
@@ -910,17 +910,17 @@ impl<V: Value, ValidationError: Display> Slot<V, ValidationError> {
                     self.logger,
                     "do_prepare_phase: updating B.N: {} -> {}",
                     self.B.N,
-                    core::cmp::max(self.B.N + 1, h.N)
+                    max(self.B.N + 1, h.N)
                 );
-                self.B = Ballot::new(core::cmp::max(self.B.N + 1, h.N), &h.X);
+                self.B = Ballot::new(max(self.B.N + 1, h.N), &h.X);
             } else {
                 log::trace!(
                     self.logger,
                     "do_prepare_phase: updating B.N: {} -> {}",
                     self.B.N,
-                    core::cmp::max(self.B.N, h.N)
+                    max(self.B.N, h.N)
                 );
-                self.B = Ballot::new(core::cmp::max(self.B.N, h.N), &h.X);
+                self.B = Ballot::new(max(self.B.N, h.N), &h.X);
             }
 
             self.phase = Phase::Commit;
@@ -951,17 +951,17 @@ impl<V: Value, ValidationError: Display> Slot<V, ValidationError> {
                     self.logger,
                     "do_prepare_phase: updating B.N: {} -> {}",
                     self.B.N,
-                    core::cmp::max(self.B.N + 1, h.N)
+                    max(self.B.N + 1, h.N)
                 );
-                self.B = Ballot::new(core::cmp::max(self.B.N + 1, h.N), &h.X);
+                self.B = Ballot::new(max(self.B.N + 1, h.N), &h.X);
             } else {
                 log::trace!(
                     self.logger,
                     "do_prepare_phase: updating B.N: {} -> {}",
                     self.B.N,
-                    core::cmp::max(self.B.N, h.N)
+                    max(self.B.N, h.N)
                 );
-                self.B = Ballot::new(core::cmp::max(self.B.N, h.N), &h.X);
+                self.B = Ballot::new(max(self.B.N, h.N), &h.X);
             }
         }
 
@@ -1553,7 +1553,7 @@ impl<V: Value, ValidationError: Display> Slot<V, ValidationError> {
                         for ballot_a in &msg.accepts_prepared() {
                             for ballot_b in candidates {
                                 if ballot_a.X == ballot_b.X {
-                                    let min_counter = cmp::min(ballot_a.N, ballot_b.N);
+                                    let min_counter = min(ballot_a.N, ballot_b.N);
                                     intersections.insert(Ballot::new(min_counter, &ballot_a.X));
                                 }
                             }
@@ -1596,7 +1596,7 @@ impl<V: Value, ValidationError: Display> Slot<V, ValidationError> {
                         for ballot_a in &msg.votes_or_accepts_prepared() {
                             for ballot_b in candidates {
                                 if ballot_a.X == ballot_b.X {
-                                    let min_counter = cmp::min(ballot_a.N, ballot_b.N);
+                                    let min_counter = min(ballot_a.N, ballot_b.N);
                                     intersections.insert(Ballot::new(min_counter, &ballot_a.X));
                                 }
                             }
@@ -1634,7 +1634,7 @@ impl<V: Value, ValidationError: Display> Slot<V, ValidationError> {
                 for ballot_a in &msg.accepts_prepared() {
                     for ballot_b in candidates {
                         if ballot_a.X == ballot_b.X {
-                            let min_counter = cmp::min(ballot_a.N, ballot_b.N);
+                            let min_counter = min(ballot_a.N, ballot_b.N);
                             intersections.insert(Ballot::new(min_counter, &ballot_a.X));
                         }
                     }
@@ -1747,8 +1747,8 @@ impl<V: Value, ValidationError: Display> Slot<V, ValidationError> {
             match ballot_ranges.get_mut(&values) {
                 Some((c, d)) => {
                     // TODO: If values maps to multiple ranges, take the union of those ranges?
-                    let min = core::cmp::min(a, *c);
-                    let max = core::cmp::max(b, *d);
+                    let min = min(a, *c);
+                    let max = max(b, *d);
                     ballot_ranges.insert(values, (min, max));
                 }
                 None => {

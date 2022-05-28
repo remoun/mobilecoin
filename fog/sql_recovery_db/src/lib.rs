@@ -19,11 +19,13 @@ mod sql_types;
 
 use crate::sql_types::{SqlCompressedRistrettoPublic, UserEventType};
 use clap::Parser;
+use core::cmp::max;
 use diesel::{
     pg::PgConnection,
     prelude::*,
     r2d2::{ConnectionManager, Pool},
 };
+pub use error::Error;
 use mc_attest_core::VerificationReport;
 use mc_common::{
     logger::{log, Logger},
@@ -47,9 +49,7 @@ use prost::Message;
 use proto_types::ProtoIngestedBlockData;
 use retry::{delay, Error as RetryError, OperationResult};
 use serde::Serialize;
-use std::{cmp::max, time::Duration};
-
-pub use error::Error;
+use std::time::Duration;
 
 /// Maximum number of parameters PostgreSQL allows in a single query.
 /// The actual limit is 65535. This value is more conservative, resulting on
@@ -754,7 +754,7 @@ impl SqlRecoveryDb {
             ) = row;
 
             // Update running max
-            max_user_event_id = core::cmp::max(max_user_event_id, user_event_id);
+            max_user_event_id = max(max_user_event_id, user_event_id);
 
             events.push((
                 user_event_id,

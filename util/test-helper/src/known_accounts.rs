@@ -5,7 +5,7 @@
 use mc_account_keys::{AccountKey, PublicAddress, RootIdentity};
 use rand::rngs::StdRng;
 use rand_core::SeedableRng;
-use std::cmp;
+use std::cmp::min;
 
 // The default accounts are the first NUMBER_OF_DEFAULT_ACCOUNTS that we
 // generate
@@ -115,19 +115,19 @@ lazy_static! {
 pub fn generate(mut num: usize) -> Vec<AccountKey> {
     let mut keys = Vec::with_capacity(num);
     if num > 0 {
-        for k in KNOWN_ACCOUNT_KEYS_0_10[0..cmp::min(num, 10)].iter() {
+        for k in KNOWN_ACCOUNT_KEYS_0_10[0..min(num, 10)].iter() {
             keys.push(k.clone());
             num -= 1;
         }
     }
     if num > 0 {
-        for k in KNOWN_ACCOUNT_KEYS_10_100[0..cmp::min(num, 90)].iter() {
+        for k in KNOWN_ACCOUNT_KEYS_10_100[0..min(num, 90)].iter() {
             keys.push(k.clone());
             num -= 1;
         }
     }
     if num > 0 {
-        for k in KNOWN_ACCOUNT_KEYS_100_1000[0..cmp::min(num, 900)].iter() {
+        for k in KNOWN_ACCOUNT_KEYS_100_1000[0..min(num, 900)].iter() {
             keys.push(k.clone());
             num -= 1;
         }

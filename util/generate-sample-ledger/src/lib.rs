@@ -18,7 +18,7 @@ use mc_transaction_core::{
 use mc_util_from_random::FromRandom;
 use rand::{RngCore, SeedableRng};
 use rand_hc::Hc128Rng as FixedRng;
-use std::{path::Path, vec::Vec};
+use std::{cmp::min, path::Path, vec::Vec};
 
 // This is historically the version created by bootstrap
 const BLOCK_VERSION: BlockVersion = BlockVersion::ZERO;
@@ -159,7 +159,7 @@ fn create_output(
         let mut hint_buf = [1u8; ENCRYPTED_FOG_HINT_LEN];
         let hint_len = hs.as_bytes().len();
         if hint_len > 0 {
-            let slice_len = std::cmp::min(hint_len, ENCRYPTED_FOG_HINT_LEN);
+            let slice_len = min(hint_len, ENCRYPTED_FOG_HINT_LEN);
             hint_buf[..slice_len].copy_from_slice(&hs.as_bytes()[..slice_len]);
         }
 

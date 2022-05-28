@@ -14,9 +14,9 @@ use mc_consensus_enclave::FeeMap;
 use mc_ledger_db::Ledger;
 use mc_transaction_core::{tokens::Mob, BlockVersion, Token};
 use mc_util_grpc::{rpc_logger, send_result, Authenticator};
-use mc_util_metrics::{self, SVC_COUNTERS};
+use mc_util_metrics::SVC_COUNTERS;
 use protobuf::RepeatedField;
-use std::{cmp, collections::HashMap, convert::From, iter::FromIterator, sync::Arc};
+use std::{cmp::min, collections::HashMap, convert::From, iter::FromIterator, sync::Arc};
 
 #[derive(Clone)]
 pub struct BlockchainApiService<L: Ledger + Clone> {
@@ -92,7 +92,7 @@ impl<L: Ledger + Clone> BlockchainApiService<L> {
     /// is a hack to expose the `get_blocks` implementation for unit testing.
     fn get_blocks_helper(&mut self, offset: u64, limit: u32) -> Result<BlocksResponse, ()> {
         let start_index = offset;
-        let end_index = offset + cmp::min(limit, self.max_page_size as u32) as u64;
+        let end_index = offset + min(limit, self.max_page_size as u32) as u64;
 
         // Get "persistence type" blocks.
         let mut block_entities: Vec<mc_transaction_core::Block> = vec![];

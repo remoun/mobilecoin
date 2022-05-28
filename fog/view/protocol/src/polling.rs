@@ -19,7 +19,10 @@ use crate::{
     user_rng_set::{TxOutRecoveryError, UserRngSet},
 };
 use alloc::vec::Vec;
-use core::fmt::{Debug, Display};
+use core::{
+    cmp::min,
+    fmt::{Debug, Display},
+};
 use displaydoc::Display;
 use mc_common::HashSet;
 use mc_crypto_keys::KeyError;
@@ -168,7 +171,7 @@ pub trait FogViewConnection {
             // so that we can guarantee that if we don't find a transaction for
             // some particular rng output, then it didn't land
             // before num_blocks.
-            new_highest_processed_block_count = core::cmp::min(
+            new_highest_processed_block_count = min(
                 new_highest_processed_block_count,
                 resp.highest_processed_block_count,
             );

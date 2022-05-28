@@ -11,8 +11,7 @@ use mc_crypto_digestible::Digestible;
 use mc_util_serial::prost::alloc::fmt::Formatter;
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use std::{
-    cmp,
-    cmp::Ordering,
+    cmp::{max, min, Ordering},
     collections::{hash_map::DefaultHasher, BTreeSet, HashSet},
     fmt,
     fmt::{Debug, Display},
@@ -496,8 +495,13 @@ impl<
     /// b whose value is `value` and whose counter is in the range [min, max]
     /// (inclusive). If so, returns the new min/max that is the overlap
     /// between the input and what `self` votes for or accepts.
-    pub fn votes_or_accepts_commits(&self, value: &[V], min: u32, max: u32) -> Option<(u32, u32)> {
-        assert!(min <= max);
+    pub fn votes_or_accepts_commits(
+        &self,
+        value: &[V],
+        min_val: u32,
+        max_val: u32,
+    ) -> Option<(u32, u32)> {
+        assert!(min_val <= max_val);
 
         // Range of ballot counters for which this message implies "vote_or_accept
         // commit" for these values.
@@ -532,9 +536,9 @@ impl<
 
         range.and_then(|(a, b)| {
             // If [a,b] intersects with with [min,max], return the intersection.
-            let intersects = a <= max && min <= b;
+            let intersects = a <= max_val && min_val <= b;
             if intersects {
-                let intersection: (u32, u32) = (cmp::max(a, min), cmp::min(b, max));
+                let intersection: (u32, u32) = (max(a, min_val), min(b, max_val));
                 assert!(intersection.0 <= intersection.1);
                 Some(intersection)
             } else {
@@ -547,8 +551,8 @@ impl<
     /// and whose counter is in the range [min,max] (inclusive). If so,
     /// returns the new min/max that is the overlap between the input and
     /// what e accepts.
-    pub fn accepts_commits(&self, value: &[V], min: u32, max: u32) -> Option<(u32, u32)> {
-        assert!(min <= max);
+    pub fn accepts_commits(&self, value: &[V], min_val: u32, max_val: u32) -> Option<(u32, u32)> {
+        assert!(min_val <= max_val);
         let range = match self.topic {
             Commit(ref payload) => {
                 if &payload.B.X[..] == value {
@@ -571,9 +575,9 @@ impl<
 
         range.and_then(|(a, b)| {
             // If [a,b] intersects with with [min,max], return the intersection.
-            let intersects = a <= max && min <= b;
+            let intersects = a <= max_val && min_val <= b;
             if intersects {
-                let intersection: (u32, u32) = (cmp::max(a, min), cmp::min(b, max));
+                let intersection: (u32, u32) = (max(a, min_val), min(b, max_val));
                 assert!(intersection.0 <= intersection.1);
                 Some(intersection)
             } else {

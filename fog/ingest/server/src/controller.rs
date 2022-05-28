@@ -9,6 +9,7 @@ use crate::{
     error::{IngestServiceError as Error, PeerBackupError, RestoreStateError, SetPeersError},
     server::IngestServerConfig,
 };
+use core::cmp::max;
 use mc_attest_enclave_api::{EnclaveMessage, PeerAuthRequest, PeerAuthResponse, PeerSession};
 use mc_attest_net::RaClient;
 use mc_common::{
@@ -36,10 +37,13 @@ use mc_transaction_core::{Block, BlockContents, BlockIndex};
 use mc_util_parse::SeqDisplay;
 use mc_util_uri::ConnectionUri;
 use std::{
+    cmp::min,
     collections::{BTreeMap, BTreeSet},
     convert::TryFrom,
     io::ErrorKind,
     sync::{Arc, Mutex, MutexGuard},
+    thread::sleep,
+    time::Duration,
 };
 
 /// The ingest controller sits under the grpc / networking layer, and implements
@@ -225,8 +229,8 @@ where
                             "Retry to restore state on connection error: {}",
                             err
                         );
-                        std::thread::sleep(std::time::Duration::from_secs(retry_seconds));
-                        retry_seconds = std::cmp::min(retry_seconds + 1, 30);
+                        sleep(Duration::from_secs(retry_seconds));
+                        retry_seconds = min(retry_seconds + 1, 30);
                     }
                     Err(err) => {
                         // Note: We don't panic or nuke the statefile because this server may have
@@ -476,8 +480,8 @@ where
                                 block.index,
                                 err
                             );
-                            std::thread::sleep(std::time::Duration::from_secs(retry_seconds));
-                            retry_seconds = std::cmp::min(retry_seconds + 1, 30);
+                            sleep(Duration::from_secs(retry_seconds));
+                            retry_seconds = min(retry_seconds + 1, 30);
                         }
                     }
                 }
@@ -570,8 +574,8 @@ where
                         }
                         Err(err) => {
                             log::crit!(self.logger, "Could not rotate kex rng pubkey in recovery database! Retrying...: {}", err);
-                            std::thread::sleep(std::time::Duration::from_secs(retry_seconds));
-                            retry_seconds = std::cmp::min(retry_seconds + 1, 30);
+                            sleep(Duration::from_secs(retry_seconds));
+                            retry_seconds = min(retry_seconds + 1, 30);
                         }
                     };
                 };
@@ -644,8 +648,8 @@ where
                 }
                 Err(err) => {
                     log::crit!(self.logger, "add_block_data failed while attempting to add {} rows for block #{}: {}. Retrying in {} seconds", tx_rows.len(), block.index, err, retry_seconds);
-                    std::thread::sleep(std::time::Duration::from_secs(retry_seconds));
-                    retry_seconds = std::cmp::min(retry_seconds + 1, 30);
+                    sleep(Duration::from_secs(retry_seconds));
+                    retry_seconds = min(retry_seconds + 1, 30);
                     let _ = db_metrics_timer.stop_and_discard();
                 }
             }
@@ -787,7 +791,7 @@ where
                 // ledger_db.num_blocks(), and whatever is in recovery_db, in
                 // case our ledger_db is behind Note: we add one to recovery_db
                 // result because that is an index, but num_blocks is a block_count
-                let start_block = core::cmp::max(
+                let start_block = max(
                     ledger_num_blocks,
                     self.recovery_db
                         .get_highest_known_block_index()?

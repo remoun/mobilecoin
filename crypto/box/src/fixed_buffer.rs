@@ -4,6 +4,7 @@
 //! buffer.
 
 use crate::aead::{Buffer, Error};
+use core::cmp::min;
 
 /// The rust aead crate is organized around a Buffer trait which abstracts
 /// commonalities of alloc::vec::Vec and heapless::Vec which are useful for
@@ -62,7 +63,7 @@ impl<'a> Buffer for FixedBuffer<'a> {
     }
 
     fn truncate(&mut self, len: usize) {
-        self.length = core::cmp::min(self.length, len);
+        self.length = min(self.length, len);
     }
 }
 

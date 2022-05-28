@@ -26,6 +26,7 @@ use mc_util_telemetry::{
 use mc_util_uri::ConnectionUri;
 use retry::delay::Fibonacci;
 use std::{
+    cmp::min,
     collections::{BTreeMap, HashMap, HashSet},
     sync::{Arc, Condvar, Mutex},
     thread,
@@ -585,7 +586,7 @@ fn get_block_contents<TF: TransactionsFetcher + 'static>(
     // Spawn worker threads.
     let mut thread_handles = Vec::new();
 
-    let num_workers = std::cmp::min(MAX_CONCURRENT_GET_BLOCK_CONTENTS_CALLS, blocks.len());
+    let num_workers = min(MAX_CONCURRENT_GET_BLOCK_CONTENTS_CALLS, blocks.len());
     for worker_num in 0..num_workers {
         let thread_results_and_condvar = results_and_condvar.clone();
         let thread_sender = sender.clone();

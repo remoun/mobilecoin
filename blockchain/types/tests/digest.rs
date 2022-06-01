@@ -157,10 +157,7 @@ fn origin_block_digestible_ast() {
             ASTNode::from(ASTPrimitive {
                 context: b"hash",
                 type_name: b"bytes",
-                data: vec![
-                    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                    0, 0, 0, 0, 0, 0,
-                ],
+                data: vec![0; 32],
             }),
         ],
     });

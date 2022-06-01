@@ -5,7 +5,7 @@ use mc_blockchain_types::{Block, BlockContentsHash, BlockID};
 use mc_transaction_core::tx::TxOutMembershipElement;
 use std::convert::TryFrom;
 
-/// Convert mc_blockchain_types::Block --> blockchain::Block.
+/// Convert Block --> blockchain::Block.
 impl From<&Block> for blockchain::Block {
     fn from(other: &Block) -> Self {
         let mut block = blockchain::Block::new();
@@ -20,7 +20,7 @@ impl From<&Block> for blockchain::Block {
     }
 }
 
-/// Convert blockchain::Block --> mc_blockchain_types::Block.
+/// Convert blockchain::Block --> Block.
 impl TryFrom<&blockchain::Block> for Block {
     type Error = ConversionError;
 
@@ -51,7 +51,7 @@ mod tests {
     use protobuf::Message;
 
     #[test]
-    // mc_blockchain_types::Block --> blockchain::Block
+    // Block --> blockchain::Block
     fn test_block_from() {
         let source_block = Block {
             id: BlockID::try_from(&[2u8; 32][..]).unwrap(),
@@ -79,7 +79,7 @@ mod tests {
     }
 
     #[test]
-    // blockchain::Block -> mc_blockchain_types::Block
+    // blockchain::Block -> Block
     fn test_block_try_from() {
         let mut root_element = external::TxOutMembershipElement::new();
         root_element.mut_range().set_from(10);

@@ -1,24 +1,24 @@
 //! Convert to/from blockchain::BlockID
 
 use crate::{blockchain, convert::ConversionError};
+use mc_blockchain_types::BlockID;
 use std::convert::TryFrom;
 
-/// Convert mc_blockchain_types::BlockID --> blockchain::BlockID.
-impl From<&mc_blockchain_types::BlockID> for blockchain::BlockID {
-    fn from(src: &mc_blockchain_types::BlockID) -> Self {
+/// Convert BlockID --> blockchain::BlockID.
+impl From<&BlockID> for blockchain::BlockID {
+    fn from(src: &BlockID) -> Self {
         let mut dst = blockchain::BlockID::new();
         dst.set_data(src.as_ref().to_vec());
         dst
     }
 }
 
-/// Convert blockchain::BlockID --> mc_blockchain_types::BlockID.
-impl TryFrom<&blockchain::BlockID> for mc_blockchain_types::BlockID {
+/// Convert blockchain::BlockID --> BlockID.
+impl TryFrom<&blockchain::BlockID> for BlockID {
     type Error = ConversionError;
 
     fn try_from(src: &blockchain::BlockID) -> Result<Self, Self::Error> {
-        mc_blockchain_types::BlockID::try_from(src.get_data())
-            .map_err(|_| ConversionError::ArrayCastError)
+        BlockID::try_from(src.get_data()).map_err(|_| ConversionError::ArrayCastError)
     }
 }
 
@@ -33,7 +33,7 @@ mod tests {
         let mut bad_block_id = blockchain::BlockID::new();
         bad_block_id.set_data(vec![1u8; 37]);
 
-        let converted = mc_blockchain_types::BlockID::try_from(&bad_block_id);
+        let converted = BlockID::try_from(&bad_block_id);
         assert!(converted.is_err());
     }
 
@@ -44,7 +44,7 @@ mod tests {
         let mut bad_block_id = blockchain::BlockID::new();
         bad_block_id.set_data(vec![1u8; 11]);
 
-        let converted = mc_blockchain_types::BlockID::try_from(&bad_block_id);
+        let converted = BlockID::try_from(&bad_block_id);
         assert!(converted.is_err());
     }
 }

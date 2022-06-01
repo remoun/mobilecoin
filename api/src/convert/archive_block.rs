@@ -198,7 +198,7 @@ mod tests {
             BlockSignature::try_from(archive_block.get_v1().get_signature()).unwrap()
         );
 
-        // blockchain::ArchiveBlock -> mc_blockchain_types::BlockData
+        // blockchain::ArchiveBlock -> BlockData
         let block_data2 = BlockData::try_from(&archive_block).unwrap();
         assert_eq!(block_data, block_data2);
     }
@@ -235,11 +235,11 @@ mod tests {
     }
 
     #[test]
-    // Vec<mc_blockchain_types::BlockData> <--> blockchain::ArchiveBlocks
+    // Vec<BlockData> <--> blockchain::ArchiveBlocks
     fn test_archive_blocks() {
         let blocks_data = generate_test_blocks_data(10);
 
-        // Vec<mc_blockchain_types::BlockData> -> blockchain::ArchiveBlocks
+        // Vec<BlockData> -> blockchain::ArchiveBlocks
         let archive_blocks = blockchain::ArchiveBlocks::from(&blocks_data[..]);
         for (i, block_data) in blocks_data.iter().enumerate() {
             let archive_block = &archive_blocks.get_blocks()[i];
@@ -257,13 +257,13 @@ mod tests {
             );
         }
 
-        // blockchain::ArchiveBlocks -> Vec<mc_blockchain_types::BlockData>
+        // blockchain::ArchiveBlocks -> Vec<BlockData>
         let blocks_data2 = Vec::<BlockData>::try_from(&archive_blocks).unwrap();
         assert_eq!(blocks_data, blocks_data2);
     }
 
     #[test]
-    // blockchain::ArchiveBlocks -> Vec<mc_blockchain_types::BlockData> should fail
+    // blockchain::ArchiveBlocks -> Vec<BlockData> should fail
     // if the blocks to not form a chain.
     fn test_try_from_blockchain_archive_blocks_rejects_invalid() {
         let blocks_data = generate_test_blocks_data(10);

@@ -1,7 +1,6 @@
 mod util;
 
-use mc_blockchain_types::BlockVersion;
-use mc_transaction_core::{tx::Tx, InputRules};
+use mc_transaction_core::{tx::Tx, BlockVersion, InputRules};
 
 use util::create_test_tx;
 

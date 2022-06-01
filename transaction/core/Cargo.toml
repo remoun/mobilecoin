@@ -56,7 +56,6 @@ proptest = { version = "1.0", default-features = false, features = ["default-cod
 rand = "0.8"
 tempdir = "0.3"
 
-mc-blockchain-types = { path = "../../blockchain/types" }
 mc-crypto-digestible-test-utils = { path = "../../crypto/digestible/test-utils" }
 mc-crypto-ring-signature = { path = "../../crypto/ring-signature", features = ["proptest"] }
 mc-ledger-db = { path = "../../ledger/db" }

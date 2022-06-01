@@ -50,9 +50,7 @@ impl TryFrom<&ArchiveBlock> for BlockData {
             .transpose()?;
 
         if let Some(signature) = signature.as_ref() {
-            signature
-                .verify(&block)
-                .map_err(|_| ConversionError::InvalidSignature)?;
+            signature.verify(&block)?;
         }
 
         if block.contents_hash != block_contents.hash() {

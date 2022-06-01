@@ -12,7 +12,7 @@ impl From<&mc_blockchain_types::BlockID> for blockchain::BlockID {
     }
 }
 
-/// Convert blockchain::BlockContentsHash --> mc_blockchain_types::BlockID.
+/// Convert blockchain::BlockID --> mc_blockchain_types::BlockID.
 impl TryFrom<&blockchain::BlockID> for mc_blockchain_types::BlockID {
     type Error = ConversionError;
 

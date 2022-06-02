@@ -5,7 +5,9 @@
 
 use crate::error::WatcherDBError;
 use lmdb::{Cursor, Database, DatabaseFlags, Environment, RwTransaction, Transaction, WriteFlags};
-use mc_blockchain_types::{Block, BlockContents, BlockData, BlockIndex, BlockSignature};
+use mc_blockchain_types::{
+    Block, BlockContents, BlockData, BlockIndex, BlockMetadata, BlockSignature,
+};
 use mc_common::{
     logger::{log, Logger},
     HashMap,
@@ -19,28 +21,35 @@ use url::Url;
 /// Block datas database name.
 pub const BLOCK_DATAS_BY_INDEX_DB_NAME: &str = "watcher_db:block_data:blocks_datas_by_index";
 
-/// Blocks by hash database name.
+/// [Block]s by hash database name.
 pub const BLOCKS_BY_HASH_DB_NAME: &str = "watcher_db:block_data:blocks_by_hash";
 
-/// BlockContents by hash database name.
+/// [BlockContents] by hash database name.
 pub const BLOCK_CONTENTS_BY_HASH_DB_NAME: &str = "watcher_db:block_data:block_contents_by_hash";
+
+/// [BlockMetadata] by hash database name.
+pub const BLOCK_METADATA_BY_HASH_DB_NAME: &str = "watcher_db:block_data:block_metadata_by_hash";
 
 /// An internal object for representing BlockData that doesn't hold the actual
 /// Block and BlockContents since those might be shared with other blocks.
 #[derive(Clone, Message)]
 pub struct StoredBlockData {
-    /// 32 bytes hash of Block.
-    #[prost(bytes, required, tag = "1")]
+    /// 32 bytes hash of [Block].
+    #[prost(bytes, required, tag = 1)]
     pub block_hash: Vec<u8>,
 
-    /// 32 bytes hash of BlockContent.
-    #[prost(bytes, required, tag = "2")]
+    /// 32 bytes hash of [BlockContents].
+    #[prost(bytes, required, tag = 2)]
     pub block_contents_hash: Vec<u8>,
+
+    /// Hash of [BlockMetadata].
+    #[prost(bytes, required, tag = 4)]
+    pub block_metadata_hash: Vec<u8>,
 
     /// Block signature (optional).
     // The signature is unique (we do not expect to encounter duplicate signatures)
     // so we store it inside here.
-    #[prost(message, tag = "3")]
+    #[prost(message, tag = 3)]
     pub signature: Option<BlockSignature>,
 }
 
@@ -48,14 +57,17 @@ pub struct StoredBlockData {
 #[derive(Clone)]
 pub struct BlockDataStore {
     /// Blocks data database. Indexed by (block index, tx_src_url) and maps into
-    /// a StoredBlockData object
+    /// a [StoredBlockData] object.
     block_datas_by_index: Database,
 
-    /// Block hash -> Block.
+    /// Block hash -> [Block].
     blocks_by_hash: Database,
 
-    /// BlockContents hash -> BlockContents
+    /// BlockContents hash -> [BlockContents].
     block_contents_by_hash: Database,
+
+    /// Metadata hash -> [BlockMetadata].
+    block_metadata_by_hash: Database,
 
     /// Logger.
     logger: Logger,
@@ -67,10 +79,12 @@ impl BlockDataStore {
         let block_datas_by_index = env.open_db(Some(BLOCK_DATAS_BY_INDEX_DB_NAME))?;
         let blocks_by_hash = env.open_db(Some(BLOCKS_BY_HASH_DB_NAME))?;
         let block_contents_by_hash = env.open_db(Some(BLOCK_CONTENTS_BY_HASH_DB_NAME))?;
+        let block_metadata_by_hash = env.open_db(Some(BLOCK_METADATA_BY_HASH_DB_NAME))?;
         Ok(Self {
             block_datas_by_index,
             blocks_by_hash,
             block_contents_by_hash,
+            block_metadata_by_hash,
             logger,
         })
     }
@@ -80,6 +94,7 @@ impl BlockDataStore {
         env.create_db(Some(BLOCK_DATAS_BY_INDEX_DB_NAME), DatabaseFlags::empty())?;
         env.create_db(Some(BLOCKS_BY_HASH_DB_NAME), DatabaseFlags::empty())?;
         env.create_db(Some(BLOCK_CONTENTS_BY_HASH_DB_NAME), DatabaseFlags::empty())?;
+        env.create_db(Some(BLOCK_METADATA_BY_HASH_DB_NAME), DatabaseFlags::empty())?;
         Ok(())
     }
 
@@ -93,10 +108,12 @@ impl BlockDataStore {
     ) -> Result<(), WatcherDBError> {
         let block_hash = self.store_block(db_txn, block_data.block())?;
         let block_contents_hash = self.store_block_contents(db_txn, block_data.contents())?;
+        let block_metadata_hash = self.store_block_metadata(db_txn, block_data.metadata())?;
 
         let stored_block_data = StoredBlockData {
             block_hash,
             block_contents_hash,
+            block_metadata_hash,
             signature: block_data.signature().clone(),
         };
 
@@ -147,12 +164,14 @@ impl BlockDataStore {
         let block = self.get_block_by_hash(db_txn, &stored_block_data.block_hash)?;
         let block_contents =
             self.get_block_contents_by_hash(db_txn, &stored_block_data.block_contents_hash)?;
+        let block_metadata =
+            self.get_block_metadata_by_hash(db_txn, &stored_block_data.block_metadata_hash)?;
 
         Ok(BlockData::new(
             block,
             block_contents,
             stored_block_data.signature,
-            None,
+            block_metadata,
         ))
     }
 
@@ -189,10 +208,17 @@ impl BlockDataStore {
             let block = self.get_block_by_hash(db_txn, &stored_block_data.block_hash)?;
             let block_contents =
                 self.get_block_contents_by_hash(db_txn, &stored_block_data.block_contents_hash)?;
+            let block_metadata =
+                self.get_block_metadata_by_hash(db_txn, &stored_block_data.block_metadata_hash)?;
 
             results.insert(
                 tx_source_url,
-                BlockData::new(block, block_contents, stored_block_data.signature, None),
+                BlockData::new(
+                    block,
+                    block_contents,
+                    stored_block_data.signature,
+                    block_metadata,
+                ),
             );
         }
 
@@ -271,6 +297,30 @@ impl BlockDataStore {
         }
     }
 
+    fn store_block_metadata<'env>(
+        &self,
+        db_txn: &mut RwTransaction<'env>,
+        block_metadata: &Option<BlockMetadata>,
+    ) -> Result<Vec<u8>, WatcherDBError> {
+        block_metadata.as_ref().map_or_else(
+            || Ok(Vec::new()),
+            |block_metadata| {
+                let hash = block_metadata.hash().to_vec();
+
+                match db_txn.put(
+                    self.block_metadata_by_hash,
+                    &hash,
+                    &encode(block_metadata),
+                    WriteFlags::NO_OVERWRITE,
+                ) {
+                    Ok(()) => Ok(hash),
+                    Err(lmdb::Error::KeyExist) => Ok(hash),
+                    Err(err) => Err(err.into()),
+                }
+            },
+        )
+    }
+
     fn get_block_by_hash(
         &self,
         db_txn: &impl Transaction,
@@ -291,6 +341,22 @@ impl BlockDataStore {
             .get(self.block_contents_by_hash, &hash)
             .map_err(WatcherDBError::from)
             .and_then(|bytes| decode(bytes).map_err(WatcherDBError::from))
+    }
+
+    fn get_block_metadata_by_hash(
+        &self,
+        db_txn: &impl Transaction,
+        hash: &[u8],
+    ) -> Result<Option<BlockMetadata>, WatcherDBError> {
+        if hash.is_empty() {
+            Ok(None)
+        } else {
+            db_txn
+                .get(self.block_metadata_by_hash, &hash)
+                .map_err(WatcherDBError::from)
+                .and_then(|bytes| decode(bytes).map_err(WatcherDBError::from))
+                .map(Some)
+        }
     }
 }
 

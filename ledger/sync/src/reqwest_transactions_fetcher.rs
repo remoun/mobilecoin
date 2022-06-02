@@ -108,7 +108,7 @@ impl ReqwestTransactionsFetcher {
         client: reqwest::blocking::Client,
         logger: Logger,
     ) -> Result<Self, ReqwestTransactionsFetcherError> {
-        let source_urls: Result<Vec<Url>, ReqwestTransactionsFetcherError> = source_urls
+        let source_urls = source_urls
             .into_iter()
             // All source_urls must end with a '/'
             .map(|mut url| {
@@ -122,10 +122,10 @@ impl ReqwestTransactionsFetcher {
             .map(|url| {
                 Url::parse(&url).map_err(|err| ReqwestTransactionsFetcherError::UrlParse(url, err))
             })
-            .collect();
+            .collect::<Result<_, _>>()?;
 
         Ok(Self {
-            source_urls: source_urls?,
+            source_urls,
             client,
             logger,
             source_index_counter: Arc::new(AtomicU64::new(0)),

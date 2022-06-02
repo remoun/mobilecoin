@@ -254,9 +254,9 @@ pub fn initialize_ledger(
     // TxOut from the previous block
     let mut to_spend: Option<TxOut> = None;
 
-    let mut results = Vec::with_capacity(n_blocks.try_into().unwrap());
+    let mut results = Vec::with_capacity(n_blocks as usize);
     for block_index in 0..n_blocks {
-        let block_data = match to_spend {
+        let (outputs, key_images) = match to_spend {
             Some(tx_out) => {
                 let tx = create_transaction(
                     block_version,
@@ -269,25 +269,24 @@ pub fn initialize_ledger(
                 );
 
                 let key_images = tx.key_images();
-                let outputs = tx.prefix.outputs.clone();
-                add_txos_and_key_images_to_ledger_db(
-                    ledger,
-                    block_version,
-                    outputs,
-                    key_images,
-                    rng,
-                )
+                (tx.prefix.outputs, key_images)
             }
             None => {
                 // Create an origin block.
                 let recipient_and_amount = (0..RING_SIZE)
                     .map(|_| (account_key.default_subaddress(), Amount { value, token_id }))
                     .collect::<Vec<_>>();
+                //  The origin block is always V0.
                 let outputs = get_outputs(BlockVersion::ZERO, &recipient_and_amount, rng);
-                add_txos_to_ledger_db(ledger, block_version, &outputs, rng)
+                (outputs, vec![])
             }
-        }
-        .unwrap();
+        };
+
+        let block_data =
+            add_txos_and_key_images_to_ledger_db(ledger, block_version, outputs, key_images, rng)
+                .unwrap_or_else(|err| {
+                    panic!("failed to append block with index {}: {}", block_index, err)
+                });
 
         to_spend = Some(block_data.contents().outputs[0].clone());
 
@@ -346,12 +345,11 @@ pub fn add_txos_to_ledger_db(
     outputs: &[TxOut],
     rng: &mut (impl CryptoRng + RngCore),
 ) -> Result<BlockData, Error> {
-    let key_images = vec![KeyImage::from(rng.next_u64())];
     add_txos_and_key_images_to_ledger_db(
         ledger_db,
         block_version,
         outputs.to_vec(),
-        key_images,
+        vec![KeyImage::from(rng.next_u64())],
         rng,
     )
 }

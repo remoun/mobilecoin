@@ -174,6 +174,7 @@ impl TryFrom<&mc_mobilecoind_api::TxProposal> for TxProposal {
 #[cfg(test)]
 mod test {
     use super::*;
+    use mc_account_keys::AccountKey;
     use mc_crypto_keys::RistrettoPublic;
     use mc_ledger_db::{
         test_utils::{create_ledger, create_transaction, initialize_ledger},
@@ -183,7 +184,6 @@ mod test {
         encrypted_fog_hint::ENCRYPTED_FOG_HINT_LEN, tokens::Mob, Amount, BlockVersion,
         MaskedAmount, Token,
     };
-    use mc_transaction_core_test_utils::AccountKey;
     use mc_util_from_random::FromRandom;
     use rand::{rngs::StdRng, SeedableRng};
     use std::iter::FromIterator;

@@ -52,7 +52,7 @@ subtle = { version = "2.4", default-features = false, features = ["i128"] }
 [dev-dependencies]
 mc-common = { path = "../../../common", features = ["loggers"] }
 mc-crypto-multisig = { path = "../../../crypto/multisig" }
-mc-ledger-db = { path = "../../../ledger/db" }
+mc-ledger-db = { path = "../../../ledger/db", features = ["test_utils"] }
 mc-transaction-core-test-utils = { path = "../../../transaction/core/test-utils" }
 
 rand = "0.8"

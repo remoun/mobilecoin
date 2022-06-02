@@ -1,11 +1,11 @@
 // Copyright (c) 2018-2022 The MobileCoin Foundation
 
 use crate::{
-    crypto::metadata::{MetadataSigner, MetadataVerifier},
+    crypto::metadata::{block_metadata_context, MetadataSigner, MetadataVerifier},
     BlockID, QuorumSet, VerificationReport,
 };
 use displaydoc::Display;
-use mc_crypto_digestible::Digestible;
+use mc_crypto_digestible::{Digestible, MerlinTranscript};
 use mc_crypto_keys::{Ed25519Pair, Ed25519Public, Ed25519Signature, SignatureError};
 use prost::Message;
 use serde::{Deserialize, Serialize};
@@ -115,5 +115,10 @@ impl BlockMetadata {
     /// Get the signature.
     pub fn signature(&self) -> &Ed25519Signature {
         &self.signature
+    }
+
+    /// Get a digest hash of this metadata.
+    pub fn hash(&self) -> [u8; 32] {
+        self.digest32::<MerlinTranscript>(block_metadata_context())
     }
 }

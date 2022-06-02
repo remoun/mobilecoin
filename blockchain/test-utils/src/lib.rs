@@ -83,9 +83,10 @@ pub fn get_blocks_with_recipients<R: RngCore + CryptoRng>(
             recipients.len() * num_tokens as usize * num_tx_outs_per_recipient_per_token_per_block,
         );
         for recipient in recipients {
-            for token_id in 0..num_tokens {
-                let amount = Amount::new(amount_per_tx_out, token_id.into());
-                for _ in 0..num_tx_outs_per_recipient_per_token_per_block {
+            for _ in 0..num_tx_outs_per_recipient_per_token_per_block {
+                // Create outputs for each token in round-robin
+                for token_id in 0..num_tokens {
+                    let amount = Amount::new(amount_per_tx_out, token_id.into());
                     recipient_and_amount.push((recipient.clone(), amount));
                 }
             }

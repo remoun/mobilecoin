@@ -55,10 +55,13 @@ pub fn bootstrap_ledger(
 
     log::info!(
         logger,
-        "Making {} outputs of {} picoMOB across {} recipients.",
+        "Making {} outputs of {} picoMOB across {} recipients ({} outputs per recipient, {} tokens, {} blocks).",
         num_outputs,
         picomob_per_output,
         recipients.len(),
+        outputs_per_recipient_per_block,
+        max_token_id + 1,
+        num_blocks
     );
 
     let block_version = if max_token_id > 0 {

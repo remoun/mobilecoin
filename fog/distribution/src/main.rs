@@ -368,7 +368,7 @@ fn select_spendable_tx_outs(
         }
         log::info!(
             logger,
-            "Loaded {:?} transactions from block {:?}",
+            "Loaded {} transactions from block {}",
             transactions.len(),
             block_count
         );
@@ -387,7 +387,7 @@ fn select_spendable_tx_outs(
             if num_processed_this_account >= num_transactions_per_account {
                 log::trace!(
                     logger,
-                    "Moving on to next account {:?} at tx index {:?}",
+                    "Moving on to next account {} at tx index {}",
                     account_index + 1,
                     index
                 );
@@ -421,7 +421,7 @@ fn select_spendable_tx_outs(
 
                 log::trace!(
                     logger,
-                    "(account = {:?}) and (tx_index {:?}) = {:?}",
+                    "(account = {}) and (tx_index {}) = {:?}",
                     account_index,
                     index,
                     amount,
@@ -627,7 +627,7 @@ fn submit_tx(
             Ok(block_height) => {
                 log::debug!(
                     logger,
-                    "Successfully submitted {:?}, at block height {:?} (attempt {} / {})",
+                    "Successfully submitted {}, at block height {} (attempt {} / {})",
                     counter,
                     block_height,
                     i,
@@ -648,7 +648,7 @@ fn submit_tx(
                 {
                     log::debug!(
                             logger,
-                            "Transaction {:?} could not be submitted before tombstone block passed, giving up", counter);
+                            "Transaction {} could not be submitted before tombstone block passed, giving up", counter);
                     return false;
                 }
                 if let ConnectionError::TransactionValidation(
@@ -657,7 +657,7 @@ fn submit_tx(
                 {
                     log::info!(
                         logger,
-                        "Transaction {:?} contains a spent key image. Moving to next transaction",
+                        "Transaction {} contains a spent key image. Moving to next transaction",
                         counter
                     );
                     return true;
@@ -665,7 +665,7 @@ fn submit_tx(
 
                 log::warn!(
                     logger,
-                    "Failed to submit transaction {:?} to node {} (attempt {} / {}): {}. Total Delay: {:?}. Retry Crate 'tries': {}.",
+                    "Failed to submit transaction {} to node {} (attempt {} / {}): {}. Total Delay: {:?}. Retry Crate 'tries': {}.",
                     counter,
                     conn,
                     i,
@@ -877,10 +877,10 @@ fn get_rings(
     let mut indexes_and_proofs_iterator = sampled_indices_vec.into_iter().zip(proofs.into_iter());
 
     // Convert that into a Vec<Vec<TxOut, TxOutMembershipProof>>
-    let mut rings_with_proofs = Vec::new();
+    let mut rings_with_proofs = Vec::with_capacity(num_rings);
 
     for _ in 0..num_rings {
-        let mut ring = Vec::new();
+        let mut ring = Vec::with_capacity(ring_size);
         for _ in 0..ring_size {
             let (index, proof) = indexes_and_proofs_iterator.next().unwrap();
             let tx_out = ledger_db.get_tx_out_by_index(index).unwrap();

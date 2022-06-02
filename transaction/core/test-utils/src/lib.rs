@@ -6,6 +6,7 @@ pub use mc_account_keys::{AccountKey, PublicAddress, DEFAULT_SUBADDRESS_INDEX};
 pub use mc_crypto_ring_signature_signer::NoKeysRingSigner;
 pub use mc_fog_report_validation_test_utils::MockFogResolver;
 pub use mc_transaction_core::{
+    encrypted_fog_hint::EncryptedFogHint,
     get_tx_out_shared_secret,
     onetime_keys::recover_onetime_private_key,
     ring_signature::KeyImage,
@@ -35,13 +36,20 @@ pub fn get_outputs<T: RngCore + CryptoRng>(
                 *amount,
                 recipient,
                 &RistrettoPrivate::from_random(rng),
-                Default::default(),
+                EncryptedFogHint::fake_onetime_hint(rng),
             )
             .unwrap();
             if !block_version.e_memo_feature_is_supported() {
                 result.e_memo = None;
             }
-            result.masked_amount.masked_token_id = Default::default();
+            if !block_version.masked_token_id_feature_is_supported() {
+                result.masked_amount.masked_token_id.clear();
+                assert_eq!(
+                    amount.token_id, 0,
+                    "Cannot mint outputs for non-MOB tokens with block version {}",
+                    block_version
+                )
+            }
             result
         })
         .collect()

@@ -348,14 +348,14 @@ pub fn get_ingress_keys(nodes: &[TestIngestNode]) -> Vec<CompressedRistrettoPubl
 }
 
 /// Add an arbitrary block to ledger and a timestamp for it
-pub fn add_test_block<T: RngCore + CryptoRng>(
+pub fn add_test_block(
     ledger: &mut LedgerDB,
     watcher: &WatcherDB,
-    rng: &mut T,
+    rng: &mut (impl RngCore + CryptoRng),
 ) {
     // Make the new block and append to database
     let prev_block = ledger.get_latest_block().expect("Could not get last block");
-    let block_data = get_blocks(BlockVersion::ZERO, 1, 2, 1, 2, 42, prev_block, rng)
+    let block_data = get_blocks(BlockVersion::MAX, 1, 2, 1, 2, 42, prev_block, rng)
         .pop()
         .unwrap();
 
@@ -379,7 +379,7 @@ pub fn add_test_block<T: RngCore + CryptoRng>(
 }
 
 /// Make a random output for a block
-pub fn random_output<T: RngCore + CryptoRng>(rng: &mut T) -> TxOut {
+pub fn random_output(rng: &mut (impl RngCore + CryptoRng)) -> TxOut {
     TxOut {
         masked_amount: MaskedAmount::default(),
         target_key: RistrettoPublic::from_random(rng).into(),

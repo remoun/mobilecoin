@@ -78,7 +78,7 @@ pub fn get_blocks_with_recipients<R: RngCore + CryptoRng>(
     let mut blocks = Vec::with_capacity(num_blocks);
     let mut prev_block: Option<Block> = prev_block.into();
 
-    for block_index in 0..num_blocks {
+    for _ in 0..num_blocks {
         let mut recipient_and_amount = Vec::with_capacity(
             recipients.len() * num_tokens as usize * num_tx_outs_per_recipient_per_token_per_block,
         );
@@ -95,7 +95,7 @@ pub fn get_blocks_with_recipients<R: RngCore + CryptoRng>(
 
         // Non-origin blocks must have at least one key image.
         let key_images = match &prev_block {
-            Some(_) => vec![KeyImage::from(block_index as u64)],
+            Some(_) => vec![KeyImage::from(rng.next_u64())],
             None => vec![],
         };
 

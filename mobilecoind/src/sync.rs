@@ -584,16 +584,14 @@ mod test {
         let first_utxo = utxos[0].clone();
 
         add_block_to_ledger_db(
-            BlockVersion::MAX,
             &mut ledger_db,
+            BlockVersion::MAX,
             &[recipients[1].clone()],
-            Amount {
-                value: DEFAULT_PER_RECIPIENT_AMOUNT,
-                token_id: Mob::ID,
-            },
+            Amount::new(DEFAULT_PER_RECIPIENT_AMOUNT, Mob::ID),
             &[utxos[0].key_image],
             &mut rng,
-        );
+        )
+        .unwrap();
 
         let result = sync_monitor(&ledger_db, &mobilecoind_db, &monitor_id, &logger).unwrap();
         assert_eq!(result, SyncMonitorOk::NoMoreBlocks);
@@ -655,16 +653,14 @@ mod test {
 
         // Add a block with 0-value txout that spends our first utxo and sync it.
         add_block_to_ledger_db(
-            BlockVersion::MAX,
             &mut ledger_db,
+            BlockVersion::MAX,
             &[recipients[0].clone()],
-            Amount {
-                value: 0,
-                token_id: Mob::ID,
-            },
+            Amount::new(0, Mob::ID),
             &[utxos[0].key_image],
             &mut rng,
-        );
+        )
+        .unwrap();
 
         let result = sync_monitor(&ledger_db, &mobilecoind_db, &monitor_id, &logger).unwrap();
         assert_eq!(result, SyncMonitorOk::NoMoreBlocks);

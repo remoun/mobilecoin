@@ -2089,12 +2089,13 @@ mod test {
         burn_address_view_private, AccountKey, PublicAddress, ShortAddressHash,
         DEFAULT_SUBADDRESS_INDEX,
     };
-    use mc_blockchain_types::{Block, BlockContents, BlockVersion};
+    use mc_blockchain_types::{Block, BlockVersion};
     use mc_common::{logger::test_with_logger, HashSet};
     use mc_crypto_keys::RistrettoPrivate;
     use mc_crypto_rand::RngCore;
     use mc_fog_report_validation::{FullyValidatedFogPubkey, MockFogPubkeyResolver};
     use mc_fog_report_validation_test_utils::MockFogResolver;
+    use mc_ledger_db::test_utils::add_txos_and_key_images_to_ledger_db;
     use mc_transaction_core::{
         constants::{MAX_INPUTS, RING_SIZE},
         fog_hint::FogHint,
@@ -2352,21 +2353,19 @@ mod test {
 
         // Add a block with a non-MOB token ID.
         add_block_to_ledger_db(
-            BLOCK_VERSION,
             &mut ledger_db,
+            BLOCK_VERSION,
             &vec![
                 AccountKey::random(&mut rng).default_subaddress(),
                 AccountKey::random(&mut rng).default_subaddress(),
                 AccountKey::random(&mut rng).default_subaddress(),
                 account_key.default_subaddress(),
             ],
-            Amount {
-                value: 1000,
-                token_id: TokenId::from(2),
-            },
+            Amount::new(1000, 2.into()),
             &[KeyImage::from(101)],
             &mut rng,
-        );
+        )
+        .unwrap();
 
         // Insert into database.
         let id = mobilecoind_db.add_monitor(&data).unwrap();
@@ -2718,16 +2717,14 @@ mod test {
         // Insert a block with some key images in it.
         let recipient = AccountKey::random(&mut rng).default_subaddress();
         add_block_to_ledger_db(
-            BLOCK_VERSION,
             &mut ledger_db,
+            BLOCK_VERSION,
             &[recipient.clone()],
-            Amount {
-                value: DEFAULT_PER_RECIPIENT_AMOUNT,
-                token_id: Mob::ID,
-            },
+            Amount::new(DEFAULT_PER_RECIPIENT_AMOUNT, Mob::ID),
             &[KeyImage::from(1), KeyImage::from(2), KeyImage::from(3)],
             &mut rng,
-        );
+        )
+        .unwrap();
 
         // Create receiver_tx_receipt based on the txout created in
         // add_block_to_ledger_db
@@ -2845,16 +2842,14 @@ mod test {
         // Add another block to the ledger with different key images, to the same
         // recipient
         add_block_to_ledger_db(
-            BLOCK_VERSION,
             &mut ledger_db,
+            BLOCK_VERSION,
             &[recipient.clone()],
-            Amount {
-                value: DEFAULT_PER_RECIPIENT_AMOUNT,
-                token_id: Mob::ID,
-            },
+            Amount::new(DEFAULT_PER_RECIPIENT_AMOUNT, Mob::ID),
             &[KeyImage::from(4), KeyImage::from(5), KeyImage::from(6)],
             &mut rng,
-        );
+        )
+        .unwrap();
 
         // A receipt with all the key_images in the ledger, but in different blocks,
         // should fail.
@@ -2910,10 +2905,12 @@ mod test {
 
             let mut request = mc_mobilecoind_api::SubmitTxResponse::new();
             request.set_sender_tx_receipt(sender_receipt);
-            request.set_receiver_tx_receipt_list(RepeatedField::from_vec(vec![
-                receiver_receipt.clone(),
-                receiver_receipt2,
-            ]));
+            request
+                .mut_receiver_tx_receipt_list()
+                .push(receiver_receipt.clone());
+            request
+                .mut_receiver_tx_receipt_list()
+                .push(receiver_receipt2);
 
             let response = client.get_tx_status_as_sender(&request).unwrap();
 
@@ -3050,7 +3047,7 @@ mod test {
             .add_output(Amount::new(10, Mob::ID), &receiver.subaddress(0), &mut rng)
             .unwrap();
 
-        add_txos_to_ledger_db(BLOCK_VERSION, &mut ledger_db, &[tx_out.clone()], &mut rng);
+        add_txos_to_ledger_db(&mut ledger_db, BLOCK_VERSION, &[tx_out.clone()], &mut rng).unwrap();
 
         // A request with a valid confirmation number and monitor ID should return
         // Verified
@@ -3227,19 +3224,17 @@ mod test {
         {
             let recipient = AccountKey::random(&mut rng).default_subaddress();
             add_block_to_ledger_db(
-                BLOCK_VERSION,
                 &mut ledger_db,
+                BLOCK_VERSION,
                 &[recipient],
-                Amount {
-                    value: DEFAULT_PER_RECIPIENT_AMOUNT,
-                    token_id: Mob::ID,
-                },
+                Amount::new(DEFAULT_PER_RECIPIENT_AMOUNT, Mob::ID),
                 &[
                     expected_utxos[monitor_data.first_block as usize].key_image,
                     expected_utxos[monitor_data.first_block as usize + 1].key_image,
                 ],
                 &mut rng,
-            );
+            )
+            .unwrap();
 
             wait_for_monitors(&mobilecoind_db, &ledger_db, &logger);
 
@@ -3292,16 +3287,14 @@ mod test {
         // correctly.
         {
             add_block_to_ledger_db(
-                BLOCK_VERSION,
                 &mut ledger_db,
-                &vec![account_key.subaddress(5)],
-                Amount {
-                    value: 102030,
-                    token_id: TokenId::from(2),
-                },
+                BLOCK_VERSION,
+                &[account_key.subaddress(5)],
+                Amount::new(102030, 2.into()),
                 &[KeyImage::from(101)],
                 &mut rng,
-            );
+            )
+            .unwrap();
 
             wait_for_monitors(&mobilecoind_db, &ledger_db, &logger);
 
@@ -3625,21 +3618,19 @@ mod test {
 
         // Add a block with a non-MOB token ID.
         add_block_to_ledger_db(
-            BlockVersion::MAX,
             &mut ledger_db,
-            &vec![
+            BlockVersion::MAX,
+            &[
                 AccountKey::random(&mut rng).default_subaddress(),
                 AccountKey::random(&mut rng).default_subaddress(),
                 AccountKey::random(&mut rng).default_subaddress(),
                 sender.default_subaddress(),
             ],
-            Amount {
-                value: 1_000_000_000_000,
-                token_id: TokenId::from(2),
-            },
+            Amount::new(1_000_000_000_000, TokenId::from(2)),
             &[KeyImage::from(101)],
             &mut rng,
-        );
+        )
+        .unwrap();
 
         // Insert into database.
         let monitor_id = mobilecoind_db.add_monitor(&data).unwrap();
@@ -3953,21 +3944,19 @@ mod test {
 
         // Add a block with a non-MOB token ID.
         add_block_to_ledger_db(
-            BlockVersion::MAX,
             &mut ledger_db,
-            &vec![
+            BlockVersion::MAX,
+            &[
                 AccountKey::random(&mut rng).default_subaddress(),
                 AccountKey::random(&mut rng).default_subaddress(),
                 AccountKey::random(&mut rng).default_subaddress(),
                 sender.default_subaddress(),
             ],
-            Amount {
-                value: 1_000_000_000_000,
-                token_id: token_id2,
-            },
+            Amount::new(1_000_000_000_000, token_id2),
             &[KeyImage::from(101)],
             &mut rng,
-        );
+        )
+        .unwrap();
 
         // Insert into database.
         let monitor_id = mobilecoind_db.add_monitor(&data).unwrap();
@@ -4164,25 +4153,14 @@ mod test {
             let tx_proposal = TxProposal::try_from(response.get_tx_proposal()).unwrap();
             let key_images = tx_proposal.tx.key_images();
             let outputs = tx_proposal.tx.prefix.outputs;
-            let block_contents = BlockContents {
-                key_images,
-                outputs,
-                ..Default::default()
-            };
-
-            // Append to ledger.
-            let num_blocks = ledger_db.num_blocks().unwrap();
-            let parent = ledger_db.get_block(num_blocks - 1).unwrap();
-            let new_block = Block::new_with_parent(
+            add_txos_and_key_images_to_ledger_db(
+                &mut ledger_db,
                 BLOCK_VERSION,
-                &parent,
-                &Default::default(),
-                &block_contents,
-            );
-
-            ledger_db
-                .append_block(&new_block, &block_contents, None, None)
-                .unwrap();
+                outputs,
+                key_images,
+                &mut rng,
+            )
+            .unwrap();
 
             // Use bip39 entropy to construct AccountKey.
             let mnemonic =
@@ -4254,13 +4232,10 @@ mod test {
         // Add a bunch of blocks/utxos for our recipient.
         for _ in 0..MAX_INPUTS {
             let _ = add_block_to_ledger_db(
-                BLOCK_VERSION,
                 &mut ledger_db,
+                BLOCK_VERSION,
                 &[sender_default_subaddress.clone()],
-                Amount {
-                    value: DEFAULT_PER_RECIPIENT_AMOUNT,
-                    token_id: Mob::ID,
-                },
+                Amount::new(DEFAULT_PER_RECIPIENT_AMOUNT, Mob::ID),
                 &[KeyImage::from(rng.next_u64())],
                 &mut rng,
             );
@@ -4853,16 +4828,14 @@ mod test {
         // create the test transaction.
         for amount in &[10, 20, Mob::MINIMUM_FEE] {
             add_block_to_ledger_db(
-                BLOCK_VERSION,
                 &mut ledger_db,
+                BLOCK_VERSION,
                 &[sender.default_subaddress()],
-                Amount {
-                    value: *amount,
-                    token_id: Mob::ID,
-                },
+                Amount::new(*amount, Mob::ID),
                 &[KeyImage::from(rng.next_u64())],
                 &mut rng,
-            );
+            )
+            .unwrap();
         }
 
         // Insert into database.
@@ -5529,7 +5502,7 @@ mod test {
             )
             .unwrap();
 
-        add_txos_to_ledger_db(BLOCK_VERSION, &mut ledger_db, &[tx_out.clone()], &mut rng);
+        add_txos_to_ledger_db(&mut ledger_db, BLOCK_VERSION, &[tx_out.clone()], &mut rng).unwrap();
 
         let tx_public_key = tx_out.public_key;
 
@@ -5642,7 +5615,7 @@ mod test {
             )
             .unwrap();
 
-        add_txos_to_ledger_db(BLOCK_VERSION, &mut ledger_db, &[tx_out.clone()], &mut rng);
+        add_txos_to_ledger_db(&mut ledger_db, BLOCK_VERSION, &[tx_out.clone()], &mut rng).unwrap();
 
         let tx_public_key = tx_out.public_key;
 
@@ -5873,16 +5846,14 @@ mod test {
 
         let recipient = AccountKey::random(&mut rng).default_subaddress();
         add_block_to_ledger_db(
-            BLOCK_VERSION,
             &mut ledger_db,
+            BLOCK_VERSION,
             &[recipient],
-            Amount {
-                value: DEFAULT_PER_RECIPIENT_AMOUNT,
-                token_id: Mob::ID,
-            },
+            Amount::new(DEFAULT_PER_RECIPIENT_AMOUNT, Mob::ID),
             &[first_key_image],
             &mut rng,
-        );
+        )
+        .unwrap();
 
         wait_for_monitors(&mobilecoind_db, &ledger_db, &logger);
 

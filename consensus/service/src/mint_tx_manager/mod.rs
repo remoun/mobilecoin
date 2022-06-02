@@ -234,10 +234,12 @@ impl<L: Ledger> MintTxManager for MintTxManagerImpl<L> {
 #[cfg(test)]
 mod mint_config_tx_tests {
     use super::*;
-    use mc_blockchain_types::{Block, BlockContents};
+    use mc_blockchain_types::BlockContents;
     use mc_common::logger::test_with_logger;
     use mc_crypto_multisig::SignerSet;
-    use mc_ledger_db::test_utils::{create_ledger, initialize_ledger};
+    use mc_ledger_db::test_utils::{
+        add_block_contents_to_ledger_db, create_ledger, initialize_ledger,
+    };
     use mc_transaction_core::ring_signature::KeyImage;
     use mc_transaction_core_test_utils::{
         create_mint_config_tx_and_signers, create_test_tx_out,
@@ -365,23 +367,12 @@ mod mint_config_tx_tests {
         );
 
         // Append a block to the ledger.
-        let parent_block = ledger.get_block(n_blocks - 1).unwrap();
-
         let block_contents = BlockContents {
             outputs: vec![create_test_tx_out(&mut rng)],
             key_images: vec![KeyImage::from(123)],
             ..Default::default()
         };
-
-        let block = Block::new_with_parent(
-            BlockVersion::MAX,
-            &parent_block,
-            &Default::default(),
-            &block_contents,
-        );
-
-        ledger
-            .append_block(&block, &block_contents, None, None)
+        add_block_contents_to_ledger_db(&mut ledger, block_version, block_contents, &mut rng)
             .unwrap();
 
         // Try again, we should fail.
@@ -426,22 +417,11 @@ mod mint_config_tx_tests {
         );
 
         // Append to the ledger.
-        let parent_block = ledger.get_block(n_blocks - 1).unwrap();
-
         let block_contents = BlockContents {
             validated_mint_config_txs: vec![to_validated(&mint_config_tx)],
             ..Default::default()
         };
-
-        let block = Block::new_with_parent(
-            BlockVersion::MAX,
-            &parent_block,
-            &Default::default(),
-            &block_contents,
-        );
-
-        ledger
-            .append_block(&block, &block_contents, None, None)
+        add_block_contents_to_ledger_db(&mut ledger, block_version, block_contents, &mut rng)
             .unwrap();
 
         // Try again, we should fail.
@@ -631,11 +611,13 @@ mod mint_config_tx_tests {
 #[cfg(test)]
 mod mint_tx_tests {
     use super::*;
-    use mc_blockchain_types::{Block, BlockContents};
+    use mc_blockchain_types::BlockContents;
     use mc_common::logger::test_with_logger;
     use mc_crypto_keys::Ed25519Pair;
     use mc_crypto_multisig::SignerSet;
-    use mc_ledger_db::test_utils::{create_ledger, initialize_ledger};
+    use mc_ledger_db::test_utils::{
+        add_block_contents_to_ledger_db, create_ledger, initialize_ledger,
+    };
     use mc_transaction_core::ring_signature::KeyImage;
     use mc_transaction_core_test_utils::{
         create_mint_config_tx_and_signers, create_mint_tx, create_test_tx_out,
@@ -660,22 +642,11 @@ mod mint_tx_tests {
         // Create a mint configuration and append it to the ledger.
         let (mint_config_tx, signers) = create_mint_config_tx_and_signers(token_id_1, &mut rng);
 
-        let parent_block = ledger.get_block(ledger.num_blocks().unwrap() - 1).unwrap();
-
         let block_contents = BlockContents {
             validated_mint_config_txs: vec![to_validated(&mint_config_tx)],
             ..Default::default()
         };
-
-        let block = Block::new_with_parent(
-            BlockVersion::MAX,
-            &parent_block,
-            &Default::default(),
-            &block_contents,
-        );
-
-        ledger
-            .append_block(&block, &block_contents, None, None)
+        add_block_contents_to_ledger_db(&mut ledger, block_version, block_contents, &mut rng)
             .unwrap();
 
         // Create MintTxManagerImpl
@@ -715,8 +686,6 @@ mod mint_tx_tests {
         let (mint_config_tx1, signers1) = create_mint_config_tx_and_signers(token_id_1, &mut rng);
         let (mint_config_tx2, signers2) = create_mint_config_tx_and_signers(token_id_2, &mut rng);
 
-        let parent_block = ledger.get_block(ledger.num_blocks().unwrap() - 1).unwrap();
-
         let block_contents = BlockContents {
             validated_mint_config_txs: vec![
                 to_validated(&mint_config_tx1),
@@ -724,16 +693,7 @@ mod mint_tx_tests {
             ],
             ..Default::default()
         };
-
-        let block = Block::new_with_parent(
-            BlockVersion::MAX,
-            &parent_block,
-            &Default::default(),
-            &block_contents,
-        );
-
-        ledger
-            .append_block(&block, &block_contents, None, None)
+        add_block_contents_to_ledger_db(&mut ledger, block_version, block_contents, &mut rng)
             .unwrap();
 
         // Create MintTxManagerImpl
@@ -793,8 +753,6 @@ mod mint_tx_tests {
         let (mint_config_tx1, signers1) = create_mint_config_tx_and_signers(token_id_1, &mut rng);
         let (mint_config_tx2, signers2) = create_mint_config_tx_and_signers(token_id_2, &mut rng);
 
-        let parent_block = ledger.get_block(ledger.num_blocks().unwrap() - 1).unwrap();
-
         let block_contents = BlockContents {
             validated_mint_config_txs: vec![
                 to_validated(&mint_config_tx1),
@@ -803,15 +761,7 @@ mod mint_tx_tests {
             ..Default::default()
         };
 
-        let block = Block::new_with_parent(
-            BlockVersion::MAX,
-            &parent_block,
-            &Default::default(),
-            &block_contents,
-        );
-
-        ledger
-            .append_block(&block, &block_contents, None, None)
+        add_block_contents_to_ledger_db(&mut ledger, block_version, block_contents, &mut rng)
             .unwrap();
 
         // Create MintTxManagerImpl
@@ -892,22 +842,11 @@ mod mint_tx_tests {
         // Create a mint configuration and append it to the ledger.
         let (mint_config_tx, signers) = create_mint_config_tx_and_signers(token_id_1, &mut rng);
 
-        let parent_block = ledger.get_block(ledger.num_blocks().unwrap() - 1).unwrap();
-
         let block_contents = BlockContents {
             validated_mint_config_txs: vec![to_validated(&mint_config_tx)],
             ..Default::default()
         };
-
-        let block = Block::new_with_parent(
-            BlockVersion::MAX,
-            &parent_block,
-            &Default::default(),
-            &block_contents,
-        );
-
-        ledger
-            .append_block(&block, &block_contents, None, None)
+        add_block_contents_to_ledger_db(&mut ledger, block_version, block_contents, &mut rng)
             .unwrap();
 
         // Create MintTxManagerImpl
@@ -949,23 +888,12 @@ mod mint_tx_tests {
 
         assert_eq!(mint_tx_manager.validate_mint_tx(&mint_tx), Ok(()));
 
-        let parent_block = ledger.get_block(ledger.num_blocks().unwrap() - 1).unwrap();
-
         let block_contents = BlockContents {
             mint_txs: vec![mint_tx],
             outputs: vec![create_test_tx_out(&mut rng)],
             ..Default::default()
         };
-
-        let block = Block::new_with_parent(
-            BlockVersion::MAX,
-            &parent_block,
-            &Default::default(),
-            &block_contents,
-        );
-
-        ledger
-            .append_block(&block, &block_contents, None, None)
+        add_block_contents_to_ledger_db(&mut ledger, block_version, block_contents, &mut rng)
             .unwrap();
 
         // Create a MintTx that exceeds the mint limit
@@ -1011,22 +939,11 @@ mod mint_tx_tests {
 
         mint_config_tx.prefix.total_mint_limit = mint_config_tx.prefix.configs[0].mint_limit - 1;
 
-        let parent_block = ledger.get_block(ledger.num_blocks().unwrap() - 1).unwrap();
-
         let block_contents = BlockContents {
             validated_mint_config_txs: vec![to_validated(&mint_config_tx)],
             ..Default::default()
         };
-
-        let block = Block::new_with_parent(
-            BlockVersion::MAX,
-            &parent_block,
-            &Default::default(),
-            &block_contents,
-        );
-
-        ledger
-            .append_block(&block, &block_contents, None, None)
+        add_block_contents_to_ledger_db(&mut ledger, block_version, block_contents, &mut rng)
             .unwrap();
 
         // Create MintTxManagerImpl
@@ -1068,23 +985,12 @@ mod mint_tx_tests {
 
         assert_eq!(mint_tx_manager.validate_mint_tx(&mint_tx), Ok(()));
 
-        let parent_block = ledger.get_block(ledger.num_blocks().unwrap() - 1).unwrap();
-
         let block_contents = BlockContents {
             mint_txs: vec![mint_tx],
             outputs: vec![create_test_tx_out(&mut rng)],
             ..Default::default()
         };
-
-        let block = Block::new_with_parent(
-            BlockVersion::MAX,
-            &parent_block,
-            &Default::default(),
-            &block_contents,
-        );
-
-        ledger
-            .append_block(&block, &block_contents, None, None)
+        add_block_contents_to_ledger_db(&mut ledger, block_version, block_contents, &mut rng)
             .unwrap();
 
         // Create a MintTx that exceeds the mint limit
@@ -1128,22 +1034,11 @@ mod mint_tx_tests {
         // Create a mint configuration and append it to the ledger.
         let (mint_config_tx, signers) = create_mint_config_tx_and_signers(token_id_1, &mut rng);
 
-        let parent_block = ledger.get_block(ledger.num_blocks().unwrap() - 1).unwrap();
-
         let block_contents = BlockContents {
             validated_mint_config_txs: vec![to_validated(&mint_config_tx)],
             ..Default::default()
         };
-
-        let block = Block::new_with_parent(
-            BlockVersion::MAX,
-            &parent_block,
-            &Default::default(),
-            &block_contents,
-        );
-
-        ledger
-            .append_block(&block, &block_contents, None, None)
+        add_block_contents_to_ledger_db(&mut ledger, block_version, block_contents, &mut rng)
             .unwrap();
 
         // Create MintTxManagerImpl
@@ -1202,22 +1097,11 @@ mod mint_tx_tests {
         initialize_ledger(block_version, &mut ledger, n_blocks, &sender, &mut rng);
 
         // Append the mint config to the ledger
-        let parent_block = ledger.get_block(ledger.num_blocks().unwrap() - 1).unwrap();
-
         let block_contents = BlockContents {
             validated_mint_config_txs: vec![to_validated(&mint_config_tx)],
             ..Default::default()
         };
-
-        let block = Block::new_with_parent(
-            BlockVersion::MAX,
-            &parent_block,
-            &Default::default(),
-            &block_contents,
-        );
-
-        ledger
-            .append_block(&block, &block_contents, None, None)
+        add_block_contents_to_ledger_db(&mut ledger, block_version, block_contents, &mut rng)
             .unwrap();
 
         // Create MintTxManagerImpl
@@ -1238,23 +1122,12 @@ mod mint_tx_tests {
         assert_eq!(mint_tx_manager.validate_mint_tx(&mint_tx), Ok(()));
 
         // Append a block to the ledger.
-        let parent_block = block;
-
         let block_contents = BlockContents {
             outputs: vec![create_test_tx_out(&mut rng)],
             key_images: vec![KeyImage::from(123)],
             ..Default::default()
         };
-
-        let block = Block::new_with_parent(
-            BlockVersion::MAX,
-            &parent_block,
-            &Default::default(),
-            &block_contents,
-        );
-
-        ledger
-            .append_block(&block, &block_contents, None, None)
+        add_block_contents_to_ledger_db(&mut ledger, block_version, block_contents, &mut rng)
             .unwrap();
 
         // Try again, we should fail.
@@ -1281,22 +1154,11 @@ mod mint_tx_tests {
         // Create a mint configuration and append it to the ledger.
         let (mint_config_tx, signers) = create_mint_config_tx_and_signers(token_id_1, &mut rng);
 
-        let parent_block = ledger.get_block(ledger.num_blocks().unwrap() - 1).unwrap();
-
         let block_contents = BlockContents {
             validated_mint_config_txs: vec![to_validated(&mint_config_tx)],
             ..Default::default()
         };
-
-        let block = Block::new_with_parent(
-            BlockVersion::MAX,
-            &parent_block,
-            &Default::default(),
-            &block_contents,
-        );
-
-        ledger
-            .append_block(&block, &block_contents, None, None)
+        add_block_contents_to_ledger_db(&mut ledger, block_version, block_contents, &mut rng)
             .unwrap();
 
         // Create MintTxManagerImpl
@@ -1329,17 +1191,7 @@ mod mint_tx_tests {
             mint_txs: vec![mint_tx.clone()],
             ..Default::default()
         };
-
-        let parent_block = block;
-        let block = Block::new_with_parent(
-            BlockVersion::MAX,
-            &parent_block,
-            &Default::default(),
-            &block_contents,
-        );
-
-        ledger
-            .append_block(&block, &block_contents, None, None)
+        add_block_contents_to_ledger_db(&mut ledger, block_version, block_contents, &mut rng)
             .unwrap();
 
         // Try again, we should fail.
@@ -1367,22 +1219,11 @@ mod mint_tx_tests {
         // Create a mint configuration and append it to the ledger.
         let (mint_config_tx, signers) = create_mint_config_tx_and_signers(token_id_1, &mut rng);
 
-        let parent_block = ledger.get_block(ledger.num_blocks().unwrap() - 1).unwrap();
-
         let block_contents = BlockContents {
             validated_mint_config_txs: vec![to_validated(&mint_config_tx)],
             ..Default::default()
         };
-
-        let block = Block::new_with_parent(
-            BlockVersion::MAX,
-            &parent_block,
-            &Default::default(),
-            &block_contents,
-        );
-
-        ledger
-            .append_block(&block, &block_contents, None, None)
+        add_block_contents_to_ledger_db(&mut ledger, block_version, block_contents, &mut rng)
             .unwrap();
 
         // Test txs, each one using a different mint configuration (determined by the
@@ -1461,22 +1302,11 @@ mod mint_tx_tests {
         // Create a mint configuration and append it to the ledger.
         let (mint_config_tx, signers) = create_mint_config_tx_and_signers(token_id_1, &mut rng);
 
-        let parent_block = ledger.get_block(ledger.num_blocks().unwrap() - 1).unwrap();
-
         let block_contents = BlockContents {
             validated_mint_config_txs: vec![to_validated(&mint_config_tx)],
             ..Default::default()
         };
-
-        let block = Block::new_with_parent(
-            BlockVersion::MAX,
-            &parent_block,
-            &Default::default(),
-            &block_contents,
-        );
-
-        ledger
-            .append_block(&block, &block_contents, None, None)
+        add_block_contents_to_ledger_db(&mut ledger, block_version, block_contents, &mut rng)
             .unwrap();
 
         // Test txs that have overlapping minting configurations

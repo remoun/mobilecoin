@@ -381,45 +381,46 @@ fn fog_ledger_key_images_test(logger: Logger) {
             // FIXME assert_eq!(response.num_txos, ...);
             assert_eq!(response.results[0].key_image, keys[0]);
             assert_eq!(response.results[0].status(), Ok(Some(1)));
-            assert_eq!(response.results[0].timestamp, 100);
             assert_eq!(
                 response.results[0].timestamp_result_code,
                 TimestampResultCode::TimestampFound as u32
             );
+            assert_eq!(response.results[0].timestamp, 1);
+
             assert_eq!(response.results[1].key_image, keys[1]);
             assert_eq!(response.results[1].status(), Ok(Some(1)));
-            assert_eq!(response.results[1].timestamp, 100);
             assert_eq!(
                 response.results[1].timestamp_result_code,
                 TimestampResultCode::TimestampFound as u32
             );
+            assert_eq!(response.results[1].timestamp, 1);
 
             // Check a key_image for a block which will never have signatures & timestamps
             assert_eq!(response.results[2].key_image, keys[3]);
             assert_eq!(response.results[2].status(), Ok(Some(2))); // Spent in block 2
-            assert_eq!(response.results[2].timestamp, 200);
             assert_eq!(
                 response.results[2].timestamp_result_code,
                 TimestampResultCode::TimestampFound as u32
             );
+            assert_eq!(response.results[2].timestamp, 2);
 
             // Watcher has only synced 1 block, so timestamp should be behind
             assert_eq!(response.results[3].key_image, keys[7]);
             assert_eq!(response.results[3].status(), Ok(Some(3))); // Spent in block 3
-            assert_eq!(response.results[3].timestamp, 300);
             assert_eq!(
                 response.results[3].timestamp_result_code,
                 TimestampResultCode::TimestampFound as u32
             );
+            assert_eq!(response.results[3].timestamp, 3);
 
             // Check a key_image that has not been spent
             assert_eq!(response.results[4].key_image, keys[19]);
             assert_eq!(response.results[4].status(), Ok(None)); // Not spent
-            assert_eq!(response.results[4].timestamp, u64::MAX);
             assert_eq!(
                 response.results[4].timestamp_result_code,
                 TimestampResultCode::TimestampFound as u32
             );
+            assert_eq!(response.results[4].timestamp, u64::MAX);
         }
 
         // FIXME: Check a key_image that generates a DatabaseError - tough to generate
@@ -774,18 +775,17 @@ fn add_block_to_ledger_db(
     .expect("failed to add block");
     let block_index = block_data.block().index;
 
-    if let Some(block_signature) = block_data.signature() {
-        for src_url in watcher.get_config_urls().unwrap().iter() {
-            watcher
-                .add_block_signature(
-                    src_url,
-                    block_index,
-                    block_signature.clone(),
-                    format!("00/{}", block_index),
-                )
-                .expect("Could not add block signature");
-        }
+    let signature = block_data.signature.expect("missing signature");
+    for src_url in watcher.get_config_urls().unwrap().iter() {
+        watcher
+            .add_block_signature(
+                src_url,
+                block_index,
+                signature.clone(),
+                format!("00/{}", block_index),
+            )
+            .expect("Could not add block signature");
     }
 
-    block_index
+    block_index + 1
 }

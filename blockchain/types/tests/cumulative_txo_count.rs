@@ -14,8 +14,8 @@ fn test_cumulative_txo_counts() {
             };
             let results = get_blocks(
                 block_version,
-                25,
-                3,
+                5,
+                2,
                 num_tokens,
                 2,
                 42,

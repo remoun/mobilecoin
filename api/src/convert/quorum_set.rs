@@ -9,7 +9,7 @@ use crate::{
     },
     ConversionError,
 };
-use mc_blockchain_types::{QuorumSet, QuorumSetMember, QuorumSetMemberWrapper};
+use mc_blockchain_types::{NodeID, QuorumSet, QuorumSetMember, QuorumSetMemberWrapper};
 use std::convert::{Into, TryFrom, TryInto};
 
 // QuorumSet
@@ -53,8 +53,8 @@ impl TryFrom<&QuorumSetProto> for QuorumSet {
 }
 
 // QuorumSetMember
-impl From<&QuorumSetMember> for QuorumSetMemberProto {
-    fn from(member: &QuorumSetMember) -> QuorumSetMemberProto {
+impl From<&QuorumSetMember<NodeID>> for QuorumSetMemberProto {
+    fn from(member: &QuorumSetMember<NodeID>) -> QuorumSetMemberProto {
         use QuorumSetMember::*;
         let mut proto = QuorumSetMemberProto::new();
         match member {
@@ -65,7 +65,7 @@ impl From<&QuorumSetMember> for QuorumSetMemberProto {
     }
 }
 
-impl TryFrom<&QuorumSetMemberProto> for QuorumSetMember {
+impl TryFrom<&QuorumSetMemberProto> for QuorumSetMember<NodeID> {
     type Error = ConversionError;
 
     fn try_from(proto: &QuorumSetMemberProto) -> Result<Self, Self::Error> {

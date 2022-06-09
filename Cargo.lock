@@ -2565,6 +2565,7 @@ dependencies = [
  "mc-account-keys",
  "mc-attest-verifier-types",
  "mc-common",
+ "mc-consensus-scp-core",
  "mc-crypto-digestible",
  "mc-crypto-digestible-signature",
  "mc-crypto-digestible-test-utils",
@@ -2869,7 +2870,6 @@ dependencies = [
 name = "mc-consensus-scp-core"
 version = "1.3.0-pre0"
 dependencies = [
- "mc-blockchain-types",
  "mc-common",
  "mc-crypto-digestible",
  "mc-crypto-keys",

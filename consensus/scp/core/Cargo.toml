@@ -11,7 +11,6 @@ std = ["mc-common/std", "serde/std"]
 test_utils = ["mc-util-test-helper", "rand", "rand_hc"]
 
 [dependencies]
-mc-blockchain-types = { path = "../../../blockchain/types" }
 mc-common = { path = "../../../common", default-features = false }
 mc-crypto-digestible = { path = "../../../crypto/digestible", features = ["derive"] }
 mc-crypto-keys = { path = "../../../crypto/keys" }

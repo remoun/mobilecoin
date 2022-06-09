@@ -11,25 +11,39 @@ use core::{
 };
 use mc_common::HasherBuilder;
 use mc_crypto_digestible::Digestible;
+use prost::Message;
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
 
 /// A generic node identifier.
 pub trait GenericNodeId:
-    Clone + Debug + Display + Eq + PartialEq + Ord + PartialOrd + Hash + Digestible
+    Clone
+    + Debug
+    + Default
+    + Digestible
+    + Display
+    + Eq
+    + Hash
+    + Message
+    + Ord
+    + PartialEq
+    + PartialOrd
+    + Serialize
 {
 }
 impl<T> GenericNodeId for T where
     T: Clone
         + Debug
+        + Default
+        + Digestible
         + Display
-        + Serialize
         + DeserializeOwned
         + Eq
-        + PartialEq
-        + Ord
-        + PartialOrd
         + Hash
-        + Digestible
+        + Message
+        + Ord
+        + PartialEq
+        + PartialOrd
+        + Serialize
 {
 }
 

@@ -11,35 +11,70 @@ use crate::{
 };
 use alloc::{vec, vec::Vec};
 use core::{
-    fmt::Debug,
     hash::{Hash, Hasher},
     iter::FromIterator,
 };
 use mc_common::{HashMap, HashSet, NodeID, ResponderId};
 use mc_crypto_digestible::Digestible;
+use prost::{Message, Oneof};
 use serde::{Deserialize, Serialize};
 
 /// A member in a QuorumSet. Can be either a Node or another QuorumSet.
 #[derive(
-    Clone, Debug, Ord, PartialOrd, Eq, PartialEq, Hash, Serialize, Deserialize, Digestible,
+    Clone, Deserialize, Digestible, Eq, Hash, Oneof, Ord, PartialEq, PartialOrd, Serialize,
 )]
 #[serde(tag = "type", content = "args")]
 pub enum QuorumSetMember<ID: GenericNodeId> {
     /// A single trusted entity with an identity.
+    #[prost(message, tag = 1)]
     Node(ID),
 
     /// A quorum set can also be a member of a quorum set.
+    #[prost(message, tag = 2)]
     InnerSet(QuorumSet<ID>),
 }
 
+/// This wrapper struct is required because of a peculiarity of `prost`: you
+/// cannot have repeated oneof fields (like a `Vec<QuorumSetMember>`), so we
+/// wrap [QuorumSetMember] in a struct which implements [prost::Message].
+/// Unfortunately protobuf also doesn't allow for required oneof fields, so the
+/// inner value has to be optional. In practice we expect it to always be
+/// `Some`.
+#[derive(
+    Clone, Deserialize, Digestible, Eq, Hash, Message, Ord, PartialEq, PartialOrd, Serialize,
+)]
+#[serde(transparent)]
+pub struct QuorumSetMemberWrapper<ID: GenericNodeId> {
+    /// The member `oneof`
+    #[prost(oneof = "QuorumSetMember", tags = "1,2")]
+    pub member: Option<QuorumSetMember<ID>>,
+}
+
+impl<ID: GenericNodeId> From<QuorumSetMember<ID>> for QuorumSetMemberWrapper<ID> {
+    fn from(src: QuorumSetMember<ID>) -> Self {
+        Self { member: Some(src) }
+    }
+}
+
+impl<ID: GenericNodeId> PartialEq<QuorumSetMember<ID>> for QuorumSetMemberWrapper<ID> {
+    fn eq(&self, other: &QuorumSetMember<ID>) -> bool {
+        self.member
+            .as_ref()
+            .map(|member| member == other)
+            .unwrap_or_default()
+    }
+}
+
 /// The quorum set defining the trusted set of peers.
-#[derive(Clone, Debug, Ord, PartialOrd, Serialize, Deserialize, Digestible)]
+#[derive(Clone, Deserialize, Digestible, Message, Ord, PartialOrd, Serialize)]
 pub struct QuorumSet<ID: GenericNodeId = NodeID> {
     /// Threshold (how many members do we need to reach quorum).
+    #[prost(uint32, required, tag = 1)]
     pub threshold: u32,
 
     /// Members.
-    pub members: Vec<QuorumSetMember<ID>>,
+    #[prost(message, repeated, tag = 2)]
+    pub members: Vec<QuorumSetMemberWrapper<ID>>,
 }
 
 impl<ID: GenericNodeId> PartialEq for QuorumSet<ID> {
@@ -70,7 +105,13 @@ impl<ID: GenericNodeId> Hash for QuorumSet<ID> {
 impl<ID: GenericNodeId> QuorumSet<ID> {
     /// Create a new quorum set.
     pub fn new(threshold: u32, members: Vec<QuorumSetMember<ID>>) -> Self {
-        Self { threshold, members }
+        Self {
+            threshold,
+            members: members
+                .into_iter()
+                .map(QuorumSetMemberWrapper::from)
+                .collect(),
+        }
     }
 
     /// Create a new quorum set from the given node IDs.
@@ -106,7 +147,10 @@ impl<ID: GenericNodeId> QuorumSet<ID> {
 
         // All of our inner sets must be valid.
         for member in self.members.iter() {
-            if let QuorumSetMember::InnerSet(qs) = member {
+            if member.member.is_none() {
+                return false;
+            }
+            if let Some(QuorumSetMember::InnerSet(qs)) = &member.member {
                 if !qs.is_valid() {
                     return false;
                 }
@@ -120,7 +164,7 @@ impl<ID: GenericNodeId> QuorumSet<ID> {
     /// Recursively sort the QS and all inner sets
     pub fn sort(&mut self) {
         for member in self.members.iter_mut() {
-            if let QuorumSetMember::InnerSet(qs) = member {
+            if let Some(QuorumSetMember::InnerSet(qs)) = &mut member.member {
                 qs.sort()
             };
         }
@@ -133,13 +177,14 @@ impl<ID: GenericNodeId> QuorumSet<ID> {
     pub fn nodes(&self) -> HashSet<ID> {
         let mut result = HashSet::<ID>::default();
         for member in self.members.iter() {
-            match member {
-                QuorumSetMember::Node(node_id) => {
+            match &member.member {
+                Some(QuorumSetMember::Node(node_id)) => {
                     result.insert(node_id.clone());
                 }
-                QuorumSetMember::InnerSet(qs) => {
+                Some(QuorumSetMember::InnerSet(qs)) => {
                     result.extend(qs.nodes());
                 }
+                None => {}
             }
         }
         result
@@ -154,18 +199,19 @@ impl<ID: GenericNodeId> QuorumSet<ID> {
     /// * (numerator, denominator) representing the node's weight.
     pub fn weight(&self, node_id: &ID) -> (u32, u32) {
         for m in self.members.iter() {
-            match m {
-                QuorumSetMember::Node(N) => {
-                    if N == node_id {
+            match &m.member {
+                Some(QuorumSetMember::Node(id)) => {
+                    if id == node_id {
                         return (self.threshold, self.members.len() as u32);
                     }
                 }
-                QuorumSetMember::InnerSet(Q) => {
+                Some(QuorumSetMember::InnerSet(Q)) => {
                     let (num2, denom2) = Q.weight(node_id);
                     if num2 > 0 {
                         return (self.threshold * num2, self.members.len() as u32 * denom2);
                     }
                 }
+                None => {}
             }
         }
 
@@ -211,7 +257,7 @@ impl<ID: GenericNodeId> QuorumSet<ID> {
     ///   finding a blocking set.
     fn findBlockingSetHelper<V: Value, P: Predicate<V, ID>>(
         needed: u32,
-        members: &[QuorumSetMember<ID>],
+        members: &[QuorumSetMemberWrapper<ID>],
         msgs: &HashMap<ID, Msg<V, ID>>,
         pred: P,
         nodes_so_far: HashSet<ID>,
@@ -228,8 +274,8 @@ impl<ID: GenericNodeId> QuorumSet<ID> {
 
         // See if the first member of our potential nodes/sets allows us to reach a
         // blocking threshold.
-        match &members[0] {
-            QuorumSetMember::Node(N) => {
+        match &members[0].member {
+            Some(QuorumSetMember::Node(N)) => {
                 // If we have received a message from this member
                 if let Some(msg) = msgs.get(N) {
                     // and the predicate accepts it
@@ -248,7 +294,8 @@ impl<ID: GenericNodeId> QuorumSet<ID> {
                     }
                 }
             }
-            QuorumSetMember::InnerSet(Q) => {
+
+            Some(QuorumSetMember::InnerSet(Q)) => {
                 let (nodes_so_far2, pred2) = Self::findBlockingSetHelper(
                     // "A message reaches blocking threshold at "v" when the number of
                     //  "validators" making the statement plus (recursively) the number
@@ -270,6 +317,8 @@ impl<ID: GenericNodeId> QuorumSet<ID> {
                     );
                 }
             }
+
+            None => {}
         }
 
         // First member didn't get us to a blocking set, move to the next member and try
@@ -317,7 +366,7 @@ impl<ID: GenericNodeId> QuorumSet<ID> {
     ///   finding a quorum.
     fn findQuorumHelper<V: Value, P: Predicate<V, ID>>(
         threshold: u32,
-        members: &[QuorumSetMember<ID>],
+        members: &[QuorumSetMemberWrapper<ID>],
         msgs: &HashMap<ID, Msg<V, ID>>,
         pred: P,
         nodes_so_far: HashSet<ID>,
@@ -334,8 +383,8 @@ impl<ID: GenericNodeId> QuorumSet<ID> {
 
         // See if the first member of our potential nodes/sets allows us to reach
         // quorum.
-        match &members[0] {
-            QuorumSetMember::Node(N) => {
+        match &members[0].member {
+            Some(QuorumSetMember::Node(N)) => {
                 // If we already seen this node and it got added to the list of potential
                 // quorum-forming nodes, we need one less node to reach quorum.
                 if nodes_so_far.contains(N) {
@@ -378,7 +427,7 @@ impl<ID: GenericNodeId> QuorumSet<ID> {
                     }
                 }
             }
-            QuorumSetMember::InnerSet(Q) => {
+            Some(QuorumSetMember::InnerSet(Q)) => {
                 // See if we can find quorum for the inner set.
                 let (nodes_so_far2, pred2) = Self::findQuorumHelper(
                     Q.threshold,
@@ -398,6 +447,7 @@ impl<ID: GenericNodeId> QuorumSet<ID> {
                     );
                 }
             }
+            None => {}
         }
 
         // First member didn't get us to a quorum, move to the next member and try
@@ -411,17 +461,18 @@ impl<ID: GenericNodeId + AsRef<ResponderId>> From<&QuorumSet<ID>> for QuorumSet<
         let members = src
             .members
             .iter()
-            .map(|member| match member {
-                QuorumSetMember::Node(node_id) => QuorumSetMember::Node(node_id.as_ref().clone()),
-                QuorumSetMember::InnerSet(quorum_set) => {
-                    QuorumSetMember::InnerSet(quorum_set.into())
-                }
+            .filter_map(|member| {
+                member.member.as_ref().map(|member| match member {
+                    QuorumSetMember::Node(node_id) => {
+                        QuorumSetMember::Node(node_id.as_ref().clone())
+                    }
+                    QuorumSetMember::InnerSet(quorum_set) => {
+                        QuorumSetMember::InnerSet(quorum_set.into())
+                    }
+                })
             })
             .collect();
-        QuorumSet {
-            threshold: src.threshold,
-            members,
-        }
+        QuorumSet::new(src.threshold, members)
     }
 }
 

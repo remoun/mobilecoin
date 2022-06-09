@@ -4,7 +4,10 @@
 #![cfg_attr(not(any(test, feature = "std", feature = "test_utils")), no_std)]
 #![warn(unused_extern_crates)]
 #![allow(non_snake_case)]
-#![deny(missing_docs)]
+
+// FIXME: Re-enable when prost-generated for `derive(Oneof)` has the necessary
+// doc comments: https://github.com/tokio-rs/prost/issues/237
+//#![deny(missing_docs)]
 
 extern crate alloc;
 

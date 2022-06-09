@@ -12,6 +12,7 @@ use alloc::vec::Vec;
 use core::{
     cmp::Ordering,
     convert::TryFrom,
+    fmt::{Debug, Display},
     hash::{Hash, Hasher},
 };
 use digest::generic_array::typenum::{U32, U64};
@@ -23,6 +24,7 @@ use ed25519_dalek::{
     Keypair, PublicKey as DalekPublicKey, SecretKey, Signature as DalekSignature,
     PUBLIC_KEY_LENGTH, SECRET_KEY_LENGTH,
 };
+use hex_fmt::HexFmt;
 use mc_crypto_digestible::{DigestTranscript, Digestible};
 use mc_util_from_random::FromRandom;
 use mc_util_repr_bytes::{
@@ -102,7 +104,7 @@ impl DistinguishedEncoding for Ed25519Signature {
 }
 
 /// An Ed25519 public key.
-#[derive(Copy, Clone, Debug, Default, Deserialize, Eq, Serialize, Digestible)]
+#[derive(Copy, Clone, Default, Deserialize, Eq, Serialize, Digestible)]
 pub struct Ed25519Public(DalekPublicKey);
 
 impl AsRef<[u8]> for Ed25519Public {
@@ -132,6 +134,18 @@ impl AsRef<[u8; PUBLIC_KEY_LENGTH]> for Ed25519Public {
 
 derive_core_cmp_from_as_ref! { Ed25519Public, [u8; PUBLIC_KEY_LENGTH] }
 derive_prost_message_from_repr_bytes!(Ed25519Public);
+
+impl Debug for Ed25519Public {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        write!(f, "Ed25519Public({})", HexFmt(self.0))
+    }
+}
+
+impl Display for Ed25519Public {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        write!(f, "{}", HexFmt(self.0))
+    }
+}
 
 // ASN.1 DER SubjectPublicKeyInfo Bytes -- this is a set of nested TLVs
 // describing a pubkey -- use https://lapo.it/asn1js/

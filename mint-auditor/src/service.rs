@@ -152,10 +152,10 @@ impl MintAuditorApi for MintAuditorService {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::db::test_utils::TestDbContext;
+    use crate::db::test_utils::{append_and_sync, TestDbContext};
     use grpcio::{ChannelBuilder, Environment, Server, ServerBuilder};
     use mc_account_keys::AccountKey;
-    use mc_blockchain_types::{Block, BlockContents, BlockVersion};
+    use mc_blockchain_types::{BlockContents, BlockVersion};
     use mc_common::logger::{test_with_logger, Logger};
     use mc_ledger_db::{
         test_utils::{create_ledger, initialize_ledger},
@@ -230,23 +230,8 @@ mod tests {
             ],
             ..Default::default()
         };
+        append_and_sync(block_contents, &mut ledger_db, &mint_audit_db).unwrap();
 
-        let parent_block = ledger_db
-            .get_block(ledger_db.num_blocks().unwrap() - 1)
-            .unwrap();
-        let block = Block::new_with_parent(
-            BlockVersion::MAX,
-            &parent_block,
-            &Default::default(),
-            &block_contents,
-        );
-
-        ledger_db
-            .append_block(&block, &block_contents, None, None)
-            .unwrap();
-        mint_audit_db
-            .sync_block(&block, &block_contents, &ledger_db)
-            .unwrap();
         // Sync a block that contains a few mint transactions.
         let mint_tx1 = create_mint_tx(token_id1, &signers1, 1, &mut rng);
         let mint_tx2 = create_mint_tx(token_id2, &signers2, 2, &mut rng);
@@ -259,20 +244,8 @@ mod tests {
                 .collect(),
             ..Default::default()
         };
+        append_and_sync(block_contents, &mut ledger_db, &mint_audit_db).unwrap();
 
-        let block = Block::new_with_parent(
-            BlockVersion::MAX,
-            &block,
-            &Default::default(),
-            &block_contents,
-        );
-
-        ledger_db
-            .append_block(&block, &block_contents, None, None)
-            .unwrap();
-        mint_audit_db
-            .sync_block(&block, &block_contents, &ledger_db)
-            .unwrap();
         (mint_audit_db, test_db_context)
     }
 

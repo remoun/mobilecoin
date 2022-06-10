@@ -3,6 +3,8 @@
 //! Attestation Verification Report type.
 
 use alloc::{string::String, vec::Vec};
+use core::fmt::{Debug, Display};
+use hex_fmt::HexFmt;
 use mc_crypto_digestible::Digestible;
 use mc_util_encodings::{Error as EncodingError, FromHex};
 use prost::{
@@ -42,10 +44,22 @@ pub struct VerificationReport {
 
 /// A type containing the bytes of the VerificationReport signature
 #[derive(
-    Clone, Debug, Default, Deserialize, Digestible, Eq, Hash, Ord, PartialEq, PartialOrd, Serialize,
+    Clone, Default, Deserialize, Digestible, Eq, Hash, Ord, PartialEq, PartialOrd, Serialize,
 )]
 #[repr(transparent)]
 pub struct VerificationSignature(#[digestible(never_omit)] Vec<u8>);
+
+impl Debug for VerificationSignature {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        write!(f, "VerificationSignature({})", HexFmt(&self))
+    }
+}
+
+impl Display for VerificationSignature {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        write!(f, "{}", HexFmt(&self))
+    }
+}
 
 impl AsRef<[u8]> for VerificationSignature {
     fn as_ref(&self) -> &[u8] {

@@ -177,7 +177,7 @@ fn create_or_open_ledger_db(
     }
 
     // Attempt to open the ledger and see if it has anything in it.
-    match LedgerDB::open(&config.ledger_db) {
+    match config.open_ledger_db() {
         Ok(ledger_db) => {
             if let Ok(num_blocks) = ledger_db.num_blocks() {
                 if num_blocks > 0 {
@@ -245,7 +245,7 @@ fn create_or_open_ledger_db(
             let block_data = transactions_fetcher
                 .get_origin_block_and_transactions()
                 .expect("Failed to download initial transactions");
-            let mut db = LedgerDB::open(&config.ledger_db).expect("Could not open ledger_db");
+            let mut db = config.open_ledger_db().expect("Could not open ledger_db");
             db.append_block_data(&block_data)
                 .expect("Failed to appened initial transactions");
             log::info!(logger, "Bootstrapping completed!");
@@ -254,7 +254,8 @@ fn create_or_open_ledger_db(
 
     // Open ledger and verify it has (at least) the origin block.
     log::debug!(logger, "Opening Ledger DB {:?}", config.ledger_db);
-    let ledger_db = LedgerDB::open(&config.ledger_db)
+    let ledger_db = config
+        .open_ledger_db()
         .unwrap_or_else(|_| panic!("Could not open ledger db inside {:?}", config.ledger_db));
 
     let num_blocks = ledger_db

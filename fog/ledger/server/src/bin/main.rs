@@ -49,14 +49,15 @@ fn main() {
         logger.clone(),
     );
 
-    let db = LedgerDB::open(&config.ledger_db).expect("Could not read ledger DB");
+    let ledger = config.open_ledger_db().expect("Failed to open LedgerDB");
+        .expect("Could not read ledger DB");
     let watcher =
         WatcherDB::open_ro(&config.watcher_db, logger.clone()).expect("Could not open watcher DB");
     let ias_client = Client::new(&config.ias_api_key).expect("Could not create IAS client");
     let mut server = LedgerServer::new(
         config.clone(),
         enclave,
-        db,
+        ledger,
         watcher,
         ias_client,
         SystemTimeProvider::default(),

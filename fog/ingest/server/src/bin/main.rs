@@ -65,7 +65,7 @@ fn main() {
         )
     });
 
-    let ledger_db = LedgerDB::open(&config.ledger_db).expect("Could not read ledger DB");
+    let ledger_db = config.open_ledger_db().expect("Failed to open LedgerDB");
 
     let watcher =
         WatcherDB::open_ro(&config.watcher_db, logger.clone()).expect("Could not open watcher DB");

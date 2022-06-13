@@ -319,7 +319,8 @@ fn main() {
 
     // Open ledger
     log::info!(logger, "Opening ledger db {:?}", config.ledger_path);
-    let ledger_db = LedgerDB::open(&config.ledger_path).expect("Could not read ledger DB");
+    let ledger_db = LedgerDB::open(&config.ledger_path, config.get_avr_lookup())
+        .expect("Could not read ledger DB");
 
     // Figure out the first block to sync from.
     let first_desired_block = match config.start_from {

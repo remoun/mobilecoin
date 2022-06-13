@@ -104,7 +104,7 @@ fn main() {
     assert_ne!(0, account_keys.len());
 
     // Open the ledger db
-    let mut ledger = LedgerDB::open(&config.ledger).expect("Could not open ledger db");
+    let mut ledger = config.open_ledger_db().expect("Failed to open LedgerDB");
     let num_blocks = ledger.num_blocks().expect("Could not compute num_blocks");
     assert_ne!(0, num_blocks);
 

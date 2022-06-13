@@ -95,7 +95,7 @@ fn main() -> Result<(), ConsensusServiceError> {
 
     setup_ledger_dir(&config.origin_block_path, &config.ledger_path);
 
-    let local_ledger = LedgerDB::open(&config.ledger_path).expect("Failed creating LedgerDB");
+    let local_ledger = config.open_ledger_db().expect("Failed to open LedgerDB");
 
     let ias_client = Client::new(&config.ias_api_key).expect("Could not create IAS client");
 

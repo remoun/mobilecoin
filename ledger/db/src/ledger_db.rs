@@ -421,7 +421,6 @@ impl Ledger for LedgerDB {
 
 impl LedgerDB {
     /// Opens an existing Ledger Database in the given path.
-    #[allow(clippy::unreadable_literal)]
     pub fn open(path: &Path) -> Result<LedgerDB, Error> {
         let env = Environment::new()
             .set_max_dbs(MAX_LMDB_DATABASES)
@@ -866,9 +865,16 @@ impl LedgerDB {
         block_number: u64,
     ) -> Result<BlockMetadata, Error> {
         let key = u64_to_key_bytes(block_number);
-        let metadata_bytes = db_transaction.get(self.block_metadata, &key)?;
-        let metadata = decode(metadata_bytes)?;
-        Ok(metadata)
+        match db_transaction.get(self.block_metadata, &key) {
+            Ok(metadata_bytes) => Ok(decode(metadata_bytes)?),
+            Err(lmdb::Error::NotFound) => self.try_lookup_block_metadata(block_number),
+            Err(err) => Err(err.into()),
+        }
+    }
+
+    fn try_lookup_block_metadata(&self, _block_number: u64) -> Result<BlockMetadata, Error> {
+        // TODO!
+        Err(Error::NotFound)
     }
 
     /// Returns true if the Ledger contains the given TxOut public key.

@@ -32,8 +32,8 @@ impl MetadataStoreSettings for MobilecoindDbMetadataStoreSettings {
     // introduced. If this is properly maintained, we could check during ledger
     // db opening for any incompatibilities, and either refuse to open or
     // perform a migration.
-    #[allow(clippy::unreadable_literal)]
-    const LATEST_VERSION: u64 = 20200805;
+    #[allow(clippy::inconsistent_digit_grouping)]
+    const LATEST_VERSION: u64 = 2020_08_05;
 
     /// The current crate version that manages the database.
     const CRATE_VERSION: &'static str = env!("CARGO_PKG_VERSION");

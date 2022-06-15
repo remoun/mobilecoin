@@ -805,6 +805,7 @@ mod tests {
     }
 
     // MintTxs that exceed the MintConfigTx limit get counted.
+    #[ignore]
     #[test_with_logger]
     fn test_sync_blocks_counts_mint_txs_exceeding_total_mint_limit(logger: Logger) {
         let mut rng = Hc128Rng::from_seed([1u8; 32]);

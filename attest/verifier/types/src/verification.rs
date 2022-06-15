@@ -4,7 +4,7 @@
 
 use alloc::{string::String, vec::Vec};
 use core::fmt::{Debug, Display};
-use hex_fmt::HexFmt;
+use hex_fmt::{HexFmt, HexList};
 use mc_crypto_digestible::Digestible;
 use mc_util_encodings::{Error as EncodingError, FromHex};
 use prost::{
@@ -40,6 +40,16 @@ pub struct VerificationReport {
     #[prost(string, required, tag = 3)]
     #[digestible(never_omit)]
     pub http_body: String,
+}
+
+impl Display for VerificationReport {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        f.debug_struct("VerificationReport")
+            .field("sig", &HexFmt(&self.sig))
+            .field("chain", &HexList(&self.chain))
+            .field("http_body", &self.http_body)
+            .finish()
+    }
 }
 
 /// A type containing the bytes of the VerificationReport signature
@@ -129,5 +139,33 @@ impl Message for VerificationSignature {
 
     fn clear(&mut self) {
         self.0.clear()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use alloc::vec;
+
+    #[test]
+    fn test_signature_debug() {
+        let sig = VerificationSignature(vec![0xDE, 0xAD, 0xBE, 0xEF, 0xCA, 0xFE]);
+        assert_eq!(
+            alloc::format!("{:?}", &sig),
+            "VerificationSignature(deadbeefcafe)"
+        );
+    }
+
+    #[test]
+    fn test_report_display() {
+        let report = VerificationReport {
+            sig: vec![0xDE, 0xAD, 0xBE, 0xEF, 0xCA, 0xFE].into(),
+            chain: vec![vec![0xAB, 0xCD], vec![0xCD, 0xEF], vec![0x12, 0x34]],
+            http_body: "some_body".into(),
+        };
+        assert_eq!(
+            alloc::format!("{}", &report),
+            "VerificationReport { sig: deadbeefcafe, chain: [abcd, cdef, 1234], http_body: \"some_body\" }"
+        );
     }
 }

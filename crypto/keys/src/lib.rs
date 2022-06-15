@@ -57,10 +57,24 @@ mod x25519;
 
 pub use crate::{
     ed25519::{Ed25519Pair, Ed25519Private, Ed25519Public, Ed25519Signature},
-    ristretto::*,
-    traits::*,
-    x25519::*,
+    ristretto::{
+        CompressedRistrettoPublic, Ristretto, RistrettoEphemeralPrivate, RistrettoPrivate,
+        RistrettoPublic, RistrettoSecret, RistrettoSignature,
+    },
+    traits::{
+        DistinguishedEncoding, Fingerprintable, Kex, KexEphemeralPrivate, KexPrivate, KexPublic,
+        KexReusablePrivate, KexSecret, KeyError, PrivateKey, PublicKey,
+    },
+    x25519::{
+        X25519EphemeralPrivate, X25519Private, X25519Public, X25519Secret, X25519, X25519_LEN,
+    },
 };
 
 // Expected format for base64 strings
 pub(crate) const B64_CONFIG: base64::Config = base64::STANDARD;
+
+pub use digest::Digest;
+pub use mc_util_repr_bytes::{typenum::Unsigned, GenericArray, LengthMismatch, ReprBytes};
+pub use signature::{
+    DigestSigner, DigestVerifier, Error as SignatureError, Signature, Signer, Verifier,
+};

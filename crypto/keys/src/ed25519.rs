@@ -3,21 +3,22 @@
 //! This module implements the common keys traits for the Ed25519 digital
 //! signature scheme.
 
-use alloc::vec;
-
-use crate::{traits::*, Signature as SignatureTrait, SignatureError};
-use alloc::vec::Vec;
+use crate::{
+    DigestSigner, DigestVerifier, DistinguishedEncoding, KeyError, PrivateKey, PublicKey,
+    Signature as SignatureTrait, SignatureError, Signer, Verifier,
+};
+use alloc::{vec, vec::Vec};
 use core::{
     cmp::Ordering,
     convert::TryFrom,
     fmt::{Debug, Display},
     hash::{Hash, Hasher},
 };
-use digest::generic_array::typenum::{U32, U64};
-use ed25519::{
-    signature::{DigestSigner, DigestVerifier, Signer, Verifier},
-    Signature,
+use digest::{
+    generic_array::typenum::{U32, U64},
+    Digest,
 };
+use ed25519::Signature;
 use ed25519_dalek::{
     Keypair, PublicKey as DalekPublicKey, SecretKey, Signature as DalekSignature,
     PUBLIC_KEY_LENGTH, SECRET_KEY_LENGTH,
@@ -467,7 +468,7 @@ derive_prost_message_from_repr_bytes!(Ed25519Signature);
 #[cfg(test)]
 mod ed25519_tests {
     use super::*;
-    use digest::generic_array::typenum::Unsigned;
+    use crate::{ReprBytes, Unsigned};
     use mc_crypto_digestible::Digestible;
     use mc_crypto_hashes::PseudoMerlin;
     use rand_core::SeedableRng;

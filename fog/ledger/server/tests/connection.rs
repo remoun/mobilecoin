@@ -636,7 +636,10 @@ fn fog_ledger_untrusted_tx_out_api_test(logger: Logger) {
         assert_eq!(result.results[1].result_code, TxOutResultCode::Found);
         assert_eq!(result.results[1].tx_out_global_index, 0);
         assert_eq!(result.results[1].block_index, 0);
-        assert_eq!(result.results[1].timestamp_result_code, TIMESTAMP_FOUND);
+        assert_eq!(
+            result.results[1].timestamp_result_code,
+            TimestampResultCode::TimestampFound
+        );
     }
 
     // grpcio detaches all its threads and does not join them :(

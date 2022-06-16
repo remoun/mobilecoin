@@ -14,6 +14,7 @@ name = "ledger_server"
 path = "src/bin/main.rs"
 
 [dependencies]
+mc-api = { path = "../../../api", default-features = false }
 mc-attest-api = { path = "../../../attest/api" }
 mc-attest-core = { path = "../../../attest/core" }
 mc-attest-enclave-api = { path = "../../../attest/enclave-api" }

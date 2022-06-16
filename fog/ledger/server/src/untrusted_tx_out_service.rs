@@ -3,6 +3,7 @@
 use core::convert::TryFrom;
 
 use grpcio::{RpcContext, RpcStatus, UnarySink};
+use mc_api::watcher::TimestampResultCode;
 use mc_common::logger::{log, Logger};
 use mc_crypto_keys::CompressedRistrettoPublic;
 use mc_fog_api::{
@@ -12,7 +13,6 @@ use mc_fog_api::{
 use mc_ledger_db::{self, Error as DbError, Ledger};
 use mc_util_grpc::{rpc_internal_error, rpc_logger, send_result, Authenticator};
 use mc_util_metrics::SVC_COUNTERS;
-use mc_watcher_api::TimestampResultCode;
 use std::sync::Arc;
 
 #[derive(Clone)]
@@ -129,7 +129,7 @@ impl<L: Ledger + Clone> UntrustedTxOutService<L> {
         };
         result.block_index = block_index;
         result.timestamp = timestamp;
-        result.timestamp_result_code = ts_result as u32;
+        result.timestamp_result_code = ts_result;
 
         Ok(result)
     }

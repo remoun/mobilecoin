@@ -4,6 +4,7 @@ syntax = "proto3";
 import "attest.proto";
 import "external.proto";
 import "fog_common.proto";
+import "watcher.proto";
 
 package fog_ledger;
 option go_package = "mobilecoin/api";
@@ -290,8 +291,7 @@ message TxOutResult {
     /// The timestamp of the block of this tx out (if found and timestamp is available)
     uint64 timestamp = 5;
     /// Indicates if the block had a timestamp (if tx out was found)
-    /// The possible values are described in enum TimestampResultCode.
-    uint32 timestamp_result_code = 6;
+    watcher.TimestampResultCode timestamp_result_code = 6;
 }
 
 enum TxOutResultCode {

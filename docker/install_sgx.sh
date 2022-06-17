@@ -71,14 +71,3 @@ rm ./sgx.bin
 
 # Update .bashrc to source sgxsdk
 echo 'source /opt/intel/sgxsdk/environment' >> /root/.bashrc
-
-# Protobuf
-#
-#  When you absolutely, positively, can't depend on this getting installed properly...
-#
-mkdir -p /tmp/protoc
-
-cd /tmp/protoc
-wget https://github.com/protocolbuffers/protobuf/releases/download/v3.6.1/protoc-3.6.1-linux-x86_64.zip
-unzip protoc-3.6.1-linux-x86_64.zip
-cp bin/protoc /usr/bin/protoc

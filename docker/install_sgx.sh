@@ -1,8 +1,13 @@
-#!/bin/sh
+#!/bin/bash
 
 # Copyright (c) 2018-2022 The MobileCoin Foundation
 
 set -e -x
+
+if [[ "$EUID" -ne 0 ]]; then
+	echo "Must be run as superuser" >&2
+	exit 1
+fi
 
 # ############################################### #
 # builder-install-sgx - Add SGX SDK and reinstall protobuf
@@ -24,7 +29,7 @@ cd /tmp
 (
 	. /etc/os-release
 
-    curl -o sgx.bin "https://download.01.org/intel-sgx/sgx-linux/2.17/distro/ubuntu${VERSION_ID}-server/sgx_linux_x64_sdk_2.17.100.3.bin"
+	curl -o sgx.bin "https://download.01.org/intel-sgx/sgx-linux/2.17/distro/ubuntu${VERSION_ID}-server/sgx_linux_x64_sdk_2.17.100.3.bin"
 
 	echo "deb [arch=amd64 signed-by=/etc/apt/trusted.gpg.d/intel-sgx-archive-keyring.gpg] https://download.01.org/intel-sgx/sgx_repo/ubuntu/ ${UBUNTU_CODENAME} main" > /etc/apt/sources.list.d/intel-sgx.list
 )

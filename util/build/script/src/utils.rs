@@ -28,7 +28,8 @@ lazy_static! {
 
 /// Adds all the known source files under the given path which match the given
 /// extensions and filenames.
-pub fn rerun_if_path_changed(path: &Path) {
+pub fn rerun_if_path_changed(path: impl AsRef<Path>) {
+    let path = path.as_ref();
     let extensions = EXTENSION_SET
         .lock()
         .expect("Could not acquire lock on extensions");

@@ -49,7 +49,7 @@ pub enum EnclaveCall {
     /// Tears down any in-enclave state about a client association.
     ClientClose(ClientSession),
 
-    /// The [LedgerEnclave::get_identity()] method.
+    /// The [LedgerEnclave::identity()] method.
     ///
     /// Retrieves the public identity (X25519 public key) of an enclave.
     GetIdentity,
@@ -74,17 +74,17 @@ pub enum EnclaveCall {
     ///   later calls.
     VerifyReport(VerificationReport),
 
-    /// The [LedgerEnclave::get_ias_report()] method.
+    /// The [LedgerEnclave::ias_report()] method.
     ///
     /// Retrieves a previously cached report, if any.
     GetReport,
 
-    /// The [LedgerEnclave::get_outputs()] method.
+    /// The [LedgerEnclave::outputs()] method.
     ///
     /// Start a new request for outputs and membership proofs from a client.
     GetOutputs(EnclaveMessage<ClientSession>),
 
-    /// The [LedgerEnclave::get_outputs_data()] method.
+    /// The [LedgerEnclave::outputs_data()] method.
     ///
     /// Re-encrypt the given outputs and proofs for transmission to a client.
     GetOutputsData(GetOutputsResponse, ClientSession),

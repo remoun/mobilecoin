@@ -64,13 +64,13 @@ impl<L: Ledger + Clone> BlockchainApiService<L> {
     }
 
     /// Returns information about the last block.
-    fn get_last_block_info_helper(&mut self) -> Result<LastBlockInfoResponse, mc_ledger_db::Error> {
+    fn last_block_info_helper(&mut self) -> Result<LastBlockInfoResponse, mc_ledger_db::Error> {
         let num_blocks = self.ledger.num_blocks()?;
         let mut resp = LastBlockInfoResponse::new();
         resp.set_index(num_blocks - 1);
         resp.set_mob_minimum_fee(
             self.fee_map
-                .get_fee_for_token(&Mob::ID)
+                .fee_for_token(&Mob::ID)
                 .expect("should always have a fee for MOB"),
         );
         resp.set_minimum_fees(HashMap::from_iter(
@@ -88,15 +88,15 @@ impl<L: Ledger + Clone> BlockchainApiService<L> {
     /// If `limit` exceeds `max_page_size`, then only [offset, offset +
     /// max_page_size) is returned. If `limit` exceeds the maximum index in
     /// the database, then only [offset, max_index] is returned. This method
-    /// is a hack to expose the `get_blocks` implementation for unit testing.
-    fn get_blocks_helper(&mut self, offset: u64, limit: u32) -> Result<BlocksResponse, ()> {
+    /// is a hack to expose the `blocks` implementation for unit testing.
+    fn blocks_helper(&mut self, offset: u64, limit: u32) -> Result<BlocksResponse, ()> {
         let start_index = offset;
         let end_index = offset + cmp::min(limit, self.max_page_size as u32) as u64;
 
         // Get "persistence type" blocks.
         let mut block_entities: Vec<mc_blockchain_types::Block> = vec![];
         for block_index in start_index..end_index {
-            match self.ledger.get_block(block_index as u64) {
+            match self.ledger.block(block_index as u64) {
                 Ok(block) => block_entities.push(block),
                 Err(mc_ledger_db::Error::NotFound) => {
                     // This is okay - it means we have reached the last block in the ledger in the
@@ -129,7 +129,7 @@ impl<L: Ledger + Clone> BlockchainApiService<L> {
 
 impl<L: Ledger + Clone> BlockchainApi for BlockchainApiService<L> {
     /// Gets the last block.
-    fn get_last_block_info(
+    fn last_block_info(
         &mut self,
         ctx: RpcContext,
         _request: Empty,
@@ -143,19 +143,14 @@ impl<L: Ledger + Clone> BlockchainApi for BlockchainApiService<L> {
             }
 
             let resp = self
-                .get_last_block_info_helper()
+                .last_block_info_helper()
                 .map_err(|_| RpcStatus::new(RpcStatusCode::INTERNAL));
             send_result(ctx, sink, resp, logger);
         });
     }
 
     /// Gets a range [offset, offset+limit) of Blocks.
-    fn get_blocks(
-        &mut self,
-        ctx: RpcContext,
-        request: BlocksRequest,
-        sink: UnarySink<BlocksResponse>,
-    ) {
+    fn blocks(&mut self, ctx: RpcContext, request: BlocksRequest, sink: UnarySink<BlocksResponse>) {
         let _timer = SVC_COUNTERS.req(&ctx);
 
         mc_common::logger::scoped_global_logger(&rpc_logger(&ctx, &self.logger), |logger| {
@@ -171,7 +166,7 @@ impl<L: Ledger + Clone> BlockchainApi for BlockchainApiService<L> {
             );
 
             let resp = self
-                .get_blocks_helper(request.offset, request.limit)
+                .blocks_helper(request.offset, request.limit)
                 .map_err(|_| RpcStatus::new(RpcStatusCode::INTERNAL));
             send_result(ctx, sink, resp, logger);
         });
@@ -191,7 +186,7 @@ mod tests {
     use std::{collections::HashMap, time::Duration};
 
     /// Starts the service on localhost and connects a client to it.
-    fn get_client_server<L: Ledger + Clone + 'static>(
+    fn client_server<L: Ledger + Clone + 'static>(
         instance: BlockchainApiService<L>,
     ) -> (BlockchainApiClient, Server) {
         let service = consensus_common_grpc::create_blockchain_api(instance);
@@ -209,7 +204,7 @@ mod tests {
     }
 
     #[test_with_logger]
-    // `get_last_block_info` should returns the last block.
+    // `last_block_info` should returns the last block.
     fn test_get_last_block_info(logger: Logger) {
         let fee_map =
             FeeMap::try_from_iter([(Mob::ID, 4000000000), (TokenId::from(60), 128000)]).unwrap();
@@ -239,12 +234,12 @@ mod tests {
         let mut blockchain_api_service =
             BlockchainApiService::new(ledger_db, authenticator, fee_map, BlockVersion::MAX, logger);
 
-        let block_response = blockchain_api_service.get_last_block_info_helper().unwrap();
+        let block_response = blockchain_api_service.last_block_info_helper().unwrap();
         assert_eq!(block_response, expected_response);
     }
 
     #[test_with_logger]
-    // `get_last_block_info` should reject unauthenticated responses when configured
+    // `last_block_info` should reject unauthenticated responses when configured
     // with an authenticator.
     fn test_get_last_block_info_rejects_unauthenticated(logger: Logger) {
         let ledger_db = create_ledger();
@@ -262,9 +257,9 @@ mod tests {
             logger,
         );
 
-        let (client, _server) = get_client_server(blockchain_api_service);
+        let (client, _server) = client_server(blockchain_api_service);
 
-        match client.get_last_block_info(&Empty::default()) {
+        match client.last_block_info(&Empty::default()) {
             Ok(response) => {
                 panic!("Unexpected response {:?}", response);
             }
@@ -278,7 +273,7 @@ mod tests {
     }
 
     #[test_with_logger]
-    // `get_blocks` should returns the correct range of blocks.
+    // `blocks` should returns the correct range of blocks.
     fn test_get_blocks_response_range(logger: Logger) {
         let mut ledger_db = create_ledger();
         let authenticator = Arc::new(AnonymousAuthenticator::default());
@@ -307,13 +302,13 @@ mod tests {
 
         {
             // The empty range [0,0) should return an empty collection of Blocks.
-            let block_response = blockchain_api_service.get_blocks_helper(0, 0).unwrap();
+            let block_response = blockchain_api_service.blocks_helper(0, 0).unwrap();
             assert_eq!(0, block_response.blocks.len());
         }
 
         {
             // The singleton range [0,1) should return a single Block.
-            let block_response = blockchain_api_service.get_blocks_helper(0, 1).unwrap();
+            let block_response = blockchain_api_service.blocks_helper(0, 1).unwrap();
             let blocks = block_response.blocks;
             assert_eq!(1, blocks.len());
             assert_eq!(expected_blocks.get(0).unwrap(), blocks.get(0).unwrap());
@@ -321,7 +316,7 @@ mod tests {
 
         {
             // The range [0,10) should return 10 Blocks.
-            let block_response = blockchain_api_service.get_blocks_helper(0, 10).unwrap();
+            let block_response = blockchain_api_service.blocks_helper(0, 10).unwrap();
             let blocks = block_response.blocks;
             assert_eq!(10, blocks.len());
             assert_eq!(expected_blocks.get(0).unwrap(), blocks.get(0).unwrap());
@@ -331,7 +326,7 @@ mod tests {
     }
 
     #[test_with_logger]
-    // `get_blocks` should return the intersection of the request with the available
+    // `blocks` should return the intersection of the request with the available
     // data if a client requests data that does not exist.
     fn test_get_blocks_request_out_of_bounds(logger: Logger) {
         let mut ledger_db = create_ledger();
@@ -357,13 +352,13 @@ mod tests {
         {
             // The range [0, 1000) requests values that don't exist. The response should
             // contain [0,10).
-            let block_response = blockchain_api_service.get_blocks_helper(0, 1000).unwrap();
+            let block_response = blockchain_api_service.blocks_helper(0, 1000).unwrap();
             assert_eq!(10, block_response.blocks.len());
         }
     }
 
     #[test_with_logger]
-    // `get_blocks` should only return the "maximum" number of items if the
+    // `blocks` should only return the "maximum" number of items if the
     // requested range is larger.
     fn test_get_blocks_max_size(logger: Logger) {
         let mut ledger_db = create_ledger();
@@ -394,7 +389,7 @@ mod tests {
 
         // The request exceeds the max_page_size, so only max_page_size items should be
         // returned.
-        let block_response = blockchain_api_service.get_blocks_helper(0, 100).unwrap();
+        let block_response = blockchain_api_service.blocks_helper(0, 100).unwrap();
         let blocks = block_response.blocks;
         assert_eq!(5, blocks.len());
         assert_eq!(expected_blocks.get(0).unwrap(), blocks.get(0).unwrap());
@@ -402,7 +397,7 @@ mod tests {
     }
 
     #[test_with_logger]
-    // `get_blocks` should reject unauthenticated responses when configured with an
+    // `blocks` should reject unauthenticated responses when configured with an
     // authenticator.
     fn test_get_blocks_rejects_unauthenticated(logger: Logger) {
         let ledger_db = create_ledger();
@@ -420,9 +415,9 @@ mod tests {
             logger,
         );
 
-        let (client, _server) = get_client_server(blockchain_api_service);
+        let (client, _server) = client_server(blockchain_api_service);
 
-        match client.get_blocks(&BlocksRequest::default()) {
+        match client.blocks(&BlocksRequest::default()) {
             Ok(response) => {
                 panic!("Unexpected response {:?}", response);
             }

@@ -17,7 +17,7 @@ impl TryFrom<&external::TxHash> for tx::TxHash {
     type Error = ConversionError;
 
     fn try_from(value: &external::TxHash) -> Result<Self, Self::Error> {
-        let hash_bytes: &[u8] = value.get_hash();
+        let hash_bytes: &[u8] = value.hash();
         tx::TxHash::try_from(hash_bytes).or(Err(ConversionError::ArrayCastError))
     }
 }

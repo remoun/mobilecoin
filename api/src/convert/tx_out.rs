@@ -36,22 +36,22 @@ impl TryFrom<&external::TxOut> for tx::TxOut {
     type Error = ConversionError;
 
     fn try_from(source: &external::TxOut) -> Result<Self, Self::Error> {
-        let masked_amount = MaskedAmount::try_from(source.get_masked_amount())?;
+        let masked_amount = MaskedAmount::try_from(source.masked_amount())?;
 
-        let target_key_bytes: &[u8] = source.get_target_key().get_data();
+        let target_key_bytes: &[u8] = source.target_key().data();
         let target_key: CompressedRistrettoPublic = RistrettoPublic::try_from(target_key_bytes)
             .map_err(|_| ConversionError::KeyCastError)?
             .into();
 
-        let public_key_bytes: &[u8] = source.get_public_key().get_data();
+        let public_key_bytes: &[u8] = source.public_key().data();
         let public_key: CompressedRistrettoPublic = RistrettoPublic::try_from(public_key_bytes)
             .map_err(|_| ConversionError::KeyCastError)?
             .into();
 
-        let e_fog_hint = EncryptedFogHint::try_from(source.get_e_fog_hint().get_data())
+        let e_fog_hint = EncryptedFogHint::try_from(source.e_fog_hint().data())
             .map_err(|_| ConversionError::ArrayCastError)?;
 
-        let e_memo_bytes = source.get_e_memo().get_data();
+        let e_memo_bytes = source.e_memo().data();
         let e_memo = if e_memo_bytes.is_empty() {
             None
         } else {

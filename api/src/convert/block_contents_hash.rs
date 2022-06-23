@@ -17,7 +17,7 @@ impl TryFrom<&blockchain::BlockContentsHash> for BlockContentsHash {
     type Error = ConversionError;
 
     fn try_from(src: &blockchain::BlockContentsHash) -> Result<Self, Self::Error> {
-        BlockContentsHash::try_from(src.get_data()).map_err(|_| ConversionError::ArrayCastError)
+        BlockContentsHash::try_from(src.data()).map_err(|_| ConversionError::ArrayCastError)
     }
 }
 

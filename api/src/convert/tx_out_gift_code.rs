@@ -23,10 +23,9 @@ impl TryFrom<&printable::TxOutGiftCode> for mc_transaction_core::TxOutGiftCode {
     type Error = ConversionError;
 
     fn try_from(src: &printable::TxOutGiftCode) -> Result<Self, Self::Error> {
-        let global_index = src.get_global_index();
-        let onetime_private_key = RistrettoPrivate::try_from(src.get_onetime_private_key())?;
-        let compressed_shared_secret =
-            CompressedRistrettoPublic::try_from(src.get_shared_secret())?;
+        let global_index = src.global_index();
+        let onetime_private_key = RistrettoPrivate::try_from(src.onetime_private_key())?;
+        let compressed_shared_secret = CompressedRistrettoPublic::try_from(src.shared_secret())?;
         let shared_secret = RistrettoPublic::try_from(&compressed_shared_secret)?;
 
         Ok(Self {

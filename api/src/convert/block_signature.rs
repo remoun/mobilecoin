@@ -20,9 +20,9 @@ impl TryFrom<&blockchain::BlockSignature> for BlockSignature {
     type Error = ConversionError;
 
     fn try_from(source: &blockchain::BlockSignature) -> Result<Self, Self::Error> {
-        let signature = Ed25519Signature::try_from(source.get_signature())?;
-        let signer = Ed25519Public::try_from(source.get_signer())?;
-        let signed_at = source.get_signed_at();
+        let signature = Ed25519Signature::try_from(source.signature())?;
+        let signer = Ed25519Public::try_from(source.signer())?;
+        let signed_at = source.signed_at();
         Ok(BlockSignature::new(signature, signer, signed_at))
     }
 }
@@ -49,15 +49,15 @@ mod tests {
 
         let block_signature = blockchain::BlockSignature::from(&source_block_signature);
         assert_eq!(
-            block_signature.get_signature().get_data(),
+            block_signature.signature().data(),
             source_block_signature.signature().as_ref()
         );
         assert_eq!(
-            block_signature.get_signer().get_data(),
+            block_signature.signer().data(),
             source_block_signature.signer().to_bytes().as_slice(),
         );
         assert_eq!(
-            block_signature.get_signed_at(),
+            block_signature.signed_at(),
             source_block_signature.signed_at(),
         );
     }

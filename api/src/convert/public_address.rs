@@ -74,11 +74,11 @@ mod tests {
             let public_address = AccountKey::random(&mut rng).default_subaddress();
             let proto_credentials = external::PublicAddress::from(&public_address);
             assert_eq!(
-                *proto_credentials.get_view_public_key(),
+                *proto_credentials.view_public_key(),
                 external::CompressedRistretto::from(public_address.view_public_key())
             );
             assert_eq!(
-                *proto_credentials.get_spend_public_key(),
+                *proto_credentials.spend_public_key(),
                 external::CompressedRistretto::from(public_address.spend_public_key())
             );
             assert_eq!(proto_credentials.fog_report_url, String::from(""));
@@ -106,11 +106,11 @@ mod tests {
 
             let proto_credentials = external::PublicAddress::from(&public_address);
             assert_eq!(
-                *proto_credentials.get_view_public_key(),
+                *proto_credentials.view_public_key(),
                 external::CompressedRistretto::from(public_address.view_public_key())
             );
             assert_eq!(
-                *proto_credentials.get_spend_public_key(),
+                *proto_credentials.spend_public_key(),
                 external::CompressedRistretto::from(public_address.spend_public_key())
             );
             assert_eq!(

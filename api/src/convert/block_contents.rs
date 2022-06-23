@@ -41,25 +41,25 @@ impl TryFrom<&blockchain::BlockContents> for BlockContents {
 
     fn try_from(source: &blockchain::BlockContents) -> Result<Self, Self::Error> {
         let key_images = source
-            .get_key_images()
+            .key_images()
             .iter()
             .map(KeyImage::try_from)
             .collect::<Result<_, _>>()?;
 
         let outputs = source
-            .get_outputs()
+            .outputs()
             .iter()
             .map(TxOut::try_from)
             .collect::<Result<_, _>>()?;
 
         let validated_mint_config_txs = source
-            .get_validated_mint_config_txs()
+            .validated_mint_config_txs()
             .iter()
             .map(ValidatedMintConfigTx::try_from)
             .collect::<Result<_, _>>()?;
 
         let mint_txs = source
-            .get_mint_txs()
+            .mint_txs()
             .iter()
             .map(MintTx::try_from)
             .collect::<Result<_, _>>()?;

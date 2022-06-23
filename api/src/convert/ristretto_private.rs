@@ -17,7 +17,7 @@ impl TryFrom<&external::RistrettoPrivate> for RistrettoPrivate {
     type Error = ConversionError;
 
     fn try_from(source: &external::RistrettoPrivate) -> Result<Self, Self::Error> {
-        let bytes: &[u8] = source.get_data();
+        let bytes: &[u8] = source.data();
         RistrettoPrivate::try_from(bytes).map_err(|_| ConversionError::ArrayCastError)
     }
 }

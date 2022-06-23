@@ -106,7 +106,7 @@ impl WellFormedTxContext {
             tx_hash: tx.tx_hash(),
             tombstone_block: tx.prefix.tombstone_block,
             key_images: tx.key_images(),
-            highest_indices: tx.get_membership_proof_highest_indices(),
+            highest_indices: tx.membership_proof_highest_indices(),
             output_public_keys: tx.output_public_keys(),
         }
     }
@@ -261,19 +261,19 @@ pub trait ConsensusEnclave: ReportableEnclave {
 
     /// Retrieve the current minimum fee for a given token id.
     /// Returns None if the token ID is not configured to have a minimum fee.
-    fn get_minimum_fee(&self, token_id: &TokenId) -> Result<Option<u64>>;
+    fn minimum_fee(&self, token_id: &TokenId) -> Result<Option<u64>>;
 
     /// Retrieve the public identity of the enclave.
-    fn get_identity(&self) -> Result<X25519Public>;
+    fn identity(&self) -> Result<X25519Public>;
 
     /// Retrieve the block signing public key from the enclave.
-    fn get_signer(&self) -> Result<Ed25519Public>;
+    fn signer(&self) -> Result<Ed25519Public>;
 
     /// Retrieve the fee public key from the enclave.
-    fn get_fee_recipient(&self) -> Result<FeePublicKey>;
+    fn fee_recipient(&self) -> Result<FeePublicKey>;
 
     /// Retrieve the minting trust root public key from the enclave.
-    fn get_minting_trust_root(&self) -> Result<Ed25519Public>;
+    fn minting_trust_root(&self) -> Result<Ed25519Public>;
 
     // CLIENT-FACING METHODS
 

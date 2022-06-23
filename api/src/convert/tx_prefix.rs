@@ -31,13 +31,13 @@ impl TryFrom<&external::TxPrefix> for tx::TxPrefix {
 
     fn try_from(source: &external::TxPrefix) -> Result<Self, Self::Error> {
         let mut inputs: Vec<tx::TxIn> = Vec::new();
-        for out in source.get_inputs() {
+        for out in source.inputs() {
             let tx_out = tx::TxIn::try_from(out)?;
             inputs.push(tx_out);
         }
 
         let mut outputs: Vec<tx::TxOut> = Vec::new();
-        for out in source.get_outputs() {
+        for out in source.outputs() {
             let tx_out = tx::TxOut::try_from(out)?;
             outputs.push(tx_out);
         }
@@ -45,9 +45,9 @@ impl TryFrom<&external::TxPrefix> for tx::TxPrefix {
         let tx_prefix = tx::TxPrefix {
             inputs,
             outputs,
-            fee: source.get_fee(),
-            fee_token_id: source.get_fee_token_id(),
-            tombstone_block: source.get_tombstone_block(),
+            fee: source.fee(),
+            fee_token_id: source.fee_token_id(),
+            tombstone_block: source.tombstone_block(),
         };
         Ok(tx_prefix)
     }

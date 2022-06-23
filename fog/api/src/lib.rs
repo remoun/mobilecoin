@@ -28,7 +28,7 @@ use std::{collections::BTreeSet, str::FromStr};
 
 // Extra functions for IngestSummary to avoid repetition
 impl ingest_common::IngestSummary {
-    pub fn get_sorted_peers(&self) -> Result<BTreeSet<IngestPeerUri>, UriParseError> {
+    pub fn sorted_peers(&self) -> Result<BTreeSet<IngestPeerUri>, UriParseError> {
         self.peers
             .iter()
             .map(|x| IngestPeerUri::from_str(x))
@@ -86,6 +86,6 @@ impl EnclaveGrpcChannel for ledger_grpc::FogMerkleProofApiClient {
         msg: &attest::Message,
         call_option: CallOption,
     ) -> GrpcResult<(Metadata, attest::Message, Metadata)> {
-        <Self>::get_outputs_async_opt(self, msg, call_option)?.receive_sync()
+        <Self>::outputs_async_opt(self, msg, call_option)?.receive_sync()
     }
 }

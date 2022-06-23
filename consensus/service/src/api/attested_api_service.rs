@@ -136,7 +136,7 @@ mod peer_tests {
     use std::time::Duration;
 
     /// Starts the service on localhost and connects a client to it.
-    fn get_client_server(instance: AttestedApiService<PeerSession>) -> (AttestedApiClient, Server) {
+    fn client_server(instance: AttestedApiService<PeerSession>) -> (AttestedApiClient, Server) {
         let service = attest_grpc::create_attested_api(instance);
         let env = Arc::new(Environment::new(1));
         let mut server = ServerBuilder::new(env.clone())
@@ -165,7 +165,7 @@ mod peer_tests {
         let attested_api_service =
             AttestedApiService::<PeerSession>::new(enclave, authenticator, logger);
 
-        let (client, _server) = get_client_server(attested_api_service);
+        let (client, _server) = client_server(attested_api_service);
 
         match client.auth(&AuthMessage::default()) {
             Ok(response) => {
@@ -194,9 +194,7 @@ mod client_tests {
     use std::time::Duration;
 
     /// Starts the service on localhost and connects a client to it.
-    fn get_client_server(
-        instance: AttestedApiService<ClientSession>,
-    ) -> (AttestedApiClient, Server) {
+    fn client_server(instance: AttestedApiService<ClientSession>) -> (AttestedApiClient, Server) {
         let service = attest_grpc::create_attested_api(instance);
         let env = Arc::new(Environment::new(1));
         let mut server = ServerBuilder::new(env.clone())
@@ -225,7 +223,7 @@ mod client_tests {
         let attested_api_service =
             AttestedApiService::<ClientSession>::new(enclave, authenticator, logger);
 
-        let (client, _server) = get_client_server(attested_api_service);
+        let (client, _server) = client_server(attested_api_service);
 
         match client.auth(&AuthMessage::default()) {
             Ok(response) => {

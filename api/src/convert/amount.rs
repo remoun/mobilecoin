@@ -19,9 +19,9 @@ impl TryFrom<&external::MaskedAmount> for MaskedAmount {
     type Error = ConversionError;
 
     fn try_from(source: &external::MaskedAmount) -> Result<Self, Self::Error> {
-        let commitment = CompressedCommitment::try_from(source.get_commitment())?;
-        let masked_value = source.get_masked_value();
-        let masked_token_id = source.get_masked_token_id();
+        let commitment = CompressedCommitment::try_from(source.commitment())?;
+        let masked_value = source.masked_value();
+        let masked_token_id = source.masked_token_id();
         let amount = MaskedAmount {
             commitment,
             masked_value,

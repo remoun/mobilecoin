@@ -17,7 +17,7 @@ impl TryFrom<&external::TxOutConfirmationNumber> for tx::TxOutConfirmationNumber
     type Error = ConversionError;
 
     fn try_from(src: &external::TxOutConfirmationNumber) -> Result<Self, Self::Error> {
-        let bytes: &[u8] = src.get_hash();
+        let bytes: &[u8] = src.hash();
         let mut hash = [0u8; 32];
         if bytes.len() != hash.len() {
             return Err(ConversionError::ArrayCastError);

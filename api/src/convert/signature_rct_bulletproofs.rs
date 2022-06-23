@@ -39,20 +39,20 @@ impl TryFrom<&external::SignatureRctBulletproofs> for SignatureRctBulletproofs {
 
     fn try_from(source: &external::SignatureRctBulletproofs) -> Result<Self, Self::Error> {
         let mut ring_signatures: Vec<RingMLSAG> = Vec::new();
-        for ring_signature in source.get_ring_signatures() {
+        for ring_signature in source.ring_signatures() {
             ring_signatures.push(RingMLSAG::try_from(ring_signature)?);
         }
 
         let mut pseudo_output_commitments: Vec<CompressedCommitment> = Vec::new();
-        for pseudo_output_commitment in source.get_pseudo_output_commitments() {
+        for pseudo_output_commitment in source.pseudo_output_commitments() {
             pseudo_output_commitments
                 .push(CompressedCommitment::try_from(pseudo_output_commitment)?);
         }
 
-        let range_proof_bytes = source.get_range_proof_bytes().to_vec();
-        let range_proofs = source.get_range_proofs().to_vec();
-        let pseudo_output_token_ids = source.get_pseudo_output_token_ids().to_vec();
-        let output_token_ids = source.get_output_token_ids().to_vec();
+        let range_proof_bytes = source.range_proof_bytes().to_vec();
+        let range_proofs = source.range_proofs().to_vec();
+        let pseudo_output_token_ids = source.pseudo_output_token_ids().to_vec();
+        let output_token_ids = source.output_token_ids().to_vec();
 
         Ok(SignatureRctBulletproofs {
             ring_signatures,

@@ -11,7 +11,7 @@ use mc_crypto_ring_signature_signer::NoKeysRingSigner;
 use mc_fog_report_validation_test_utils::{FullyValidatedFogPubkey, MockFogResolver};
 use mc_transaction_core::{Amount, SignedContingentInput};
 use mc_transaction_std::{
-    test_utils::get_input_credentials, EmptyMemoBuilder, ReservedSubaddresses,
+    test_utils::input_credentials, EmptyMemoBuilder, ReservedSubaddresses,
     SignedContingentInputBuilder,
 };
 use mc_util_from_random::FromRandom;
@@ -71,7 +71,7 @@ fn signed_contingent_input_examples<T: RngCore + CryptoRng>(
             },
     });
 
-    let input_credentials = get_input_credentials(
+    let input_credentials = input_credentials(
         block_version,
         Amount::new(200, 1.into()),
         &sender,
@@ -90,7 +90,7 @@ fn signed_contingent_input_examples<T: RngCore + CryptoRng>(
         .unwrap();
     result.push(builder.build(&NoKeysRingSigner {}, rng).unwrap());
 
-    let input_credentials = get_input_credentials(
+    let input_credentials = input_credentials(
         block_version,
         Amount::new(200, 1.into()),
         &sender,
@@ -112,7 +112,7 @@ fn signed_contingent_input_examples<T: RngCore + CryptoRng>(
         .unwrap();
     result.push(builder.build(&NoKeysRingSigner {}, rng).unwrap());
 
-    let input_credentials = get_input_credentials(
+    let input_credentials = input_credentials(
         block_version,
         Amount::new(300, 1.into()),
         &sender,

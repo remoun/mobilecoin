@@ -79,7 +79,7 @@ impl BlockchainConfigWithDigest {
     }
 
     /// Get the config (non mutably)
-    pub fn get_config(&self) -> &BlockchainConfig {
+    pub fn config(&self) -> &BlockchainConfig {
         &self.config
     }
 }

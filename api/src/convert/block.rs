@@ -24,10 +24,10 @@ impl TryFrom<&blockchain::Block> for Block {
     type Error = ConversionError;
 
     fn try_from(value: &blockchain::Block) -> Result<Self, Self::Error> {
-        let block_id = BlockID::try_from(value.get_id())?;
-        let parent_id = BlockID::try_from(value.get_parent_id())?;
-        let root_element = TxOutMembershipElement::try_from(value.get_root_element())?;
-        let contents_hash = BlockContentsHash::try_from(value.get_contents_hash())?;
+        let block_id = BlockID::try_from(value.id())?;
+        let parent_id = BlockID::try_from(value.parent_id())?;
+        let root_element = TxOutMembershipElement::try_from(value.root_element())?;
+        let contents_hash = BlockContentsHash::try_from(value.contents_hash())?;
 
         let block = Block {
             id: block_id,
@@ -66,15 +66,15 @@ mod tests {
         };
 
         let block = blockchain::Block::from(&source_block);
-        assert_eq!(block.get_id().get_data(), [2u8; 32]);
-        assert_eq!(block.get_version(), 1);
-        assert_eq!(block.get_parent_id().get_data(), [1u8; 32]);
-        assert_eq!(block.get_index(), 99);
-        assert_eq!(block.get_cumulative_txo_count(), 400);
-        assert_eq!(block.get_root_element().get_range().get_from(), 10);
-        assert_eq!(block.get_root_element().get_range().get_to(), 20);
-        assert_eq!(block.get_root_element().get_hash().get_data(), &[12u8; 32]);
-        assert_eq!(block.get_contents_hash().get_data(), [66u8; 32]);
+        assert_eq!(block.id().data(), [2u8; 32]);
+        assert_eq!(block.version(), 1);
+        assert_eq!(block.parent_id().data(), [1u8; 32]);
+        assert_eq!(block.index(), 99);
+        assert_eq!(block.cumulative_txo_count(), 400);
+        assert_eq!(block.root_element().range().from(), 10);
+        assert_eq!(block.root_element().range().to(), 20);
+        assert_eq!(block.root_element().hash().data(), &[12u8; 32]);
+        assert_eq!(block.contents_hash().data(), [66u8; 32]);
     }
 
     #[test]

@@ -88,5 +88,5 @@ pub trait ReportableEnclave {
     fn verify_ias_report(&self, ias_report: VerificationReport) -> Result<()>;
 
     /// Retrieve a copy of the cached verification report.
-    fn get_ias_report(&self) -> Result<VerificationReport>;
+    fn ias_report(&self) -> Result<VerificationReport>;
 }

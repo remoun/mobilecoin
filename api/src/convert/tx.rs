@@ -20,8 +20,8 @@ impl TryFrom<&external::Tx> for tx::Tx {
     type Error = ConversionError;
 
     fn try_from(source: &external::Tx) -> Result<Self, Self::Error> {
-        let prefix = tx::TxPrefix::try_from(source.get_prefix())?;
-        let signature = SignatureRctBulletproofs::try_from(source.get_signature())?;
+        let prefix = tx::TxPrefix::try_from(source.prefix())?;
+        let signature = SignatureRctBulletproofs::try_from(source.signature())?;
         Ok(tx::Tx { prefix, signature })
     }
 }
@@ -36,7 +36,7 @@ mod tests {
         constants::MILLIMOB_TO_PICOMOB, tokens::Mob, tx::Tx, Amount, BlockVersion, Token, TokenId,
     };
     use mc_transaction_std::{
-        test_utils::get_input_credentials, EmptyMemoBuilder, ReservedSubaddresses,
+        test_utils::input_credentials, EmptyMemoBuilder, ReservedSubaddresses,
         SignedContingentInputBuilder, TransactionBuilder,
     };
     use protobuf::Message;
@@ -63,7 +63,7 @@ mod tests {
             )
             .unwrap();
 
-            transaction_builder.add_input(get_input_credentials(
+            transaction_builder.add_input(input_credentials(
                 block_version,
                 Amount::new(65536 + Mob::MINIMUM_FEE, Mob::ID),
                 &alice,
@@ -132,7 +132,7 @@ mod tests {
             let fpr = MockFogResolver::default();
 
             // Charlie makes a signed contingent input, offering 1000 token2's for 1 MOB
-            let input_credentials = get_input_credentials(
+            let input_credentials = input_credentials(
                 block_version,
                 Amount::new(1000, token2),
                 &charlie,
@@ -171,7 +171,7 @@ mod tests {
             )
             .unwrap();
 
-            transaction_builder.add_input(get_input_credentials(
+            transaction_builder.add_input(input_credentials(
                 block_version,
                 Amount::new(1475 * MILLIMOB_TO_PICOMOB, Mob::ID),
                 &alice,

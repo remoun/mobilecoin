@@ -17,7 +17,7 @@ impl TryFrom<&external::KeyImage> for KeyImage {
     type Error = ConversionError;
 
     fn try_from(source: &external::KeyImage) -> Result<Self, Self::Error> {
-        let bytes: &[u8] = source.get_data();
+        let bytes: &[u8] = source.data();
         Ok(KeyImage::try_from(bytes)?)
     }
 }

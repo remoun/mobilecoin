@@ -17,7 +17,7 @@ impl TryFrom<&external::CompressedRistretto> for CompressedCommitment {
     type Error = ConversionError;
 
     fn try_from(source: &external::CompressedRistretto) -> Result<Self, Self::Error> {
-        let bytes: &[u8] = source.get_data();
+        let bytes: &[u8] = source.data();
         if bytes.len() != 32 {
             return Err(ConversionError::ArrayCastError);
         }
@@ -31,7 +31,7 @@ impl TryFrom<&external::CompressedRistretto> for RistrettoPublic {
     type Error = ConversionError;
 
     fn try_from(source: &external::CompressedRistretto) -> Result<Self, Self::Error> {
-        let bytes: &[u8] = source.get_data();
+        let bytes: &[u8] = source.data();
         RistrettoPublic::try_from(bytes).map_err(|_| ConversionError::ArrayCastError)
     }
 }
@@ -59,7 +59,7 @@ impl TryFrom<&external::CompressedRistretto> for CompressedRistrettoPublic {
     type Error = ConversionError;
 
     fn try_from(source: &external::CompressedRistretto) -> Result<Self, Self::Error> {
-        let bytes: &[u8] = source.get_data();
+        let bytes: &[u8] = source.data();
         CompressedRistrettoPublic::try_from(bytes).map_err(|_| ConversionError::ArrayCastError)
     }
 }

@@ -108,7 +108,7 @@ pub trait ViewEnclaveApi: ReportableEnclave {
     //
 
     /// Retrieve the public identity of the enclave.
-    fn get_identity(&self) -> Result<X25519Public>;
+    fn identity(&self) -> Result<X25519Public>;
 
     //
     // View-enclave specific

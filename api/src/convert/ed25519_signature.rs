@@ -17,7 +17,7 @@ impl TryFrom<&external::Ed25519Signature> for Ed25519Signature {
     type Error = ConversionError;
 
     fn try_from(source: &external::Ed25519Signature) -> Result<Self, Self::Error> {
-        let bytes: &[u8] = source.get_data();
+        let bytes: &[u8] = source.data();
         Ed25519Signature::try_from(bytes).map_err(|_| ConversionError::ArrayCastError)
     }
 }
@@ -37,7 +37,7 @@ impl TryFrom<&external::Ed25519Public> for Ed25519Public {
     type Error = ConversionError;
 
     fn try_from(source: &external::Ed25519Public) -> Result<Self, Self::Error> {
-        let bytes: &[u8] = source.get_data();
+        let bytes: &[u8] = source.data();
         Ed25519Public::try_from(bytes).map_err(|_| ConversionError::ArrayCastError)
     }
 }

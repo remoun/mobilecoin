@@ -17,7 +17,7 @@ impl TryFrom<&blockchain::BlockID> for BlockID {
     type Error = ConversionError;
 
     fn try_from(src: &blockchain::BlockID) -> Result<Self, Self::Error> {
-        BlockID::try_from(src.get_data()).map_err(|_| ConversionError::ArrayCastError)
+        BlockID::try_from(src.data()).map_err(|_| ConversionError::ArrayCastError)
     }
 }
 

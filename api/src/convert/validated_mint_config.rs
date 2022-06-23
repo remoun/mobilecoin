@@ -21,8 +21,8 @@ impl TryFrom<&external::ValidatedMintConfigTx> for ValidatedMintConfigTx {
     type Error = ConversionError;
 
     fn try_from(source: &external::ValidatedMintConfigTx) -> Result<Self, Self::Error> {
-        let mint_config_tx = MintConfigTx::try_from(source.get_mint_config_tx())?;
-        let signer_set = SignerSet::try_from(source.get_signer_set())?;
+        let mint_config_tx = MintConfigTx::try_from(source.mint_config_tx())?;
+        let signer_set = SignerSet::try_from(source.signer_set())?;
         Ok(Self {
             mint_config_tx,
             signer_set,

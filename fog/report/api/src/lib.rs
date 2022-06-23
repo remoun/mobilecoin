@@ -40,9 +40,9 @@ impl From<Report> for report::Report {
 impl From<report::ReportResponse> for ReportResponse {
     fn from(src: report::ReportResponse) -> Self {
         Self {
-            // Note: this is out of order because get_chain is a borrow, but the
+            // Note: this is out of order because chain is a borrow, but the
             //       iter below is a partial move.
-            chain: src.get_chain().into(),
+            chain: src.chain().into(),
             reports: src.reports.into_iter().map(|x| x.into()).collect(),
             signature: src.signature,
         }

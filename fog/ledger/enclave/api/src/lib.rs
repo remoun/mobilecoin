@@ -66,7 +66,7 @@ pub trait LedgerEnclave: ReportableEnclave {
     fn enclave_init(&self, self_id: &ResponderId, desired_capacity: u64) -> Result<()>;
 
     /// Retrieve the public identity of the enclave.
-    fn get_identity(&self) -> Result<X25519Public>;
+    fn identity(&self) -> Result<X25519Public>;
 
     // CLIENT-FACING METHODS
 
@@ -78,11 +78,11 @@ pub trait LedgerEnclave: ReportableEnclave {
 
     /// Extract context data to be handed back to untrusted so that it could
     /// collect the information required.
-    fn get_outputs(&self, msg: EnclaveMessage<ClientSession>) -> Result<OutputContext>;
+    fn outputs(&self, msg: EnclaveMessage<ClientSession>) -> Result<OutputContext>;
 
     /// Encrypt outputs and proofs for the given client session, using the given
     /// authenticated data for the client.
-    fn get_outputs_data(
+    fn outputs_data(
         &self,
         response: GetOutputsResponse,
         client: ClientSession,

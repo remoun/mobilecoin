@@ -60,19 +60,17 @@ pub trait IngestEnclave: ReportableEnclave {
     fn new_egress_key(&self) -> Result<()>;
 
     /// Retrieve the ingress public key of the enclave.
-    fn get_ingress_pubkey(&self) -> Result<RistrettoPublic>;
+    fn ingress_pubkey(&self) -> Result<RistrettoPublic>;
 
     /// Retrieve the ingress private key of the enclave, sealed to this enclave
     /// The public key corresponding to this value is also returned to help
     /// catch races.
-    fn get_sealed_ingress_private_key(
-        &self,
-    ) -> Result<(SealedIngestKey, CompressedRistrettoPublic)>;
+    fn sealed_ingress_private_key(&self) -> Result<(SealedIngestKey, CompressedRistrettoPublic)>;
 
     /// Retrieve the ingress private key of the enclave, encrypted for the peer
     /// The public key corresponding to this value is also returned to help
     /// catch races.
-    fn get_ingress_private_key(
+    fn ingress_private_key(
         &self,
         peer: PeerSession,
     ) -> Result<(EnclaveMessage<PeerSession>, CompressedRistrettoPublic)>;
@@ -86,14 +84,14 @@ pub trait IngestEnclave: ReportableEnclave {
 
     /// Retrieve the current KexRngPubkey for the enclave. This corresponds to
     /// the egress key.
-    fn get_kex_rng_pubkey(&self) -> Result<KexRngPubkey>;
+    fn kex_rng_pubkey(&self) -> Result<KexRngPubkey>;
 
     /// Consume all the transactions and emit corresponding rows for the
     /// recovery database
     fn ingest_txs(&self, chunk: TxsForIngest) -> Result<(Vec<ETxOutRecord>, Option<KexRngPubkey>)>;
 
     /// Retrieve the public identity of the enclave, for peering
-    fn get_identity(&self) -> Result<X25519Public>;
+    fn identity(&self) -> Result<X25519Public>;
 
     /// Initiate peering with a remote ingest enclave
     fn peer_init(&self, peer_id: &ResponderId) -> Result<PeerAuthRequest>;

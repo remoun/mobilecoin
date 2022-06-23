@@ -32,13 +32,13 @@ impl TryFrom<&external::TxIn> for tx::TxIn {
 
     fn try_from(source: &external::TxIn) -> Result<Self, Self::Error> {
         let mut ring: Vec<tx::TxOut> = Vec::new();
-        for out in source.get_ring() {
+        for out in source.ring() {
             let tx_out = tx::TxOut::try_from(out)?;
             ring.push(tx_out);
         }
 
         let mut proofs: Vec<TxOutMembershipProof> = Vec::new();
-        for proof in source.get_proofs() {
+        for proof in source.proofs() {
             let tx_proof = TxOutMembershipProof::try_from(proof)?;
             proofs.push(tx_proof);
         }
@@ -82,7 +82,7 @@ impl TryFrom<&external::InputRules> for InputRules {
 
     fn try_from(source: &external::InputRules) -> Result<Self, Self::Error> {
         let required_outputs = source
-            .get_required_outputs()
+            .required_outputs()
             .iter()
             .map(tx::TxOut::try_from)
             .collect::<Result<Vec<_>, _>>()?;

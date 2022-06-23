@@ -28,7 +28,7 @@ pub fn compile_protos_and_generate_mod_rs(
     Codegen::new()
         .includes(proto_dirs)
         .inputs(&proto_files)
-        .protoc()
+        .pure()
         .cargo_out_dir(GEN_DIR)
         .customize(
             Customize::default()

@@ -80,7 +80,7 @@ impl FeeMap {
 
     /// Get the fee for a given token id, or None if no fee is set for that
     /// token.
-    pub fn get_fee_for_token(&self, token_id: &TokenId) -> Option<u64> {
+    pub fn fee_for_token(&self, token_id: &TokenId) -> Option<u64> {
         self.map.get(token_id).cloned()
     }
 
@@ -165,13 +165,13 @@ mod test {
     #[test]
     fn valid_fee_maps_accepted() {
         let fee_map1 = FeeMap::try_from_iter([(Mob::ID, 1024), (TokenId::from(2), 80000)]).unwrap();
-        assert!(fee_map1.get_fee_for_token(&Mob::ID).is_some());
+        assert!(fee_map1.fee_for_token(&Mob::ID).is_some());
 
         let fee_map2 = FeeMap::try_from_iter([(Mob::ID, 1024), (TokenId::from(2), 3072)]).unwrap();
-        assert!(fee_map2.get_fee_for_token(&Mob::ID).is_some());
+        assert!(fee_map2.fee_for_token(&Mob::ID).is_some());
 
         let fee_map3 = FeeMap::try_from_iter([(Mob::ID, 1024), (TokenId::from(30), 3072)]).unwrap();
-        assert!(fee_map3.get_fee_for_token(&Mob::ID).is_some());
+        assert!(fee_map3.fee_for_token(&Mob::ID).is_some());
     }
 
     /// Invalid fee maps are rejected.

@@ -32,10 +32,10 @@ impl TryFrom<&ArchiveBlock> for BlockData {
         if !src.has_v1() {
             return Err(ConversionError::ObjectMissing);
         }
-        let archive_block_v1 = src.get_v1();
+        let archive_block_v1 = src.v1();
 
-        let block = archive_block_v1.get_block().try_into()?;
-        let block_contents = BlockContents::try_from(archive_block_v1.get_block_contents())?;
+        let block = archive_block_v1.block().try_into()?;
+        let block_contents = BlockContents::try_from(archive_block_v1.block_contents())?;
 
         let signature = archive_block_v1
             .signature
@@ -69,7 +69,7 @@ impl TryFrom<&ArchiveBlocks> for Vec<BlockData> {
 
     fn try_from(src: &ArchiveBlocks) -> Result<Self, Self::Error> {
         let blocks_data = src
-            .get_blocks()
+            .blocks()
             .iter()
             .map(BlockData::try_from)
             .collect::<Result<Vec<_>, ConversionError>>()?;
@@ -171,15 +171,15 @@ mod tests {
         let archive_block = ArchiveBlock::from(&block_data);
         assert_eq!(
             block_data.block(),
-            &Block::try_from(archive_block.get_v1().get_block()).unwrap(),
+            &Block::try_from(archive_block.v1().block()).unwrap(),
         );
         assert_eq!(
             block_data.contents(),
-            &BlockContents::try_from(archive_block.get_v1().get_block_contents()).unwrap()
+            &BlockContents::try_from(archive_block.v1().block_contents()).unwrap()
         );
         assert_eq!(
             block_data.signature().clone().unwrap(),
-            BlockSignature::try_from(archive_block.get_v1().get_signature()).unwrap()
+            BlockSignature::try_from(archive_block.v1().signature()).unwrap()
         );
 
         // ArchiveBlock -> BlockData
@@ -229,19 +229,19 @@ mod tests {
         // Vec<BlockData> -> ArchiveBlocks
         let archive_blocks = ArchiveBlocks::from(blocks_data.as_slice());
         for (block_data, archive_block) in
-            zip_exact(blocks_data.iter(), archive_blocks.get_blocks().iter()).unwrap()
+            zip_exact(blocks_data.iter(), archive_blocks.blocks().iter()).unwrap()
         {
             assert_eq!(
                 block_data.block(),
-                &Block::try_from(archive_block.get_v1().get_block()).unwrap(),
+                &Block::try_from(archive_block.v1().block()).unwrap(),
             );
             assert_eq!(
                 block_data.contents(),
-                &BlockContents::try_from(archive_block.get_v1().get_block_contents()).unwrap()
+                &BlockContents::try_from(archive_block.v1().block_contents()).unwrap()
             );
             assert_eq!(
                 block_data.signature().clone().unwrap(),
-                BlockSignature::try_from(archive_block.get_v1().get_signature()).unwrap()
+                BlockSignature::try_from(archive_block.v1().signature()).unwrap()
             );
         }
 

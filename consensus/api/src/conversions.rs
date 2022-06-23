@@ -246,10 +246,10 @@ impl TryFrom<&consensus_config::ActiveMintConfig> for mc_ledger_db::ActiveMintCo
     type Error = ConversionError;
 
     fn try_from(src: &consensus_config::ActiveMintConfig) -> Result<Self, Self::Error> {
-        let mint_config = src.get_mint_config().try_into()?;
+        let mint_config = src.mint_config().try_into()?;
         Ok(Self {
             mint_config,
-            total_minted: src.get_total_minted(),
+            total_minted: src.total_minted(),
         })
     }
 }
@@ -272,11 +272,11 @@ impl TryFrom<&consensus_config::ActiveMintConfigs> for mc_ledger_db::ActiveMintC
 
     fn try_from(src: &consensus_config::ActiveMintConfigs) -> Result<Self, Self::Error> {
         let configs = src
-            .get_configs()
+            .configs()
             .iter()
             .map(TryInto::try_into)
             .collect::<Result<Vec<_>, _>>()?;
-        let mint_config_tx = src.get_mint_config_tx().try_into()?;
+        let mint_config_tx = src.mint_config_tx().try_into()?;
         Ok(Self {
             configs,
             mint_config_tx,

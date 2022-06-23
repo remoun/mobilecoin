@@ -29,15 +29,15 @@ impl TryFrom<&external::TxOutMembershipProof> for TxOutMembershipProof {
     type Error = ConversionError;
 
     fn try_from(membership_proof: &external::TxOutMembershipProof) -> Result<Self, Self::Error> {
-        let index: u64 = membership_proof.get_index();
-        let highest_index: u64 = membership_proof.get_highest_index();
+        let index: u64 = membership_proof.index();
+        let highest_index: u64 = membership_proof.highest_index();
 
         let mut elements = Vec::<TxOutMembershipElement>::default();
-        for element in membership_proof.get_elements() {
-            let range = Range::new(element.get_range().get_from(), element.get_range().get_to())
+        for element in membership_proof.elements() {
+            let range = Range::new(element.range().from(), element.range().to())
                 .map_err(|_e| ConversionError::Other)?;
 
-            let bytes: &[u8] = element.get_hash().get_data();
+            let bytes: &[u8] = element.hash().data();
             let mut hash = [0u8; 32];
             if bytes.len() != hash.len() {
                 return Err(ConversionError::ArrayCastError);
@@ -69,18 +69,17 @@ mod tests {
             TxOutMembershipProof::new(index, highest_index, hashes.clone());
 
         let membership_proof = external::TxOutMembershipProof::from(&tx_out_membership_proof);
-        assert_eq!(membership_proof.get_index(), index);
-        assert_eq!(membership_proof.get_highest_index(), highest_index);
+        assert_eq!(membership_proof.index(), index);
+        assert_eq!(membership_proof.highest_index(), highest_index);
 
-        let elements = membership_proof.get_elements();
+        let elements = membership_proof.elements();
         assert_eq!(elements.len(), hashes.len());
 
         for (idx, element) in elements.iter().enumerate() {
-            let range =
-                Range::new(element.get_range().get_from(), element.get_range().get_to()).unwrap();
+            let range = Range::new(element.range().from(), element.range().to()).unwrap();
             assert_eq!(range, hashes.get(idx).unwrap().range);
             let expected_hash = &hashes.get(idx).unwrap().hash;
-            let bytes = element.get_hash().get_data();
+            let bytes = element.hash().data();
             assert_eq!(bytes.len(), expected_hash.as_ref().len());
             assert_eq!(bytes, expected_hash.as_ref());
         }

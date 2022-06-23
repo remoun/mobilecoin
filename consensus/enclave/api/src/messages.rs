@@ -61,22 +61,22 @@ pub enum EnclaveCall {
     /// Tears down any in-enclave state about a client association.
     ClientClose(ClientSession),
 
-    /// The [ConsensusEnclave::get_identity()] method.
+    /// The [ConsensusEnclave::identity()] method.
     ///
     /// Retrieves the public identity (X25519 public key) of an enclave.
     GetIdentity,
 
-    /// The [ConsensusEnclave::get_signer()] method.
+    /// The [ConsensusEnclave::signer()] method.
     ///
     /// Retrieves the block signer (Ed25519 public key) of an enclave.
     GetSigner,
 
-    /// The [ConsensusEnclave::get_fee_recipient()] method.
+    /// The [ConsensusEnclave::fee_recipient()] method.
     ///
     /// Retrieves the fee recipient (FeePublicKey) for the enclave.
     GetFeeRecipient,
 
-    /// The [ConsensusEnclave::get_minting_trust_root()] method.
+    /// The [ConsensusEnclave::minting_trust_root()] method.
     ///
     /// Retrieves the minting trust root (Ed25519 public key) of an enclave.
     GetMintingTrustRoot,
@@ -101,7 +101,7 @@ pub enum EnclaveCall {
     ///   later calls.
     VerifyReport(VerificationReport),
 
-    /// The [ConsensusEnclave::get_ias_report()] method.
+    /// The [ConsensusEnclave::ias_report()] method.
     ///
     /// Retrieves a previously cached report, if any.
     GetReport,
@@ -139,7 +139,7 @@ pub enum EnclaveCall {
     /// Converts a list of inputs into a block, block contents and a signature.
     FormBlock(Block, FormBlockInputs, TxOutMembershipElement),
 
-    /// The [ConsensusEnclave::get_minimum_fee()] method.
+    /// The [ConsensusEnclave::minimum_fee()] method.
     ///
     /// Retrieves the minimum fee, as initialized.
     GetMinimumFee(TokenId),

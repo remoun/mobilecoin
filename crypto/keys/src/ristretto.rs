@@ -45,7 +45,7 @@ pub struct RistrettoPrivate(pub(crate) Scalar);
 
 impl AsRef<[u8; 32]> for RistrettoPrivate {
     fn as_ref(&self) -> &[u8; 32] {
-        self.0.as_bytes()
+        self.as_bytes()
     }
 }
 
@@ -61,7 +61,7 @@ impl TryFrom<&[u8; 32]> for RistrettoPrivate {
 
 impl AsRef<[u8]> for RistrettoPrivate {
     fn as_ref(&self) -> &[u8] {
-        self.0.as_bytes()
+        self.as_bytes()
     }
 }
 
@@ -81,10 +81,14 @@ derive_serde_from_repr_bytes!(RistrettoPrivate);
 derive_prost_message_from_repr_bytes!(RistrettoPrivate);
 
 impl RistrettoPrivate {
+    pub fn as_bytes(&self) -> &[u8; 32] {
+        self.0.as_bytes()
+    }
+
     /// This is used by some code that used to use ReprBytes32 API
     /// This is okay in code that is not generic over the key type.
     pub fn to_bytes(&self) -> [u8; 32] {
-        *self.0.as_bytes()
+        *self.as_bytes()
     }
 
     /// Sign the given bytes using a deterministic scheme based on Schnorrkel.

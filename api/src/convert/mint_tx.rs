@@ -26,16 +26,16 @@ impl TryFrom<&external::MintTxPrefix> for MintTxPrefix {
     type Error = ConversionError;
 
     fn try_from(source: &external::MintTxPrefix) -> Result<Self, Self::Error> {
-        let view_public_key = RistrettoPublic::try_from(source.get_view_public_key())?;
-        let spend_public_key = RistrettoPublic::try_from(source.get_spend_public_key())?;
+        let view_public_key = RistrettoPublic::try_from(source.view_public_key())?;
+        let spend_public_key = RistrettoPublic::try_from(source.spend_public_key())?;
 
         Ok(Self {
-            token_id: source.get_token_id(),
-            amount: source.get_amount(),
+            token_id: source.token_id(),
+            amount: source.amount(),
             view_public_key,
             spend_public_key,
-            nonce: source.get_nonce().to_vec(),
-            tombstone_block: source.get_tombstone_block(),
+            nonce: source.nonce().to_vec(),
+            tombstone_block: source.tombstone_block(),
         })
     }
 }
@@ -55,8 +55,8 @@ impl TryFrom<&external::MintTx> for MintTx {
     type Error = ConversionError;
 
     fn try_from(source: &external::MintTx) -> Result<Self, Self::Error> {
-        let prefix = MintTxPrefix::try_from(source.get_prefix())?;
-        let signature = MultiSig::try_from(source.get_signature())?;
+        let prefix = MintTxPrefix::try_from(source.prefix())?;
+        let signature = MultiSig::try_from(source.signature())?;
 
         Ok(Self { prefix, signature })
     }

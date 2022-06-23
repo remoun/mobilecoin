@@ -36,15 +36,15 @@ pub enum EnclaveCall {
     /// The [IngestEnclave::new_egress_key()] method.
     NewEgressKey,
 
-    /// The [IngestEnclave::get_ingress_pubkey()] method.
+    /// The [IngestEnclave::ingress_pubkey()] method.
     ///
     /// Retrieves the ingress public key (RistrettoPublic) of this service.
     GetIngressPubkey,
 
-    /// The [IngestEnclave::get_sealed_ingress_private_key()] method
+    /// The [IngestEnclave::sealed_ingress_private_key()] method
     GetSealedIngressPrivateKey,
 
-    /// The [IngestEnclave::get_private_key()] method.
+    /// The [IngestEnclave::private_key()] method.
     ///
     /// Retrieves the peer-encrypted ingress private key (as attest::Message) of
     /// this service.
@@ -56,7 +56,7 @@ pub enum EnclaveCall {
     /// peer) of this service.
     SetIngressPrivateKey(EnclaveMessage<PeerSession>),
 
-    /// The [IngestEnclave::get_kex_rng_pubkey()] method.
+    /// The [IngestEnclave::kex_rng_pubkey()] method.
     ///
     /// Retrieves the KexRngPubkey object, containing public key of egress key
     /// and the rng algo version.
@@ -68,7 +68,7 @@ pub enum EnclaveCall {
     /// database.
     IngestTxs(TxsForIngest),
 
-    /// The [IngestEnclave::get_identity()] method.
+    /// The [IngestEnclave::identity()] method.
     ///
     /// Retrieves the public identity (X25519 public key) of an enclave.
     GetIdentity,
@@ -93,7 +93,7 @@ pub enum EnclaveCall {
     ///   later calls.
     VerifyReport(VerificationReport),
 
-    /// The [IngestEnclave::get_ias_report()] method.
+    /// The [IngestEnclave::ias_report()] method.
     ///
     /// Retrieves a previously cached report, if any.
     GetReport,

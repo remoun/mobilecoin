@@ -22,12 +22,12 @@ impl TryFrom<&external::RingMLSAG> for RingMLSAG {
     type Error = ConversionError;
 
     fn try_from(source: &external::RingMLSAG) -> Result<Self, Self::Error> {
-        let c_zero = CurveScalar::try_from(source.get_c_zero())?;
+        let c_zero = CurveScalar::try_from(source.c_zero())?;
         let mut responses: Vec<CurveScalar> = Vec::new();
-        for response in source.get_responses() {
+        for response in source.responses() {
             responses.push(CurveScalar::try_from(response)?);
         }
-        let key_image = KeyImage::try_from(source.get_key_image())?;
+        let key_image = KeyImage::try_from(source.key_image())?;
 
         Ok(RingMLSAG {
             c_zero,

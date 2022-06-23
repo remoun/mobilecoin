@@ -48,7 +48,7 @@ impl GovernorsMap {
 
     /// Get the governors for a given token id, or None if the token has no
     /// governors.
-    pub fn get_governors_for_token(&self, token_id: &TokenId) -> Option<SignerSet<Ed25519Public>> {
+    pub fn governors_for_token(&self, token_id: &TokenId) -> Option<SignerSet<Ed25519Public>> {
         self.map.get(token_id).cloned()
     }
 
@@ -134,9 +134,9 @@ mod test {
         ])
         .unwrap();
 
-        assert!(map1.get_governors_for_token(&TokenId::from(1)).is_some());
-        assert!(map1.get_governors_for_token(&TokenId::from(2)).is_some());
-        assert!(map1.get_governors_for_token(&TokenId::from(3)).is_none());
+        assert!(map1.governors_for_token(&TokenId::from(1)).is_some());
+        assert!(map1.governors_for_token(&TokenId::from(2)).is_some());
+        assert!(map1.governors_for_token(&TokenId::from(3)).is_none());
 
         let map2 = GovernorsMap::try_from_iter([
             (
@@ -150,14 +150,14 @@ mod test {
         ])
         .unwrap();
 
-        assert!(map2.get_governors_for_token(&TokenId::from(1)).is_some());
-        assert!(map2.get_governors_for_token(&TokenId::from(2)).is_some());
-        assert!(map2.get_governors_for_token(&TokenId::from(3)).is_none());
+        assert!(map2.governors_for_token(&TokenId::from(1)).is_some());
+        assert!(map2.governors_for_token(&TokenId::from(2)).is_some());
+        assert!(map2.governors_for_token(&TokenId::from(3)).is_none());
 
         let map3 = GovernorsMap::try_from_iter([]).unwrap();
-        assert!(map3.get_governors_for_token(&TokenId::from(1)).is_none());
-        assert!(map3.get_governors_for_token(&TokenId::from(2)).is_none());
-        assert!(map3.get_governors_for_token(&TokenId::from(3)).is_none());
+        assert!(map3.governors_for_token(&TokenId::from(1)).is_none());
+        assert!(map3.governors_for_token(&TokenId::from(2)).is_none());
+        assert!(map3.governors_for_token(&TokenId::from(3)).is_none());
     }
 
     /// Invalid are rejected.

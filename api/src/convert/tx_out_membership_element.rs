@@ -22,10 +22,10 @@ impl TryFrom<&external::TxOutMembershipElement> for TxOutMembershipElement {
     type Error = ConversionError;
 
     fn try_from(src: &external::TxOutMembershipElement) -> Result<Self, Self::Error> {
-        let range = Range::new(src.get_range().get_from(), src.get_range().get_to())
+        let range = Range::new(src.range().from(), src.range().to())
             .map_err(|_e| ConversionError::Other)?;
 
-        let bytes: &[u8] = src.get_hash().get_data();
+        let bytes: &[u8] = src.hash().data();
         let mut hash = [0u8; 32];
         if bytes.len() != hash.len() {
             return Err(ConversionError::ArrayCastError);

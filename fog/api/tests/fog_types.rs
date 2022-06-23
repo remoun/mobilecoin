@@ -31,7 +31,7 @@ fn fog_view_query_request_round_trip() {
     run_with_several_seeds(|mut rng| {
         let num_txos = rng.next_u32() as u8;
         let test_val = mc_fog_types::view::QueryRequest {
-            get_txos: (0..num_txos as usize)
+            txos: (0..num_txos as usize)
                 .map(|_| <[u8; 32]>::sample(&mut rng).to_vec())
                 .collect(),
         };
@@ -48,9 +48,7 @@ fn fog_view_query_request_protobuf_round_trip() {
     run_with_several_seeds(|mut rng| {
         let mut test_val = mc_fog_api::view::QueryRequest::new();
         for _ in 0..20 {
-            test_val
-                .get_txos
-                .push(<[u8; 32]>::sample(&mut rng).to_vec());
+            test_val.txos.push(<[u8; 32]>::sample(&mut rng).to_vec());
         }
         round_trip_protobuf_object::<
             mc_fog_api::view::QueryRequest,
@@ -224,7 +222,7 @@ fn tx_out_record_round_trip() {
 /// Test that many random instances of prosty GetOutputsResponse round trip with
 /// protobufy GetOutputResponse
 #[test]
-fn get_output_response_round_trip() {
+fn output_response_round_trip() {
     {
         let test_val = mc_fog_types::ledger::GetOutputsResponse::default();
         round_trip_message::<

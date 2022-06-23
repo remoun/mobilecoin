@@ -19,7 +19,7 @@ impl From<&VerificationReport> for external::VerificationReport {
 impl From<&external::VerificationReport> for VerificationReport {
     fn from(src: &external::VerificationReport) -> Self {
         VerificationReport {
-            sig: src.get_sig().into(),
+            sig: src.sig().into(),
             chain: src.chain().to_vec(),
             http_body: src.http_body().into(),
         }
@@ -36,7 +36,7 @@ mod tests {
     #[test]
     fn prost_to_proto_roundtrip() {
         let report = VerificationReport {
-            sig: VerificationSignature::from(&b"this is a fake signature"[..]),
+            sig: b"this is a fake signature".into(),
             chain: pem::parse_many(mc_crypto_x509_test_vectors::ok_rsa_chain_25519_leaf().0)
                 .expect("Could not parse PEM input")
                 .into_iter()

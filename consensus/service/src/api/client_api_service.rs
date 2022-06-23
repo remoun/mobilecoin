@@ -158,7 +158,7 @@ impl ClientApiService {
     }
 
     /// Get the node's configuration.
-    fn get_node_config_impl(&self) -> Result<ConsensusNodeConfig, ConsensusGrpcError> {
+    fn node_config_impl(&self) -> Result<ConsensusNodeConfig, ConsensusGrpcError> {
         let tokens_config = self.config.tokens();
 
         let token_config_map = tokens_config
@@ -173,9 +173,8 @@ impl ClientApiService {
                     grpc_token_config.set_governors(governors.into());
                 }
 
-                let active_mint_configs = self
-                    .ledger
-                    .get_active_mint_configs(token_config.token_id())?;
+                let active_mint_configs =
+                    self.ledger.active_mint_configs(token_config.token_id())?;
                 if let Some(active_mint_configs) = active_mint_configs.as_ref() {
                     grpc_token_config.set_active_mint_configs(active_mint_configs.into());
                 }
@@ -185,14 +184,14 @@ impl ClientApiService {
             .collect::<Result<_, ConsensusGrpcError>>()?;
 
         let mut response = ConsensusNodeConfig::new();
-        response.set_minting_trust_root((&self.enclave.get_minting_trust_root()?).into());
+        response.set_minting_trust_root((&self.enclave.minting_trust_root()?).into());
         response.set_token_config_map(token_config_map);
         if let Some(governors_signature) = tokens_config.governors_signature.as_ref() {
             response.set_governors_signature(governors_signature.into());
         }
         response.set_peer_responder_id(self.config.peer_responder_id.to_string());
         response.set_client_responder_id(self.config.client_responder_id.to_string());
-        response.set_block_signing_key((&self.enclave.get_signer()?).into());
+        response.set_block_signing_key((&self.enclave.signer()?).into());
         response.set_block_version(*self.config.block_version);
         response.set_scp_message_signing_key((&self.config.msg_signer_key.public_key()).into());
 
@@ -313,13 +312,13 @@ impl ConsensusClientApi for ClientApiService {
         });
     }
 
-    fn get_node_config(
+    fn node_config(
         &mut self,
         ctx: RpcContext,
         _empty: Empty,
         sink: UnarySink<ConsensusNodeConfig>,
     ) {
-        let result = self.get_node_config_impl().map_err(RpcStatus::from);
+        let result = self.node_config_impl().map_err(RpcStatus::from);
 
         mc_common::logger::scoped_global_logger(&rpc_logger(&ctx, &self.logger), |logger| {
             send_result(ctx, sink, result, logger)
@@ -371,7 +370,7 @@ mod client_api_tests {
     };
 
     /// Starts the service on localhost and connects a client to it.
-    fn get_client_server(instance: ClientApiService) -> (ConsensusClientApiClient, Server) {
+    fn client_server(instance: ClientApiService) -> (ConsensusClientApiClient, Server) {
         let service = consensus_client_grpc::create_consensus_client_api(instance);
         let env = Arc::new(Environment::new(1));
         let mut server = ServerBuilder::new(env.clone())
@@ -387,7 +386,7 @@ mod client_api_tests {
     }
 
     /// Get a dummy config object
-    fn get_config() -> Config {
+    fn config() -> Config {
         Config::try_parse_from(&[
             "foo",
             "--peer-responder-id=localhost:8081",
@@ -456,7 +455,7 @@ mod client_api_tests {
         let authenticator = AnonymousAuthenticator::default();
 
         let instance = ClientApiService::new(
-            get_config(),
+            config(),
             Arc::new(consensus_enclave),
             scp_client_value_sender,
             Arc::new(ledger),
@@ -468,12 +467,12 @@ mod client_api_tests {
         );
 
         // gRPC client and server.
-        let (client, _server) = get_client_server(instance);
+        let (client, _server) = client_server(instance);
         let message = Message::default();
         match client.client_tx_propose(&message) {
             Ok(propose_tx_response) => {
-                assert_eq!(propose_tx_response.get_result(), ProposeTxResult::Ok);
-                assert_eq!(propose_tx_response.get_block_count(), num_blocks);
+                assert_eq!(propose_tx_response.result(), ProposeTxResult::Ok);
+                assert_eq!(propose_tx_response.block_count(), num_blocks);
             }
             Err(e) => panic!("Unexpected error: {:?}", e),
         }
@@ -530,7 +529,7 @@ mod client_api_tests {
         let authenticator = AnonymousAuthenticator::default();
 
         let instance = ClientApiService::new(
-            get_config(),
+            config(),
             Arc::new(consensus_enclave),
             scp_client_value_sender,
             Arc::new(ledger),
@@ -542,16 +541,16 @@ mod client_api_tests {
         );
 
         // gRPC client and server.
-        let (client, _server) = get_client_server(instance);
+        let (client, _server) = client_server(instance);
 
         let message = Message::default();
         match client.client_tx_propose(&message) {
             Ok(propose_tx_response) => {
                 assert_eq!(
-                    propose_tx_response.get_result(),
+                    propose_tx_response.result(),
                     ProposeTxResult::ContainsSpentKeyImage
                 );
-                assert_eq!(propose_tx_response.get_block_count(), num_blocks);
+                assert_eq!(propose_tx_response.block_count(), num_blocks);
             }
             Err(e) => panic!("Unexpected error: {:?}", e),
         }
@@ -598,7 +597,7 @@ mod client_api_tests {
         let authenticator = AnonymousAuthenticator::default();
 
         let instance = ClientApiService::new(
-            get_config(),
+            config(),
             Arc::new(consensus_enclave),
             scp_client_value_sender,
             Arc::new(ledger),
@@ -610,16 +609,16 @@ mod client_api_tests {
         );
 
         // gRPC client and server.
-        let (client, _server) = get_client_server(instance);
+        let (client, _server) = client_server(instance);
 
         let message = Message::default();
         match client.client_tx_propose(&message) {
             Ok(propose_tx_response) => {
                 assert_eq!(
-                    propose_tx_response.get_result(),
+                    propose_tx_response.result(),
                     ProposeTxResult::InvalidRangeProof
                 );
-                assert_eq!(propose_tx_response.get_block_count(), num_blocks);
+                assert_eq!(propose_tx_response.block_count(), num_blocks);
             }
             Err(e) => panic!("Unexpected error: {:?}", e),
         }
@@ -646,7 +645,7 @@ mod client_api_tests {
         let authenticator = AnonymousAuthenticator::default();
 
         let instance = ClientApiService::new(
-            get_config(),
+            config(),
             Arc::new(enclave),
             scp_client_value_sender,
             Arc::new(MockLedger::new()),
@@ -658,7 +657,7 @@ mod client_api_tests {
         );
 
         // gRPC client and server.
-        let (client, _server) = get_client_server(instance);
+        let (client, _server) = client_server(instance);
 
         let message = Message::default();
         match client.client_tx_propose(&message) {
@@ -696,7 +695,7 @@ mod client_api_tests {
         let authenticator = AnonymousAuthenticator::default();
 
         let instance = ClientApiService::new(
-            get_config(),
+            config(),
             Arc::new(enclave),
             scp_client_value_sender,
             Arc::new(MockLedger::new()),
@@ -708,7 +707,7 @@ mod client_api_tests {
         );
 
         // gRPC client and server.
-        let (client, _server) = get_client_server(instance);
+        let (client, _server) = client_server(instance);
 
         // Set the number of pending values to be above the PENDING_LIMIT
         // This is a global variable, and so affects other unit tests. It must be reset
@@ -750,7 +749,7 @@ mod client_api_tests {
         );
 
         let instance = ClientApiService::new(
-            get_config(),
+            config(),
             Arc::new(enclave),
             scp_client_value_sender,
             Arc::new(MockLedger::new()),
@@ -762,7 +761,7 @@ mod client_api_tests {
         );
 
         // gRPC client and server.
-        let (client, _server) = get_client_server(instance);
+        let (client, _server) = client_server(instance);
 
         let message = Message::default();
         match client.client_tx_propose(&message) {
@@ -812,7 +811,7 @@ mod client_api_tests {
         let authenticator = AnonymousAuthenticator::default();
 
         let instance = ClientApiService::new(
-            get_config(),
+            config(),
             Arc::new(consensus_enclave),
             scp_client_value_sender,
             Arc::new(ledger),
@@ -824,15 +823,15 @@ mod client_api_tests {
         );
 
         // gRPC client and server.
-        let (client, _server) = get_client_server(instance);
+        let (client, _server) = client_server(instance);
         let tx = create_mint_config_tx(TokenId::from(5), &mut rng);
         match client.propose_mint_config_tx(&(&tx).into()) {
             Ok(propose_tx_response) => {
                 assert_eq!(
-                    propose_tx_response.get_result().get_code(),
+                    propose_tx_response.result().code(),
                     MintValidationResultCode::Ok
                 );
-                assert_eq!(propose_tx_response.get_block_count(), num_blocks);
+                assert_eq!(propose_tx_response.block_count(), num_blocks);
             }
             Err(e) => panic!("Unexpected error: {:?}", e),
         }
@@ -882,7 +881,7 @@ mod client_api_tests {
         let authenticator = AnonymousAuthenticator::default();
 
         let instance = ClientApiService::new(
-            get_config(),
+            config(),
             Arc::new(consensus_enclave),
             scp_client_value_sender,
             Arc::new(ledger),
@@ -894,14 +893,14 @@ mod client_api_tests {
         );
 
         // gRPC client and server.
-        let (client, _server) = get_client_server(instance);
+        let (client, _server) = client_server(instance);
         match client.propose_mint_config_tx(&(&tx).into()) {
             Ok(propose_tx_response) => {
                 assert_eq!(
-                    propose_tx_response.get_result().get_code(),
+                    propose_tx_response.result().code(),
                     MintValidationResultCode::NonceAlreadyUsed
                 );
-                assert_eq!(propose_tx_response.get_block_count(), num_blocks);
+                assert_eq!(propose_tx_response.block_count(), num_blocks);
             }
             Err(e) => panic!("Unexpected error: {:?}", e),
         }
@@ -933,7 +932,7 @@ mod client_api_tests {
         let authenticator = AnonymousAuthenticator::default();
 
         let instance = ClientApiService::new(
-            get_config(),
+            config(),
             Arc::new(consensus_enclave),
             scp_client_value_sender,
             Arc::new(ledger),
@@ -945,7 +944,7 @@ mod client_api_tests {
         );
 
         // gRPC client and server.
-        let (client, _server) = get_client_server(instance);
+        let (client, _server) = client_server(instance);
         match client.propose_mint_config_tx(&(&tx).into()) {
             Ok(propose_tx_response) => {
                 panic!("Unexpected response {:?}", propose_tx_response);
@@ -986,7 +985,7 @@ mod client_api_tests {
         let authenticator = AnonymousAuthenticator::default();
 
         let instance = ClientApiService::new(
-            get_config(),
+            config(),
             Arc::new(consensus_enclave),
             scp_client_value_sender,
             Arc::new(ledger),
@@ -1003,7 +1002,7 @@ mod client_api_tests {
         counters::CUR_NUM_PENDING_VALUES.set(PENDING_LIMIT);
 
         // gRPC client and server.
-        let (client, _server) = get_client_server(instance);
+        let (client, _server) = client_server(instance);
         match client.propose_mint_config_tx(&(&tx).into()) {
             Ok(propose_tx_response) => {
                 panic!("Unexpected response {:?}", propose_tx_response);
@@ -1048,7 +1047,7 @@ mod client_api_tests {
         );
 
         let instance = ClientApiService::new(
-            get_config(),
+            config(),
             Arc::new(consensus_enclave),
             scp_client_value_sender,
             Arc::new(ledger),
@@ -1060,7 +1059,7 @@ mod client_api_tests {
         );
 
         // gRPC client and server.
-        let (client, _server) = get_client_server(instance);
+        let (client, _server) = client_server(instance);
         match client.propose_mint_config_tx(&(&tx).into()) {
             Ok(propose_tx_response) => {
                 panic!("Unexpected response {:?}", propose_tx_response);
@@ -1108,7 +1107,7 @@ mod client_api_tests {
         let authenticator = AnonymousAuthenticator::default();
 
         let instance = ClientApiService::new(
-            get_config(),
+            config(),
             Arc::new(consensus_enclave),
             scp_client_value_sender,
             Arc::new(ledger),
@@ -1120,7 +1119,7 @@ mod client_api_tests {
         );
 
         // gRPC client and server.
-        let (client, _server) = get_client_server(instance);
+        let (client, _server) = client_server(instance);
         let tx = create_mint_tx(
             TokenId::from(5),
             &[Ed25519Pair::from_random(&mut rng)],
@@ -1130,10 +1129,10 @@ mod client_api_tests {
         match client.propose_mint_tx(&(&tx).into()) {
             Ok(propose_tx_response) => {
                 assert_eq!(
-                    propose_tx_response.get_result().get_code(),
+                    propose_tx_response.result().code(),
                     MintValidationResultCode::Ok
                 );
-                assert_eq!(propose_tx_response.get_block_count(), num_blocks);
+                assert_eq!(propose_tx_response.block_count(), num_blocks);
             }
             Err(e) => panic!("Unexpected error: {:?}", e),
         }
@@ -1188,7 +1187,7 @@ mod client_api_tests {
         let authenticator = AnonymousAuthenticator::default();
 
         let instance = ClientApiService::new(
-            get_config(),
+            config(),
             Arc::new(consensus_enclave),
             scp_client_value_sender,
             Arc::new(ledger),
@@ -1200,14 +1199,14 @@ mod client_api_tests {
         );
 
         // gRPC client and server.
-        let (client, _server) = get_client_server(instance);
+        let (client, _server) = client_server(instance);
         match client.propose_mint_tx(&(&tx).into()) {
             Ok(propose_tx_response) => {
                 assert_eq!(
-                    propose_tx_response.get_result().get_code(),
+                    propose_tx_response.result().code(),
                     MintValidationResultCode::NonceAlreadyUsed
                 );
-                assert_eq!(propose_tx_response.get_block_count(), num_blocks);
+                assert_eq!(propose_tx_response.block_count(), num_blocks);
             }
             Err(e) => panic!("Unexpected error: {:?}", e),
         }
@@ -1244,7 +1243,7 @@ mod client_api_tests {
         let authenticator = AnonymousAuthenticator::default();
 
         let instance = ClientApiService::new(
-            get_config(),
+            config(),
             Arc::new(consensus_enclave),
             scp_client_value_sender,
             Arc::new(ledger),
@@ -1256,7 +1255,7 @@ mod client_api_tests {
         );
 
         // gRPC client and server.
-        let (client, _server) = get_client_server(instance);
+        let (client, _server) = client_server(instance);
         match client.propose_mint_tx(&(&tx).into()) {
             Ok(propose_tx_response) => {
                 panic!("Unexpected response {:?}", propose_tx_response);
@@ -1302,7 +1301,7 @@ mod client_api_tests {
         let authenticator = AnonymousAuthenticator::default();
 
         let instance = ClientApiService::new(
-            get_config(),
+            config(),
             Arc::new(consensus_enclave),
             scp_client_value_sender,
             Arc::new(ledger),
@@ -1319,7 +1318,7 @@ mod client_api_tests {
         counters::CUR_NUM_PENDING_VALUES.set(PENDING_LIMIT);
 
         // gRPC client and server.
-        let (client, _server) = get_client_server(instance);
+        let (client, _server) = client_server(instance);
         match client.propose_mint_tx(&(&tx).into()) {
             Ok(propose_tx_response) => {
                 panic!("Unexpected response {:?}", propose_tx_response);
@@ -1369,7 +1368,7 @@ mod client_api_tests {
         );
 
         let instance = ClientApiService::new(
-            get_config(),
+            config(),
             Arc::new(consensus_enclave),
             scp_client_value_sender,
             Arc::new(ledger),
@@ -1381,7 +1380,7 @@ mod client_api_tests {
         );
 
         // gRPC client and server.
-        let (client, _server) = get_client_server(instance);
+        let (client, _server) = client_server(instance);
         match client.propose_mint_tx(&(&tx).into()) {
             Ok(propose_tx_response) => {
                 panic!("Unexpected response {:?}", propose_tx_response);

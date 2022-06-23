@@ -72,11 +72,11 @@ mod tests {
             let account_key = AccountKey::random(&mut rng);
             let proto_credentials = external::AccountKey::from(&account_key);
             assert_eq!(
-                *proto_credentials.get_view_private_key(),
+                *proto_credentials.view_private_key(),
                 external::RistrettoPrivate::from(account_key.view_private_key())
             );
             assert_eq!(
-                *proto_credentials.get_spend_private_key(),
+                *proto_credentials.spend_private_key(),
                 external::RistrettoPrivate::from(account_key.spend_private_key())
             );
             assert_eq!(proto_credentials.fog_report_url, String::from(""));
@@ -104,11 +104,11 @@ mod tests {
 
             let proto_credentials = external::AccountKey::from(&account_key);
             assert_eq!(
-                *proto_credentials.get_view_private_key(),
+                *proto_credentials.view_private_key(),
                 external::RistrettoPrivate::from(account_key.view_private_key())
             );
             assert_eq!(
-                *proto_credentials.get_spend_private_key(),
+                *proto_credentials.spend_private_key(),
                 external::RistrettoPrivate::from(account_key.spend_private_key())
             );
             assert_eq!(

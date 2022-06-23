@@ -29,14 +29,14 @@ impl TryFrom<&ingest_common::IngestSummary> for mc_fog_types::ingest_common::Ing
             }
         };
         let ingress_pubkey: CompressedRistrettoPublic =
-            CompressedRistrettoPublic::try_from(proto_ingest_summary.get_ingress_pubkey())?;
+            CompressedRistrettoPublic::try_from(proto_ingest_summary.ingress_pubkey())?;
 
         let result = mc_fog_types::ingest_common::IngestSummary {
             ingest_controller_mode,
             next_block_index: proto_ingest_summary.next_block_index,
             pubkey_expiry_window: proto_ingest_summary.pubkey_expiry_window,
             ingress_pubkey,
-            egress_pubkey: proto_ingest_summary.get_egress_pubkey().to_vec(),
+            egress_pubkey: proto_ingest_summary.egress_pubkey().to_vec(),
             kex_rng_version: proto_ingest_summary.kex_rng_version,
             peers: proto_ingest_summary.peers.to_vec(),
             ingest_invocation_id: proto_ingest_summary.ingest_invocation_id,

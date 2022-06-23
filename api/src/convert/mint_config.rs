@@ -22,11 +22,11 @@ impl TryFrom<&external::MintConfig> for MintConfig {
     type Error = ConversionError;
 
     fn try_from(source: &external::MintConfig) -> Result<Self, Self::Error> {
-        let signer_set = SignerSet::try_from(source.get_signer_set())?;
+        let signer_set = SignerSet::try_from(source.signer_set())?;
         Ok(Self {
-            token_id: source.get_token_id(),
+            token_id: source.token_id(),
             signer_set,
-            mint_limit: source.get_mint_limit(),
+            mint_limit: source.mint_limit(),
         })
     }
 }
@@ -50,17 +50,17 @@ impl TryFrom<&external::MintConfigTxPrefix> for MintConfigTxPrefix {
 
     fn try_from(source: &external::MintConfigTxPrefix) -> Result<Self, Self::Error> {
         let configs: Vec<MintConfig> = source
-            .get_configs()
+            .configs()
             .iter()
             .map(MintConfig::try_from)
             .collect::<Result<Vec<_>, _>>()?;
 
         Ok(Self {
-            token_id: source.get_token_id(),
+            token_id: source.token_id(),
             configs,
-            nonce: source.get_nonce().to_vec(),
-            tombstone_block: source.get_tombstone_block(),
-            total_mint_limit: source.get_total_mint_limit(),
+            nonce: source.nonce().to_vec(),
+            tombstone_block: source.tombstone_block(),
+            total_mint_limit: source.total_mint_limit(),
         })
     }
 }
@@ -80,8 +80,8 @@ impl TryFrom<&external::MintConfigTx> for MintConfigTx {
     type Error = ConversionError;
 
     fn try_from(source: &external::MintConfigTx) -> Result<Self, Self::Error> {
-        let prefix = MintConfigTxPrefix::try_from(source.get_prefix())?;
-        let signature = MultiSig::try_from(source.get_signature())?;
+        let prefix = MintConfigTxPrefix::try_from(source.prefix())?;
+        let signature = MultiSig::try_from(source.signature())?;
 
         Ok(Self { prefix, signature })
     }

@@ -16,7 +16,7 @@ impl From<&VerificationSignature> for external::VerificationSignature {
 
 impl From<&external::VerificationSignature> for VerificationSignature {
     fn from(src: &external::VerificationSignature) -> Self {
-        VerificationSignature::from(src.get_contents())
+        VerificationSignature::from(src.contents())
     }
 }
 

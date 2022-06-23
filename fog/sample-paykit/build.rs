@@ -6,15 +6,8 @@ fn main() {
     let env = Environment::default();
 
     let proto_dir = env.dir().join("proto");
-    let proto_str = proto_dir
-        .as_os_str()
-        .to_str()
-        .expect("Invalid UTF-8 in proto dir");
-    cargo_emit::pair!("PROTOS_PATH", "{}", proto_str);
+    // Other crates may depend on this output for their deps.
+    cargo_emit::pair!("PROTOS_PATH", "{:?}", proto_dir);
 
-    let all_proto_dirs = vec![proto_str];
-    mc_util_build_grpc::compile_protos_and_generate_mod_rs(
-        all_proto_dirs.as_slice(),
-        &["remote_wallet.proto"],
-    );
+    mc_util_build_grpc::compile_protos_and_generate_mod_rs(&[proto_dir], &["remote_wallet.proto"]);
 }

@@ -36,7 +36,7 @@ use prometheus::{
     proto::MetricFamily,
     HistogramOpts, HistogramTimer, HistogramVec, IntCounterVec, Opts, Result,
 };
-use protobuf::Message;
+use protobuf::MessageFull;
 use std::str;
 
 /// Helper that encapsulates boilerplate for tracking
@@ -146,12 +146,12 @@ impl ServiceMetrics {
 
     /// Tracks gRPC message name and size for aggregation into a Prometheus
     /// histogram
-    pub fn message<M: Message>(&self, message: &M) {
-        let computed_size = message.compute_size();
-        let message_fullname = message.descriptor().full_name();
+    pub fn message<M: MessageFull>(&self, message: &M) {
+        let computed_size = message.compute_size() as f64;
+        let descriptor = M::descriptor();
         self.message_size
-            .with_label_values(&[message_fullname])
-            .observe(f64::from(computed_size));
+            .with_label_values(&[descriptor.full_name()])
+            .observe(computed_size);
     }
 
     pub fn register_default(&self) -> Result<()> {

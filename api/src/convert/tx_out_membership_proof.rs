@@ -5,7 +5,6 @@ use mc_transaction_core::{
     membership_proofs::Range,
     tx::{TxOutMembershipElement, TxOutMembershipProof},
 };
-use protobuf::RepeatedField;
 
 /// Convert TxOutMembershipProof -> external::MembershipProof.
 impl From<&TxOutMembershipProof> for external::TxOutMembershipProof {
@@ -20,7 +19,7 @@ impl From<&TxOutMembershipProof> for external::TxOutMembershipProof {
             .map(external::TxOutMembershipElement::from)
             .collect();
 
-        membership_proof.set_elements(RepeatedField::from_vec(elements));
+        membership_proof.set_elements(elements);
         membership_proof
     }
 }

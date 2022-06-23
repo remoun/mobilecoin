@@ -190,8 +190,7 @@ impl<Enclave: IngestEnclaveProxy> IngestConnection for PeerConnection<Enclave> {
 
         // This call is not attested
         let mut request = SetPeersRequest::new();
-        request.ingest_peer_uris =
-            protobuf::RepeatedField::from_vec(peers.iter().map(|x| x.to_string()).collect());
+        request.ingest_peer_uris = peers.iter().map(|x| x.to_string()).collect();
         Ok(self.ingest_peer_api_client.set_peers(&request)?)
     }
 

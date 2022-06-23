@@ -12,7 +12,6 @@ use mc_common::logger::{create_app_logger, log, o};
 use mc_mobilecoind_api::{self as api, mobilecoind_api_grpc::MobilecoindApiClient, MobilecoindUri};
 use mc_mobilecoind_json::data_types::*;
 use mc_util_grpc::ConnectionUriGrpcioChannel;
-use protobuf::RepeatedField;
 use rocket::{delete, get, post, routes, serde::json::Json};
 use std::sync::Arc;
 
@@ -410,7 +409,7 @@ fn build_and_submit(
     let mut req = api::SendPaymentRequest::new();
     req.set_sender_monitor_id(monitor_id);
     req.set_sender_subaddress(subaddress_index);
-    req.set_outlay_list(RepeatedField::from_vec(vec![outlay]));
+    req.set_outlay_list(vec![outlay]);
     req.set_max_input_utxo_value(max_input_utxo_value);
     if let Some(subaddress) = transfer.change_subaddress.as_ref() {
         req.set_override_change_subaddress(true);
@@ -510,8 +509,8 @@ fn generate_request_code_transaction(
     let mut req = api::GenerateTxRequest::new();
     req.set_sender_monitor_id(monitor_id);
     req.set_change_subaddress(subaddress_index);
-    req.set_outlay_list(RepeatedField::from_vec(vec![outlay]));
-    req.set_input_list(RepeatedField::from_vec(inputs));
+    req.set_outlay_list(vec![outlay]);
+    req.set_input_list(inputs);
 
     let resp = state
         .mobilecoind_api_client
@@ -707,7 +706,7 @@ fn get_proof_of_membership(
 
     // Make gRPC request.
     let mut get_membership_proofs_request = api::GetMembershipProofsRequest::new();
-    get_membership_proofs_request.set_outputs(RepeatedField::from_vec(outputs));
+    get_membership_proofs_request.set_outputs(outputs);
 
     let get_membership_proofs_response = state
         .mobilecoind_api_client
@@ -750,7 +749,7 @@ fn get_mixins(
     // Make gRPC request
     let mut get_mixins_request = api::GetMixinsRequest::new();
     get_mixins_request.set_num_mixins(num_mixins);
-    get_mixins_request.set_excluded(RepeatedField::from_vec(excluded));
+    get_mixins_request.set_excluded(excluded);
 
     let get_mixins_response = state
         .mobilecoind_api_client

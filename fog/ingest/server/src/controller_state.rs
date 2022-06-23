@@ -245,8 +245,7 @@ impl IngestControllerState {
         if let Some(iid) = self.ingest_invocation_id {
             result.ingest_invocation_id = *iid;
         }
-        result.peers =
-            protobuf::RepeatedField::from_vec(self.peers.iter().map(|x| x.to_string()).collect());
+        result.peers = self.peers.iter().map(|x| x.to_string()).collect();
         result
     }
 

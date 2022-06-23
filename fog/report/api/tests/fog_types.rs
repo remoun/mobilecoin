@@ -11,7 +11,7 @@ use mc_fog_report_api::{
 use mc_fog_report_api_test_utils::{round_trip_message, round_trip_protobuf_object};
 use mc_fog_report_types::{Report as ProstReport, ReportResponse as ProstReportResponse};
 use prost::Message as ProstMessage;
-use protobuf::{Message as ProtobufMessage, RepeatedField};
+use protobuf::Message as ProtobufMessage;
 
 // Round trip a structure through protobuf type, once using serialization to
 // bytes and deserialization, and once using the From conversions.
@@ -77,7 +77,7 @@ fn protobuf_verification_signature(name: &str) -> ProtobufVerificationSignature 
 fn protobuf_verification_report(name: &str) -> ProtobufVerificationReport {
     let mut report = ProtobufVerificationReport::new();
     report.set_sig(protobuf_verification_signature(name));
-    report.set_chain(RepeatedField::from_vec(make_chain()));
+    report.set_chain(make_chain());
     report.set_http_body(format!("{} body", name));
     report
 }
@@ -129,7 +129,7 @@ fn round_trip_prost_report_response() {
 #[test]
 fn round_trip_protobuf_report_response() {
     let mut case = ProtobufReportResponse::new();
-    case.set_reports(protobuf::RepeatedField::from_vec(protobuf_test_cases()));
+    case.set_reports(protobuf_test_cases());
     case.set_chain(make_chain().into());
     case.set_signature(b"report signature".to_vec());
     round_trip_protobuf::<ProtobufReportResponse, ProstReportResponse>(case);

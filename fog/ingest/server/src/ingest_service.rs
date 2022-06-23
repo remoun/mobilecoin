@@ -26,7 +26,6 @@ use mc_util_grpc::{
     rpc_precondition_error, rpc_unavailable_error, send_result,
 };
 use mc_util_metrics::SVC_COUNTERS;
-use protobuf::RepeatedField;
 use std::{str::FromStr, sync::Arc};
 
 /// Implements the ingest grpc api
@@ -184,7 +183,7 @@ where
             .map_err(|err| rpc_database_err(err, logger))?;
 
         let mut response = GetMissedBlockRangesResponse::new();
-        response.set_missed_block_ranges(RepeatedField::from_vec(
+        response.set_missed_block_ranges(
             ranges
                 .iter()
                 .map(|range| {
@@ -194,7 +193,7 @@ where
                     proto_range
                 })
                 .collect(),
-        ));
+        );
 
         Ok(response)
     }
@@ -241,7 +240,7 @@ where
             .map_err(|err| rpc_precondition_error("get_ingress_key_records", err, logger))?;
 
         let mut response = GetIngressKeyRecordsResponse::new();
-        response.set_records(RepeatedField::from_vec(
+        response.set_records(
             ingress_key_records
                 .iter()
                 .map(|record| {
@@ -262,7 +261,7 @@ where
                     proto_ingress_public_key_record
                 })
                 .collect(),
-        ));
+        );
 
         Ok(response)
     }

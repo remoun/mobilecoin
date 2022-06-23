@@ -48,7 +48,7 @@ use mc_util_grpc::{
     BuildInfoService, ConnectionUriGrpcioServer,
 };
 use mc_watcher::watcher_db::WatcherDB;
-use protobuf::{ProtobufEnum, RepeatedField};
+use protobuf::ProtobufEnum;
 use std::sync::{Arc, Mutex, RwLock};
 
 pub struct Service {
@@ -352,11 +352,11 @@ impl<T: BlockchainConnection + UserTxConnection + 'static, FPR: FogPubkeyResolve
             .collect();
 
         // Convert to protos.
-        let proto_utxos: Vec<api::UnspentTxOut> = utxos.iter().map(|utxo| utxo.into()).collect();
+        let proto_utxos = utxos.iter().map(|utxo| utxo.into()).collect();
 
-        // Returrn response.
+        // Return response.
         let mut response = api::GetUnspentTxOutListResponse::new();
-        response.set_output_list(RepeatedField::from_vec(proto_utxos));
+        response.set_output_list(proto_utxos);
         Ok(response)
     }
 
@@ -767,7 +767,7 @@ impl<T: BlockchainConnection + UserTxConnection + 'static, FPR: FogPubkeyResolve
 
         let mut response = api::GetMixinsResponse::new();
 
-        let tx_outs_with_proofs: Vec<api::TxOutWithProof> = mixins_with_proofs
+        let tx_outs_with_proofs = mixins_with_proofs
             .iter()
             .map(|(tx_out, proof)| {
                 let mut tx_out_with_proof = api::TxOutWithProof::new();
@@ -777,7 +777,7 @@ impl<T: BlockchainConnection + UserTxConnection + 'static, FPR: FogPubkeyResolve
             })
             .collect();
 
-        response.set_mixins(RepeatedField::from(tx_outs_with_proofs));
+        response.set_mixins(tx_outs_with_proofs);
         Ok(response)
     }
 
@@ -1151,8 +1151,8 @@ impl<T: BlockchainConnection + UserTxConnection + 'static, FPR: FogPubkeyResolve
         let mut generate_tx_request = api::GenerateTxRequest::new();
         generate_tx_request.set_sender_monitor_id(request.get_sender_monitor_id().to_vec());
         generate_tx_request.set_change_subaddress(request.change_subaddress);
-        generate_tx_request.set_input_list(RepeatedField::from_vec(request.input_list.to_vec()));
-        generate_tx_request.set_outlay_list(RepeatedField::from_vec(vec![(&outlay).into()]));
+        generate_tx_request.set_input_list(request.input_list.to_vec());
+        generate_tx_request.set_outlay_list(vec![(&outlay).into()]);
         generate_tx_request.set_fee(request.fee);
         generate_tx_request.set_tombstone(request.tombstone);
         generate_tx_request.set_token_id(request.token_id);
@@ -1263,13 +1263,13 @@ impl<T: BlockchainConnection + UserTxConnection + 'static, FPR: FogPubkeyResolve
 
         // Construct sender receipt.
         let mut sender_tx_receipt = api::SenderTxReceipt::new();
-        sender_tx_receipt.set_key_image_list(RepeatedField::from_vec(
+        sender_tx_receipt.set_key_image_list(
             tx_proposal
                 .utxos
                 .iter()
                 .map(|utxo| (&utxo.key_image).into())
                 .collect(),
-        ));
+        );
         sender_tx_receipt.set_tombstone(tx_proposal.tx.prefix.tombstone_block);
 
         // Construct receiver receipts.
@@ -1319,7 +1319,7 @@ impl<T: BlockchainConnection + UserTxConnection + 'static, FPR: FogPubkeyResolve
         // Return response.
         let mut response = api::SubmitTxResponse::new();
         response.set_sender_tx_receipt(sender_tx_receipt);
-        response.set_receiver_tx_receipt_list(RepeatedField::from_vec(receiver_tx_receipts));
+        response.set_receiver_tx_receipt_list(receiver_tx_receipts);
         Ok(response)
     }
 
@@ -1744,7 +1744,7 @@ impl<T: BlockchainConnection + UserTxConnection + 'static, FPR: FogPubkeyResolve
 
         // Return response
         let mut response = api::GetProcessedBlockResponse::new();
-        response.set_tx_outs(RepeatedField::from_vec(processed_tx_outs));
+        response.set_tx_outs(processed_tx_outs);
         Ok(response)
     }
 
@@ -1925,7 +1925,7 @@ impl<T: BlockchainConnection + UserTxConnection + 'static, FPR: FogPubkeyResolve
         let mut send_payment_request = api::SendPaymentRequest::new();
         send_payment_request.set_sender_monitor_id(request.get_sender_monitor_id().to_vec());
         send_payment_request.set_sender_subaddress(request.get_sender_subaddress());
-        send_payment_request.set_outlay_list(RepeatedField::from_vec(vec![outlay]));
+        send_payment_request.set_outlay_list(vec![outlay]);
         send_payment_request.set_fee(request.get_fee());
         send_payment_request.set_tombstone(request.get_tombstone());
         send_payment_request.set_max_input_utxo_value(request.get_max_input_utxo_value());
@@ -2774,18 +2774,16 @@ mod test {
         // A receipt with all key images in the same block is verified.
         {
             let mut sender_receipt = api::SenderTxReceipt::new();
-            sender_receipt.set_key_image_list(RepeatedField::from_vec(vec![
+            sender_receipt.set_key_image_list(vec![
                 (&KeyImage::from(1)).into(),
                 (&KeyImage::from(2)).into(),
                 (&KeyImage::from(3)).into(),
-            ]));
+            ]);
             sender_receipt.set_tombstone(1);
 
             let mut request = api::SubmitTxResponse::new();
             request.set_sender_tx_receipt(sender_receipt);
-            request.set_receiver_tx_receipt_list(RepeatedField::from_vec(vec![
-                receiver_receipt.clone()
-            ]));
+            request.set_receiver_tx_receipt_list(vec![receiver_receipt.clone()]);
 
             let response = client.get_tx_status_as_sender(&request).unwrap();
 
@@ -2796,19 +2794,17 @@ mod test {
         // TransactionFailureKeyImageBlockMismatch.
         {
             let mut sender_receipt = api::SenderTxReceipt::new();
-            sender_receipt.set_key_image_list(RepeatedField::from_vec(vec![
+            sender_receipt.set_key_image_list(vec![
                 (&KeyImage::from(1)).into(),
                 (&KeyImage::from(2)).into(),
                 (&KeyImage::from(3)).into(),
                 (&KeyImage::from(4)).into(),
-            ]));
+            ]);
             sender_receipt.set_tombstone(1);
 
             let mut request = api::SubmitTxResponse::new();
             request.set_sender_tx_receipt(sender_receipt);
-            request.set_receiver_tx_receipt_list(RepeatedField::from_vec(vec![
-                receiver_receipt.clone()
-            ]));
+            request.set_receiver_tx_receipt_list(vec![receiver_receipt.clone()]);
 
             let response = client.get_tx_status_as_sender(&request).unwrap();
 
@@ -2822,17 +2818,15 @@ mod test {
         // its tombstone block has not been exceeded.
         {
             let mut sender_receipt = api::SenderTxReceipt::new();
-            sender_receipt.set_key_image_list(RepeatedField::from_vec(vec![
+            sender_receipt.set_key_image_list(vec![
                 (&KeyImage::from(4)).into(),
                 (&KeyImage::from(5)).into(),
-            ]));
+            ]);
             sender_receipt.set_tombstone(ledger_db.num_blocks().unwrap() as u64 + 1);
 
             let mut request = api::SubmitTxResponse::new();
             request.set_sender_tx_receipt(sender_receipt);
-            request.set_receiver_tx_receipt_list(RepeatedField::from_vec(vec![
-                receiver_receipt.clone()
-            ]));
+            request.set_receiver_tx_receipt_list(vec![receiver_receipt.clone()]);
 
             let response = client.get_tx_status_as_sender(&request).unwrap();
 
@@ -2843,17 +2837,15 @@ mod test {
         // block exceeded.
         {
             let mut sender_receipt = api::SenderTxReceipt::new();
-            sender_receipt.set_key_image_list(RepeatedField::from_vec(vec![
+            sender_receipt.set_key_image_list(vec![
                 (&KeyImage::from(4)).into(),
                 (&KeyImage::from(5)).into(),
-            ]));
+            ]);
             sender_receipt.set_tombstone(ledger_db.num_blocks().unwrap() as u64);
 
             let mut request = api::SubmitTxResponse::new();
             request.set_sender_tx_receipt(sender_receipt);
-            request.set_receiver_tx_receipt_list(RepeatedField::from_vec(vec![
-                receiver_receipt.clone()
-            ]));
+            request.set_receiver_tx_receipt_list(vec![receiver_receipt.clone()]);
 
             let response = client.get_tx_status_as_sender(&request).unwrap();
 
@@ -2878,18 +2870,16 @@ mod test {
         // should fail.
         {
             let mut sender_receipt = api::SenderTxReceipt::new();
-            sender_receipt.set_key_image_list(RepeatedField::from_vec(vec![
+            sender_receipt.set_key_image_list(vec![
                 (&KeyImage::from(1)).into(),
                 (&KeyImage::from(2)).into(),
                 (&KeyImage::from(4)).into(),
-            ]));
+            ]);
             sender_receipt.set_tombstone(1);
 
             let mut request = api::SubmitTxResponse::new();
             request.set_sender_tx_receipt(sender_receipt);
-            request.set_receiver_tx_receipt_list(RepeatedField::from_vec(vec![
-                receiver_receipt.clone()
-            ]));
+            request.set_receiver_tx_receipt_list(vec![receiver_receipt.clone()]);
 
             let response = client.get_tx_status_as_sender(&request).unwrap();
 
@@ -2918,18 +2908,15 @@ mod test {
         // A receiver receipt with multiple public keys in different blocks should fail
         {
             let mut sender_receipt = api::SenderTxReceipt::new();
-            sender_receipt.set_key_image_list(RepeatedField::from_vec(vec![
+            sender_receipt.set_key_image_list(vec![
                 (&KeyImage::from(1)).into(),
                 (&KeyImage::from(2)).into(),
-            ]));
+            ]);
             sender_receipt.set_tombstone(1);
 
             let mut request = api::SubmitTxResponse::new();
             request.set_sender_tx_receipt(sender_receipt);
-            request.set_receiver_tx_receipt_list(RepeatedField::from_vec(vec![
-                receiver_receipt.clone(),
-                receiver_receipt2,
-            ]));
+            request.set_receiver_tx_receipt_list(vec![receiver_receipt.clone(), receiver_receipt2]);
 
             let response = client.get_tx_status_as_sender(&request).unwrap();
 
@@ -2944,10 +2931,10 @@ mod test {
         // A receiver receipt with multiple public keys in different blocks should fail
         {
             let mut sender_receipt = api::SenderTxReceipt::new();
-            sender_receipt.set_key_image_list(RepeatedField::from_vec(vec![
+            sender_receipt.set_key_image_list(vec![
                 (&KeyImage::from(1)).into(),
                 (&KeyImage::from(4)).into(),
-            ]));
+            ]);
             sender_receipt.set_tombstone(1);
 
             let mut request = api::SubmitTxResponse::new();
@@ -2956,7 +2943,7 @@ mod test {
             receiver_receipt.set_tx_public_key(api::external::CompressedRistretto::from(
                 &CompressedRistrettoPublic::from(&RistrettoPublic::from_random(&mut rng)),
             ));
-            request.set_receiver_tx_receipt_list(RepeatedField::from_vec(vec![receiver_receipt]));
+            request.set_receiver_tx_receipt_list(vec![receiver_receipt]);
 
             let response = client.get_tx_status_as_sender(&request).unwrap();
 
@@ -3451,9 +3438,7 @@ mod test {
         // exactly the remaining 30.
         let mut request = api::GetMixinsRequest::new();
         request.set_num_mixins(30);
-        request.set_excluded(RepeatedField::from_vec(
-            to_exclude.iter().map(api::external::TxOut::from).collect(),
-        ));
+        request.set_excluded(to_exclude.iter().map(api::external::TxOut::from).collect());
 
         let response = client.get_mixins(&request).unwrap();
 
@@ -3559,9 +3544,7 @@ mod test {
         };
 
         let mut request = api::GetMembershipProofsRequest::new();
-        request.set_outputs(RepeatedField::from_vec(
-            outputs.iter().map(api::external::TxOut::from).collect(),
-        ));
+        request.set_outputs(outputs.iter().map(api::external::TxOut::from).collect());
 
         let response = client.get_membership_proofs(&request).unwrap();
 
@@ -3662,16 +3645,14 @@ mod test {
         let mut request = api::GenerateTxRequest::new();
         request.set_sender_monitor_id(monitor_id.to_vec());
         request.set_change_subaddress(0);
-        request.set_input_list(RepeatedField::from_vec(
+        request.set_input_list(
             utxos
                 .iter()
                 .filter(|utxo| utxo.token_id == *Mob::ID)
                 .map(api::UnspentTxOut::from)
                 .collect(),
-        ));
-        request.set_outlay_list(RepeatedField::from_vec(
-            outlays.iter().map(api::Outlay::from).collect(),
-        ));
+        );
+        request.set_outlay_list(outlays.iter().map(api::Outlay::from).collect());
 
         // Test the happy flow for MOB.
         {
@@ -3755,16 +3736,14 @@ mod test {
             let mut request = api::GenerateTxRequest::new();
             request.set_sender_monitor_id(monitor_id.to_vec());
             request.set_change_subaddress(0);
-            request.set_input_list(RepeatedField::from_vec(
+            request.set_input_list(
                 utxos
                     .iter()
                     .filter(|utxo| utxo.token_id == 2)
                     .map(api::UnspentTxOut::from)
                     .collect(),
-            ));
-            request.set_outlay_list(RepeatedField::from_vec(
-                outlays.iter().map(api::Outlay::from).collect(),
-            ));
+            );
+            request.set_outlay_list(outlays.iter().map(api::Outlay::from).collect());
             request.set_token_id(2);
 
             let fee = 10_000;
@@ -3877,10 +3856,10 @@ mod test {
             // Attempt to spend more than we have
             let num_blocks = ledger_db.num_blocks().unwrap();
             let mut request = request.clone();
-            request.set_outlay_list(RepeatedField::from_vec(vec![api::Outlay::from(&Outlay {
+            request.set_outlay_list(vec![api::Outlay::from(&Outlay {
                 receiver: receiver1.default_subaddress(),
                 value: test_utils::DEFAULT_PER_RECIPIENT_AMOUNT * num_blocks,
-            })]));
+            })]);
             assert!(client.generate_tx(&request).is_err());
         }
 
@@ -3889,12 +3868,8 @@ mod test {
             let mut request = api::GenerateTxRequest::new();
             request.set_sender_monitor_id(monitor_id.to_vec());
             request.set_change_subaddress(0);
-            request.set_input_list(RepeatedField::from_vec(
-                utxos.iter().map(api::UnspentTxOut::from).collect(),
-            ));
-            request.set_outlay_list(RepeatedField::from_vec(
-                outlays.iter().map(api::Outlay::from).collect(),
-            ));
+            request.set_input_list(utxos.iter().map(api::UnspentTxOut::from).collect());
+            request.set_outlay_list(outlays.iter().map(api::Outlay::from).collect());
             assert!(client.generate_tx(&request).is_err());
         }
     }
@@ -3956,7 +3931,7 @@ mod test {
             .iter()
             .filter(|utxo| utxo.token_id == token_id2)
             .map(Into::into)
-            .collect::<RepeatedField<_>>();
+            .collect();
         assert!(!utxos.is_empty());
 
         // Prepare request
@@ -4122,9 +4097,7 @@ mod test {
         let mut request = api::GenerateTransferCodeTxRequest::new();
         request.set_sender_monitor_id(monitor_id.to_vec());
         request.set_change_subaddress(0);
-        request.set_input_list(RepeatedField::from_vec(
-            utxos.iter().map(api::UnspentTxOut::from).collect(),
-        ));
+        request.set_input_list(utxos.iter().map(api::UnspentTxOut::from).collect());
         request.set_value(1337);
 
         let response = client.generate_transfer_code_tx(&request).unwrap();
@@ -4339,9 +4312,7 @@ mod test {
         let tx_utxos = utxos[0..2].to_vec();
         let mut request = api::GenerateTxFromTxOutListRequest::new();
         request.set_account_key((&sender).into());
-        request.set_input_list(RepeatedField::from_vec(
-            tx_utxos.iter().map(api::UnspentTxOut::from).collect(),
-        ));
+        request.set_input_list(tx_utxos.iter().map(api::UnspentTxOut::from).collect());
         let receiver = AccountKey::random(&mut rng);
         request.set_receiver((&receiver.default_subaddress()).into());
         request.set_fee(Mob::MINIMUM_FEE);
@@ -4419,12 +4390,8 @@ mod test {
         let mut request = api::GenerateTxRequest::new();
         request.set_sender_monitor_id(monitor_id.to_vec());
         request.set_change_subaddress(0);
-        request.set_input_list(RepeatedField::from_vec(
-            utxos.iter().map(api::UnspentTxOut::from).collect(),
-        ));
-        request.set_outlay_list(RepeatedField::from_vec(
-            outlays.iter().map(api::Outlay::from).collect(),
-        ));
+        request.set_input_list(utxos.iter().map(api::UnspentTxOut::from).collect());
+        request.set_outlay_list(outlays.iter().map(api::Outlay::from).collect());
 
         // Get our propsal which we'll use for the test.
         let response = client.generate_tx(&request).unwrap();
@@ -4671,9 +4638,7 @@ mod test {
         let mut request = api::SendPaymentRequest::new();
         request.set_sender_monitor_id(monitor_id.to_vec());
         request.set_sender_subaddress(0);
-        request.set_outlay_list(RepeatedField::from_vec(
-            outlays.iter().map(api::Outlay::from).collect(),
-        ));
+        request.set_outlay_list(outlays.iter().map(api::Outlay::from).collect());
 
         let response = client.send_payment(&request).unwrap();
 
@@ -4859,9 +4824,7 @@ mod test {
         let mut request = api::SendPaymentRequest::new();
         request.set_sender_monitor_id(monitor_id.to_vec());
         request.set_sender_subaddress(0);
-        request.set_outlay_list(RepeatedField::from_vec(
-            outlays.iter().map(api::Outlay::from).collect(),
-        ));
+        request.set_outlay_list(outlays.iter().map(api::Outlay::from).collect());
 
         let response = client.send_payment(&request).unwrap();
 
@@ -5002,9 +4965,7 @@ mod test {
         let mut request = api::SendPaymentRequest::new();
         request.set_sender_monitor_id(monitor_id.to_vec());
         request.set_sender_subaddress(0);
-        request.set_outlay_list(RepeatedField::from_vec(
-            outlays.iter().map(api::Outlay::from).collect(),
-        ));
+        request.set_outlay_list(outlays.iter().map(api::Outlay::from).collect());
 
         let response = client.send_payment(&request).unwrap();
 
@@ -5126,9 +5087,7 @@ mod test {
         let mut request = api::SendPaymentRequest::new();
         request.set_sender_monitor_id(monitor_id.to_vec());
         request.set_sender_subaddress(0);
-        request.set_outlay_list(RepeatedField::from_vec(
-            outlays.iter().map(api::Outlay::from).collect(),
-        ));
+        request.set_outlay_list(outlays.iter().map(api::Outlay::from).collect());
 
         let response = client.send_payment(&request);
         assert!(response.is_err());

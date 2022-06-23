@@ -9,7 +9,6 @@ use mc_api::external::{
 };
 use mc_mobilecoind_api as api;
 use mc_util_serial::JsonU64;
-use protobuf::RepeatedField;
 use serde_derive::{Deserialize, Serialize};
 
 #[derive(Deserialize, Default, Debug)]
@@ -645,7 +644,7 @@ impl TryFrom<&JsonTxOutMembershipProof> for TxOutMembershipProof {
         let mut proof = TxOutMembershipProof::new();
         proof.set_index(src.index.into());
         proof.set_highest_index(src.highest_index.into());
-        proof.set_elements(RepeatedField::from_vec(elements));
+        proof.set_elements(elements);
 
         Ok(proof)
     }
@@ -768,8 +767,8 @@ impl TryFrom<&JsonTxIn> for TxIn {
             .transpose()?;
 
         let mut txin = TxIn::new();
-        txin.set_ring(RepeatedField::from_vec(outputs));
-        txin.set_proofs(RepeatedField::from_vec(proofs));
+        txin.set_ring(outputs);
+        txin.set_proofs(proofs);
         if let Some(rules) = input_rules {
             txin.set_input_rules(rules);
         }
@@ -816,8 +815,8 @@ impl TryFrom<&JsonTxPrefix> for TxPrefix {
         }
 
         let mut prefix = TxPrefix::new();
-        prefix.set_inputs(RepeatedField::from_vec(inputs));
-        prefix.set_outputs(RepeatedField::from_vec(outputs));
+        prefix.set_inputs(inputs);
+        prefix.set_outputs(outputs);
         prefix.set_fee(src.fee.into());
         prefix.set_tombstone_block(src.tombstone_block.into());
 
@@ -907,7 +906,7 @@ impl TryFrom<&JsonSignatureRctBulletproofs> for SignatureRctBulletproofs {
 
             let mut ring_sig = RingMLSAG::new();
             ring_sig.set_c_zero(c_zero);
-            ring_sig.set_responses(RepeatedField::from_vec(responses));
+            ring_sig.set_responses(responses);
             ring_sig.set_key_image(key_image);
 
             ring_sigs.push(ring_sig);
@@ -923,8 +922,8 @@ impl TryFrom<&JsonSignatureRctBulletproofs> for SignatureRctBulletproofs {
         }
 
         let mut signature = SignatureRctBulletproofs::new();
-        signature.set_ring_signatures(RepeatedField::from_vec(ring_sigs));
-        signature.set_pseudo_output_commitments(RepeatedField::from_vec(commitments));
+        signature.set_ring_signatures(ring_sigs);
+        signature.set_pseudo_output_commitments(commitments);
         let range_proof_bytes = hex::decode(&src.range_proof_bytes).map_err(|err| {
             format!(
                 "Could not decode top-level range proof from hex '{}': {}",
@@ -1042,8 +1041,8 @@ impl TryFrom<&JsonTxProposal> for api::TxProposal {
 
         // Reconstruct the public address as a protobuf
         let mut proposal = api::TxProposal::new();
-        proposal.set_input_list(RepeatedField::from_vec(inputs));
-        proposal.set_outlay_list(RepeatedField::from_vec(outlays));
+        proposal.set_input_list(inputs);
+        proposal.set_outlay_list(outlays);
         proposal
             .set_tx(Tx::try_from(&src.tx).map_err(|err| format!("Could not convert tx: {}", err))?);
         proposal.set_fee(src.fee);
@@ -1053,9 +1052,7 @@ impl TryFrom<&JsonTxProposal> for api::TxProposal {
                 .map(|(key, val)| (*key as u64, *val as u64))
                 .collect(),
         );
-        proposal.set_outlay_confirmation_numbers(RepeatedField::from_vec(
-            src.outlay_confirmation_numbers.clone(),
-        ));
+        proposal.set_outlay_confirmation_numbers(src.outlay_confirmation_numbers.clone());
 
         Ok(proposal)
     }
@@ -1124,7 +1121,7 @@ impl TryFrom<&JsonSubmitTxResponse> for api::SubmitTxResponse {
             })
             .collect::<Result<Vec<KeyImage>, String>>()?;
 
-        sender_receipt.set_key_image_list(RepeatedField::from_vec(key_images));
+        sender_receipt.set_key_image_list(key_images);
         sender_receipt.set_tombstone(src.sender_tx_receipt.tombstone);
 
         let mut receiver_receipts = Vec::new();
@@ -1155,7 +1152,7 @@ impl TryFrom<&JsonSubmitTxResponse> for api::SubmitTxResponse {
 
         let mut resp = api::SubmitTxResponse::new();
         resp.set_sender_tx_receipt(sender_receipt);
-        resp.set_receiver_tx_receipt_list(RepeatedField::from_vec(receiver_receipts));
+        resp.set_receiver_tx_receipt_list(receiver_receipts);
 
         Ok(resp)
     }
@@ -1432,16 +1429,16 @@ mod test {
 
         // Make proto TxProposal
         let mut proto_proposal = api::TxProposal::new();
-        proto_proposal.set_input_list(RepeatedField::from_vec(vec![utxo]));
-        proto_proposal.set_outlay_list(RepeatedField::from_vec(vec![outlay]));
+        proto_proposal.set_input_list(vec![utxo]);
+        proto_proposal.set_outlay_list(vec![outlay]);
         proto_proposal.set_tx(mc_api::external::Tx::from(&tx));
         proto_proposal.set_outlay_index_to_tx_out_index(outlay_index_to_tx_out_index);
-        proto_proposal.set_outlay_confirmation_numbers(RepeatedField::from_vec(
+        proto_proposal.set_outlay_confirmation_numbers(
             outlay_confirmation_numbers
                 .iter()
                 .map(|x| x.to_vec())
                 .collect(),
-        ));
+        );
 
         // Proto -> Json
         let json_proposal = JsonTxProposal::from(&proto_proposal);

@@ -6,7 +6,6 @@ use mc_common::logger::Logger;
 use mc_fog_api::{fog_common::BlockRange, ledger, ledger_grpc, ledger_grpc::FogBlockApiClient};
 use mc_fog_uri::{ConnectionUri, FogLedgerUri};
 use mc_util_grpc::{BasicCredentials, ConnectionUriGrpcioChannel, GrpcRetryConfig};
-use protobuf::RepeatedField;
 use std::sync::Arc;
 
 /// A unattested connection to the Fog Block service.
@@ -47,7 +46,7 @@ impl FogBlockGrpcClient {
         missed_block_ranges: Vec<BlockRange>,
     ) -> Result<ledger::BlockResponse, Error> {
         let mut request = ledger::BlockRequest::new();
-        request.ranges = RepeatedField::from_vec(missed_block_ranges);
+        request.ranges = missed_block_ranges;
 
         self.grpc_retry_config
             .retry(|| {

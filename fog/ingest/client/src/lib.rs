@@ -20,7 +20,6 @@ use mc_fog_types::common::BlockRange;
 use mc_fog_uri::FogIngestUri;
 use mc_util_grpc::{BasicCredentials, ConnectionUriGrpcioChannel};
 use mc_util_uri::ConnectionUri;
-use protobuf::RepeatedField;
 use retry::{retry, Error as RetryError};
 use std::{sync::Arc, time::Duration};
 
@@ -106,7 +105,7 @@ impl FogIngestGrpcClient {
 
     pub fn set_peers(&self, peer_uris: &[String]) -> ClientResult<IngestSummary> {
         let mut req = SetPeersRequest::new();
-        req.set_ingest_peer_uris(RepeatedField::from_vec(peer_uris.to_vec()));
+        req.set_ingest_peer_uris(peer_uris.to_vec());
 
         retry(self.get_retries(), || -> Result<_, Error> {
             Ok(self

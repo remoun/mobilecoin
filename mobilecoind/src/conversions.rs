@@ -15,7 +15,6 @@ use mc_transaction_core::{
     ring_signature::KeyImage,
     tx::{Tx, TxOut, TxOutConfirmationNumber},
 };
-use protobuf::RepeatedField;
 
 impl From<&UnspentTxOut> for api::UnspentTxOut {
     fn from(src: &UnspentTxOut) -> Self {
@@ -83,12 +82,8 @@ impl From<&TxProposal> for api::TxProposal {
     fn from(src: &TxProposal) -> api::TxProposal {
         let mut dst = api::TxProposal::new();
 
-        dst.set_input_list(RepeatedField::from_vec(
-            src.utxos.iter().map(|utxo| utxo.into()).collect(),
-        ));
-        dst.set_outlay_list(RepeatedField::from_vec(
-            src.outlays.iter().map(|outlay| outlay.into()).collect(),
-        ));
+        dst.set_input_list(src.utxos.iter().map(|utxo| utxo.into()).collect());
+        dst.set_outlay_list(src.outlays.iter().map(|outlay| outlay.into()).collect());
         dst.set_tx((&src.tx).into());
         dst.set_fee(src.tx.prefix.fee);
         dst.set_outlay_index_to_tx_out_index(

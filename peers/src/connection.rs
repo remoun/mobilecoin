@@ -37,7 +37,6 @@ use mc_transaction_core::tx::TxHash;
 use mc_util_grpc::ConnectionUriGrpcioChannel;
 use mc_util_serial::{deserialize, serialize};
 use mc_util_uri::{ConnectionUri, ConsensusPeerUri as PeerUri};
-use protobuf::RepeatedField;
 use std::{
     cmp::Ordering,
     hash::{Hash, Hasher},
@@ -319,9 +318,7 @@ impl<Enclave: ConsensusEnclave + Clone + Send + Sync> ConsensusConnection
 
         let mut request = GrpcFetchTxsRequest::new();
         request.set_channel_id(self.channel_id.as_ref().unwrap().as_ref().to_vec());
-        request.set_tx_hashes(RepeatedField::from_vec(
-            hashes.iter().map(|tx| tx.to_vec()).collect(),
-        ));
+        request.set_tx_hashes(hashes.iter().map(|tx| tx.to_vec()).collect());
 
         let mut response = self.log_attested_call("get_txs", |this| {
             this.consensus_api_client.get_txs(&request)

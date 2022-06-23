@@ -6,7 +6,6 @@ use crate::{external, ConversionError};
 use mc_transaction_core::{
     ring_ct::SignatureRctBulletproofs, ring_signature::RingMLSAG, CompressedCommitment,
 };
-use protobuf::RepeatedField;
 
 impl From<&SignatureRctBulletproofs> for external::SignatureRctBulletproofs {
     fn from(source: &SignatureRctBulletproofs) -> Self {
@@ -27,7 +26,7 @@ impl From<&SignatureRctBulletproofs> for external::SignatureRctBulletproofs {
         signature.set_pseudo_output_commitments(pseudo_output_commitments.into());
 
         signature.set_range_proof_bytes(source.range_proof_bytes.clone());
-        signature.set_range_proofs(RepeatedField::from_vec(source.range_proofs.clone()));
+        signature.set_range_proofs(source.range_proofs.clone());
         signature.set_pseudo_output_token_ids(source.pseudo_output_token_ids.clone());
         signature.set_output_token_ids(source.output_token_ids.clone());
 

@@ -15,7 +15,6 @@ use mc_ledger_db::Ledger;
 use mc_transaction_core::{tokens::Mob, BlockVersion, Token};
 use mc_util_grpc::{rpc_logger, send_result, Authenticator};
 use mc_util_metrics::{self, SVC_COUNTERS};
-use protobuf::RepeatedField;
 use std::{cmp, collections::HashMap, sync::Arc};
 
 #[derive(Clone)]
@@ -123,7 +122,7 @@ impl<L: Ledger + Clone> BlockchainApiService<L> {
             .collect();
 
         let mut response = BlocksResponse::new();
-        response.set_blocks(RepeatedField::from_vec(blocks));
+        response.set_blocks(blocks);
         Ok(response)
     }
 }

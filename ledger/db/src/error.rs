@@ -53,7 +53,7 @@ pub enum Error {
     /// LMDB error, may mean database is opened multiple times in a process.
     BadRslot,
 
-    /// Capacity Exceeded
+    /// Capacity exceeded
     CapacityExceeded,
 
     /// Index out of bounds: {0}

@@ -8,7 +8,7 @@
 use clap::Parser;
 use grpcio::ChannelBuilder;
 use mc_common::logger::{create_app_logger, log, o};
-use mc_util_grpc::{admin, admin_grpc::AdminApiClient, ConnectionUriGrpcioChannel, Empty};
+use mc_util_grpc::{admin, admin::AdminApiClient, ConnectionUriGrpcioChannel};
 use mc_util_uri::AdminUri;
 use rocket::{
     form::Form,
@@ -83,7 +83,7 @@ impl TryFrom<&admin::GetInfoResponse> for JsonInfoResponse {
 fn info(state: &rocket::State<State>) -> Result<Json<JsonInfoResponse>, String> {
     let info = state
         .admin_api_client
-        .get_info(&Empty::new())
+        .get_info(&())
         .map_err(|err| format!("Failed getting info: {}", err))?;
 
     Ok(Json(JsonInfoResponse::try_from(&info)?))

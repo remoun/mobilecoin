@@ -31,7 +31,7 @@ impl RingSigner for NoKeysRingSigner {
         let target_key = RistrettoPublic::try_from(&real_input.target_key)?;
 
         // First, get the one-time private key
-        let onetime_private_key = match ring.input_secret.onetime_key_derive_data {
+        let onetime_private_key = match &ring.input_secret.onetime_key_derive_data {
             OneTimeKeyDeriveData::OneTimeKey(key) => key,
             OneTimeKeyDeriveData::SubaddressIndex(_) => {
                 return Err(Error::NoPathToSpendKey);
@@ -39,7 +39,7 @@ impl RingSigner for NoKeysRingSigner {
         };
 
         // Check if this is the correct one-time private key
-        if RistrettoPublic::from(&onetime_private_key) != target_key {
+        if RistrettoPublic::from(onetime_private_key) != target_key {
             return Err(Error::TrueInputNotOwned);
         }
 

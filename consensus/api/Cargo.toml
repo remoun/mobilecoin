@@ -13,8 +13,8 @@ mc-ledger-db = { path = "../../ledger/db" }
 mc-transaction-core = { path = "../../transaction/core" }
 
 futures = "0.3"
-grpcio = "0.10.3"
-protobuf = "2.27.1"
+grpcio = { version = "0.10", default-features = false, features = ["prost-codec"] }
+prost = "0.10"
 
 [dev-dependencies]
 mc-crypto-multisig = { path = "../../crypto/multisig" }
@@ -28,4 +28,4 @@ rand_hc = "0.3"
 mc-util-build-grpc = { path = "../../util/build/grpc" }
 mc-util-build-script = { path = "../../util/build/script" }
 
-cargo-emit = "0.2.1"
+cargo-emit = "0.2"

@@ -3,38 +3,43 @@
 #![doc = include_str!("../README.md")]
 
 use mc_util_build_script::Environment;
-use std::{ffi::OsStr, fs, path::PathBuf};
+use std::{ffi::OsStr, fs, path::Path};
 
 /// Compile protobuf files into Rust code, and generate a mod.rs that references
 /// all the generated modules.
-pub fn compile_protos_and_generate_mod_rs(proto_dirs: &[&str], proto_files: &[&str]) {
-    let env = Environment::default();
-
-    // Output directory for genereated code.
-    let output_destination = env.out_dir().join("protos-auto-gen");
-
+pub fn compile_protos_and_generate_mod_rs<P: AsRef<Path>>(proto_dirs: &[P], proto_files: &[P]) {
     // If the proto files change, we need to re-run.
-    for dir in proto_dirs.iter() {
-        mc_util_build_script::rerun_if_path_changed(&PathBuf::from(dir));
-    }
+    proto_dirs
+        .iter()
+        .for_each(mc_util_build_script::rerun_if_path_changed);
+
+    // Output directory for generated code.
+    let env = Environment::default();
+    let output_destination = env.out_dir().join("protos-auto-gen");
 
     // Delete old code and create output directory.
     let _ = fs::remove_dir_all(&output_destination);
     fs::create_dir_all(&output_destination).expect("failed creating output destination");
 
     // Generate code.
-    protoc_grpcio::compile_grpc_protos(proto_files, proto_dirs, &output_destination, None)
-        .expect("Failed to compile gRPC definitions!");
+    grpcio_compiler::prost_codegen::compile_protos(
+        proto_files,
+        proto_dirs,
+        output_destination.to_str().unwrap(),
+    )
+    .expect("Failed to compile gRPC definitions!");
 
     // Generate the mod.rs file that includes all the auto-generated code.
-    let mod_file_contents = fs::read_dir(&output_destination)
-        .expect("failed reading output directory")
-        .filter_map(|res| res.map(|e| e.path()).ok())
+    let mod_file_contents = proto_files
+        .into_iter()
         .filter_map(|path| {
+            let path = path.as_ref();
             if path.extension() == Some(OsStr::new("rs")) {
+                let file_stem = path.file_stem().unwrap().to_str().unwrap();
                 Some(format!(
-                    "pub mod {};",
-                    path.file_stem().unwrap().to_str().unwrap()
+                    "pub mod {} {{\n    include!(\"{}.rs\");\n}}\n",
+                    file_stem.replace('.', "_"),
+                    file_stem
                 ))
             } else {
                 None

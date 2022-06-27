@@ -21,7 +21,7 @@ where
 {
     fn from(src: AuthRequestOutput<Handshake, KexAlgo, Cipher, DigestAlgo>) -> Self {
         let mut retval = Self::default();
-        retval.set_data(src.into());
+        retval.data = src.into();
         retval
     }
 }

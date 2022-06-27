@@ -13,8 +13,8 @@ mc-ledger-db = { path = "../../ledger/db" }
 mc-transaction-core = { path = "../../transaction/core" }
 
 futures = "0.3"
-grpcio = "0.10.2"
-protobuf = "2.27.1"
+prost = "0.10"
+tonic = "0.7"
 
 [dev-dependencies]
 mc-crypto-multisig = { path = "../../crypto/multisig" }

@@ -7,7 +7,7 @@ diff -urN mobilecoin-1.0.1/mobilecoind/Cargo.toml new/mobilecoind/Cargo.toml
  num_cpus = "1.12"
 +pem = "0.8"
  prost = { version = "0.6.1", default-features = false, features = ["prost-derive"] }
- protobuf = "2.12"
+ prost = "0.10"
  reqwest = { version = "0.10", default-features = false, features = ["rustls-tls", "gzip"] }
 diff -urN mobilecoin-1.0.1/mobilecoind/src/bin/main.rs new/mobilecoind/src/bin/main.rs
 --- mobilecoin-1.0.1/mobilecoind/src/bin/main.rs	2021-01-09 20:02:33.000000000 -0800

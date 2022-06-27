@@ -12,8 +12,8 @@ mc-consensus-api = { path = "../../consensus/api" }
 mc-util-uri = { path = "../../util/uri" }
 
 futures = "0.3"
-grpcio = "0.10.2"
-protobuf = "2.27.1"
+prost = "0.10"
+tonic = "0.7"
 
 [dev-dependencies]
 mc-common = { path = "../../common", features = ["loggers"] }

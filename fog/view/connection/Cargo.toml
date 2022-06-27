@@ -21,7 +21,7 @@ mc-fog-enclave-connection = { path = "../../enclave_connection" }
 mc-fog-types = { path = "../../types" }
 mc-fog-uri = { path = "../../uri" }
 mc-fog-view-protocol = { path = "../protocol" }
+retry = "1.3"
 
 # third-party
-grpcio = "0.10.2"
-retry = "1.3"
+tonic = "0.7"

@@ -1,7 +1,6 @@
 // Copyright (c) 2018-2022 The MobileCoin Foundation
 
 use prost::Message as ProstMessage;
-use protobuf::Message as ProtobufMessage;
 
 /// Take a ProstMessage value, and a ProtobufMessage type. Try to encode the
 /// prost message, decode as protobuf, re-encode that, and decode as prost

@@ -15,14 +15,14 @@ clap = { version = "3.2", features = ["derive", "env"] }
 dirs = "4.0"
 displaydoc = { version = "0.2", default-features = false }
 futures = "0.3"
-grpcio = "0.10.2"
 hex = "0.4"
 itertools = "0.10"
 lazy_static = "1.4"
-protobuf = "2.27.1"
+prost = "0.10"
 retry = "1.3"
 serde = { version = "1.0", default-features = false, features = ["alloc", "derive"] }
 serde_json = "1.0"
+tonic = "0.7"
 
 # root
 mc-api = { path = "../../../api" }

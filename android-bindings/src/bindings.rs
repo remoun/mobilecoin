@@ -468,7 +468,7 @@ pub unsafe extern "C" fn Java_com_mobilecoin_lib_PrintableWrapper_b58_1decode(
             let printable_wrapper = PrintableWrapper::b58_decode(b58_string)
                 .map_err(|err| McError::Other(format!("{}", err)))?;
             let wrapper_bytes = printable_wrapper
-                .write_to_bytes()
+                .encode_to_vec()
                 .map_err(|err| McError::Other(format!("{}", err)))?;
             Ok(env.byte_array_from_slice(&wrapper_bytes)?)
         },

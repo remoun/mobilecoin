@@ -8,8 +8,10 @@ edition = "2021"
 mc-common = { path = "../../common", features = ["log"] }
 
 chrono = "0.4"
+grpcio = "0.10" # TODO: Remove
 lazy_static = "1.4"
 prometheus = "0.13"
 prost = "0.10"
+protobuf = "2.27"  # TODO: Remove
 serde_json = "1.0"
 tonic = "0.7"

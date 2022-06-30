@@ -106,7 +106,7 @@ impl WellFormedTxContext {
             tx_hash: tx.tx_hash(),
             tombstone_block: tx.prefix.tombstone_block,
             key_images: tx.key_images(),
-            highest_indices: tx.get_membership_proof_highest_indices(),
+            highest_indices: tx.membership_proof_highest_indices,
             output_public_keys: tx.output_public_keys(),
         }
     }

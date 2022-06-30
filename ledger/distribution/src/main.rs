@@ -163,7 +163,7 @@ impl BlockHandler for S3BlockWriter {
             dir.to_str().unwrap(),
             filename.to_str().unwrap(),
             &archive_block
-                .write_to_bytes()
+                .encode_to_vec()
                 .expect("failed to serialize ArchiveBlock"),
         );
     }
@@ -199,7 +199,7 @@ impl BlockHandler for S3BlockWriter {
             dir.to_str().unwrap(),
             filename.to_str().unwrap(),
             &archive_blocks
-                .write_to_bytes()
+                .encode_to_vec()
                 .expect("failed to serialize ArchiveBlocks"),
         );
     }
@@ -230,7 +230,7 @@ impl BlockHandler for LocalBlockWriter {
         let archive_block = blockchain::ArchiveBlock::from(block_data);
 
         let bytes = archive_block
-            .write_to_bytes()
+            .encode_to_vec()
             .expect("failed to serialize ArchiveBlock");
 
         let dest = self
@@ -271,7 +271,7 @@ impl BlockHandler for LocalBlockWriter {
         let archive_blocks = blockchain::ArchiveBlocks::from(blocks_data);
 
         let bytes = archive_blocks
-            .write_to_bytes()
+            .encode_to_vec()
             .expect("failed to serialize ArchiveBlock");
 
         let dest = self.path.as_path().join(merged_block_num_to_s3block_path(

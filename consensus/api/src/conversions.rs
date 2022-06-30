@@ -246,10 +246,10 @@ impl TryFrom<&consensus_config::ActiveMintConfig> for mc_ledger_db::ActiveMintCo
     type Error = ConversionError;
 
     fn try_from(src: &consensus_config::ActiveMintConfig) -> Result<Self, Self::Error> {
-        let mint_config = src.get_mint_config().try_into()?;
+        let mint_config = src.mint_config.try_into()?;
         Ok(Self {
             mint_config,
-            total_minted: src.get_total_minted(),
+            total_minted: src.total_minted,
         })
     }
 }
@@ -272,11 +272,11 @@ impl TryFrom<&consensus_config::ActiveMintConfigs> for mc_ledger_db::ActiveMintC
 
     fn try_from(src: &consensus_config::ActiveMintConfigs) -> Result<Self, Self::Error> {
         let configs = src
-            .get_configs()
+            .configs
             .iter()
             .map(TryInto::try_into)
             .collect::<Result<Vec<_>, _>>()?;
-        let mint_config_tx = src.get_mint_config_tx().try_into()?;
+        let mint_config_tx = src.mint_config_tx.try_into()?;
         Ok(Self {
             configs,
             mint_config_tx,
@@ -291,7 +291,6 @@ mod conversion_tests {
     use mc_transaction_core::mint::MintConfig;
     use mc_transaction_core_test_utils::create_mint_config_tx_and_signers;
     use mc_util_serial::{decode, encode};
-    use protobuf::Message;
     use rand_core::SeedableRng;
     use rand_hc::Hc128Rng;
 
@@ -337,7 +336,7 @@ mod conversion_tests {
         // Encoding with protobuf, decoding with prost should be the identity function.
         {
             let external = consensus_config::ActiveMintConfig::from(&source);
-            let bytes = external.write_to_bytes().unwrap();
+            let bytes = external.encode_to_vec().unwrap();
             let recovered: mc_ledger_db::ActiveMintConfig = decode(&bytes).unwrap();
             assert_eq!(source, recovered);
         }
@@ -391,7 +390,7 @@ mod conversion_tests {
         // Encoding with protobuf, decoding with prost should be the identity function.
         {
             let external = consensus_config::ActiveMintConfigs::from(&source);
-            let bytes = external.write_to_bytes().unwrap();
+            let bytes = external.encode_to_vec().unwrap();
             let recovered: mc_ledger_db::ActiveMintConfigs = decode(&bytes).unwrap();
             assert_eq!(source, recovered);
         }

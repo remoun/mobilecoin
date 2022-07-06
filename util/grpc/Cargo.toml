@@ -5,9 +5,6 @@ authors = ["MobileCoin"]
 edition = "2021"
 description = "Runtime gRPC Utilities"
 
-[badges]
-circle-ci = { repository = "mobilecoinfoundation/mobilecoin", branch = "master" }
-
 [dependencies]
 mc-common = { path = "../../common", features = ["loggers"] }
 mc-util-build-info = { path = "../build/info" }

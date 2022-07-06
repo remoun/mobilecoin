@@ -58,8 +58,8 @@ use mc_transaction_std::{
 };
 
 use mc_util_from_random::FromRandom;
+use mc_util_serial::Message;
 use mc_util_uri::FogUri;
-use protobuf::Message;
 use rand::{rngs::StdRng, SeedableRng};
 use sha2::Sha512;
 use std::{
@@ -467,9 +467,7 @@ pub unsafe extern "C" fn Java_com_mobilecoin_lib_PrintableWrapper_b58_1decode(
             let b58_string: String = env.get_string(b58_string)?.into();
             let printable_wrapper = PrintableWrapper::b58_decode(b58_string)
                 .map_err(|err| McError::Other(format!("{}", err)))?;
-            let wrapper_bytes = printable_wrapper
-                .encode_to_vec()
-                .map_err(|err| McError::Other(format!("{}", err)))?;
+            let wrapper_bytes = printable_wrapper.encode_to_vec();
             Ok(env.byte_array_from_slice(&wrapper_bytes)?)
         },
     )

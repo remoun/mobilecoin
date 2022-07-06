@@ -7,4 +7,4 @@ edition = "2021"
 [dependencies]
 mc-util-build-script = { path = "../../build/script" }
 
-tonic-build = "0.7"
+grpcio-compiler = { version = "0.10", default-features = false, features = ["prost-codec"] }

@@ -3,13 +3,15 @@
 #![doc = include_str!("../README.md")]
 #![deny(missing_docs)]
 
+pub use json_format::RootIdentityJson;
+pub use mnemonic_acct::UncheckedMnemonicAccount;
+
+pub mod config;
+pub mod keygen;
+
 mod error;
 mod json_format;
 mod mnemonic_acct;
-pub use json_format::RootIdentityJson;
-pub use mnemonic_acct::UncheckedMnemonicAccount;
-pub mod config;
-pub mod keygen;
 
 use crate::error::Error;
 use bip39::Mnemonic;
@@ -17,7 +19,7 @@ use mc_account_keys::{AccountKey, PublicAddress, RootIdentity};
 use mc_api::printable::{printable_wrapper, PrintableWrapper};
 use std::{
     fs::File,
-    io::{Error as IoError, ErrorKind, Read, Write},
+    io::{Read, Write},
     path::Path,
 };
 
@@ -109,7 +111,7 @@ pub fn read_pubfile_data<R: Read>(buffer: &mut R) -> Result<PublicAddress, Error
 pub fn write_b58pubfile<P: AsRef<Path>>(path: P, addr: &PublicAddress) -> Result<(), Error> {
     let data = PrintableWrapper::from(addr)
         .b58_encode()
-        .map_err(to_io_error)?;
+        .map_err(|err| Error::Encode(err.to_string()))?;
 
     File::create(path)?.write_all(data.as_ref())?;
     Ok(())
@@ -128,22 +130,21 @@ pub fn read_b58pubfile_data<R: Read>(buffer: &mut R) -> Result<PublicAddress, Er
         data
     };
 
-    let wrapper = PrintableWrapper::b58_decode(data).map_err(to_io_error)?;
+    let wrapper = PrintableWrapper::b58_decode(data).map_err(to_decode_error)?;
 
     match wrapper.wrapper {
         Some(printable_wrapper::Wrapper::PublicAddress(public_address)) => {
-            public_address.try_into().map_err(to_io_error)
+            PublicAddress::try_from(&public_address).map_err(to_decode_error)
         }
 
-        _ => Err(IoError::new(
-            ErrorKind::Other,
-            "Printable Wrapper did not contain public address",
+        _ => Err(to_decode_error(
+            "PrintableWrapper did not contain public address",
         )),
     }
 }
 
-fn to_io_error<E: 'static + std::error::Error + Send + Sync>(err: E) -> IoError {
-    IoError::new(ErrorKind::Other, Box::new(err))
+fn to_decode_error<E: ToString>(err: E) -> Error {
+    Error::Decode(err.to_string())
 }
 
 #[cfg(test)]

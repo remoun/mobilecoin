@@ -3,11 +3,21 @@
 #![doc = include_str!("../README.md")]
 
 use mc_util_build_script::Environment;
-use std::{ffi::OsStr, fs, path::Path};
+use std::{collections::HashMap, fs, path::Path};
 
 /// Compile protobuf files into Rust code, and generate a mod.rs that references
 /// all the generated modules.
 pub fn compile_protos_and_generate_mod_rs<P: AsRef<Path>>(proto_dirs: &[P], proto_files: &[P]) {
+    compile_protos_and_generate_mod_rs_with_externs(proto_dirs, proto_files, [].into())
+}
+
+/// Compile protobuf files into Rust code, and generate a mod.rs that references
+/// all the generated modules.
+pub fn compile_protos_and_generate_mod_rs_with_externs<P: AsRef<Path>>(
+    proto_dirs: &[P],
+    proto_files: &[P],
+    externs: HashMap<String, String>,
+) {
     // If the proto files change, we need to re-run.
     proto_dirs
         .iter()
@@ -21,36 +31,25 @@ pub fn compile_protos_and_generate_mod_rs<P: AsRef<Path>>(proto_dirs: &[P], prot
     let _ = fs::remove_dir_all(&output_destination);
     fs::create_dir_all(&output_destination).expect("failed creating output destination");
 
+    // DO NOT MERGE, debug
+    println!(
+        "cargo:warning=Writing {:?}",
+        output_destination.join("mod.rs")
+    );
+
     // Generate code.
-    grpcio_compiler::prost_codegen::compile_protos(
+    let mut prost_config = prost_build::Config::new();
+    prost_config
+        .include_file(output_destination.join("mod.rs"))
+        .out_dir(&output_destination);
+    for (proto_path, rust_path) in externs {
+        prost_config.extern_path(proto_path, rust_path);
+    }
+
+    grpcio_compiler::prost_codegen::compile_protos_with_config(
         proto_files,
         proto_dirs,
-        output_destination.to_str().unwrap(),
+        prost_config,
     )
     .expect("Failed to compile gRPC definitions!");
-
-    // Generate the mod.rs file that includes all the auto-generated code.
-    let mod_file_contents = proto_files
-        .into_iter()
-        .filter_map(|path| {
-            let path = path.as_ref();
-            if path.extension() == Some(OsStr::new("rs")) {
-                let file_stem = path.file_stem().unwrap().to_str().unwrap();
-                Some(format!(
-                    "pub mod {} {{\n    include!(\"{}.rs\");\n}}\n",
-                    file_stem.replace('.', "_"),
-                    file_stem
-                ))
-            } else {
-                None
-            }
-        })
-        .collect::<Vec<String>>()
-        .join("\n");
-
-    let mod_file_path = output_destination.join("mod.rs");
-
-    if fs::read_to_string(&mod_file_path).ok().as_ref() != Some(&mod_file_contents) {
-        fs::write(&mod_file_path, &mod_file_contents).expect("Failed writing mod.rs");
-    }
 }

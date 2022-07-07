@@ -5212,6 +5212,7 @@ version = "1.3.0-pre0"
 dependencies = [
  "grpcio-compiler",
  "mc-util-build-script",
+ "prost-build",
 ]
 
 [[package]]

@@ -5,7 +5,7 @@
 //! MobileCoin-specific (Ping) extensions.
 
 use crate::{
-    grpc_health_v1::{
+    grpc::health::v1::{
         create_health, Health, HealthCheckRequest, HealthCheckResponse, PingRequest, PingResponse,
     },
     rpc_logger, send_result,
@@ -20,7 +20,7 @@ use std::sync::{
 };
 
 // Re-export the health check status enum for convenience.
-pub use crate::grpc_health_v1::health_check_response::ServingStatus as HealthCheckStatus;
+pub use crate::grpc::health::v1::health_check_response::ServingStatus as HealthCheckStatus;
 
 // A prototype of a callback function that receives a service name and returns
 // it's health status. By defauult, `HealthService` would respond SERVING to all

@@ -140,7 +140,7 @@ impl ServerCredentialsFetcher for ServerCertReloader {
 mod tests {
     use super::*;
     use crate::{
-        grpc_health_v1::{HealthClient, PingRequest},
+        grpc::health::v1::{HealthClient, PingRequest},
         ConnectionUriGrpcioServer, HealthService,
     };
     use grpcio::{ChannelBuilder, ChannelCredentialsBuilder, EnvBuilder, Server, ServerBuilder};

@@ -8,3 +8,4 @@ edition = "2021"
 mc-util-build-script = { path = "../../build/script" }
 
 grpcio-compiler = { version = "0.10", default-features = false, features = ["prost-codec"] }
+prost-build = "0.10"
